@@ -26,9 +26,19 @@ func main() {
 		log.Fatalf("unable to build a new app config: %v", err)
 	}
 
-	sqlxdb, err := sqlx.Connect("mysql", "root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true")
-	if err != nil {
-		log.Fatalf("unable to connect to mysql: %s", err.Error())
+	var sqlxdb *sqlx.DB
+	switch cfg.DatabaseType {
+	case config.DatabaseTypeMySQL:
+		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
+		if err != nil {
+			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err.Error())
+		}
+	// Using mysql by default
+	default:
+		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
+		if err != nil {
+			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err.Error())
+		}
 	}
 
 	db := mysql.New(sqlxdb)
@@ -37,7 +47,7 @@ func main() {
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(sheetService, int64(10*1024*1024)) // 10MiB)
+	h := controllers.NewHandler(sheetService, cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              cfg.ServerAddr,

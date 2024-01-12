@@ -11,6 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+type DatabaseType string
+
+var (
+	DatabaseTypeMySQL    DatabaseType = "mysql"
+	DatabaseTypePostgres DatabaseType = "postgres"
+)
+
 const (
 	// Name of the application
 	AppName = "espressoapi-go"
@@ -30,6 +37,9 @@ var (
 	defaultLoggerLogLevel          = "info"
 	defaultLoggerDurationFieldUnit = "ms"
 	defaultLoggerFormat            = "json"
+
+	defaultDatabaseType           = DatabaseTypeMySQL
+	defaultDatabaseDatasourceName = "root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true"
 )
 
 type App struct {
@@ -59,6 +69,16 @@ type App struct {
 
 	// Format of the logs
 	LoggerFormat string `json:"logger_format" yaml:"logger_format" mapstructure:"LOGGER_FORMAT"`
+
+	// Name of the database (driver) type to use
+	// Available: "mysql", "postgres"
+	DatabaseType DatabaseType `json:"database_type" yaml:"database_type" mapstructure:"DATABASE_TYPE"`
+
+	// Address of the database
+	// See:
+	// - https://github.com/go-sql-driver/mysql/#usage for mysql syntax
+	// - https://github.com/jackc/pgx for postgres syntax
+	DatabaseDatasourceName string `json:"database_datasource_name" yaml:"database_datasource_name" mapstructure:"DATABASE_DATASOURCE_NAME"`
 }
 
 // New will retrieve the runtime configuration from either
@@ -153,4 +173,7 @@ func (config *App) setDefaults() {
 	config.LoggerLogLevel = defaultLoggerLogLevel
 	config.LoggerDurationFieldUnit = defaultLoggerDurationFieldUnit
 	config.LoggerFormat = defaultLoggerFormat
+
+	config.DatabaseType = defaultDatabaseType
+	config.DatabaseDatasourceName = defaultDatabaseDatasourceName
 }

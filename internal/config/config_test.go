@@ -37,6 +37,12 @@ func TestNewWithDefaults(t *testing.T) {
 	if config.LoggerFormat != defaultLoggerFormat {
 		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultLoggerFormat, config.LoggerFormat)
 	}
+	if string(config.DatabaseType) != string(defaultDatabaseType) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseType, config.DatabaseType)
+	}
+	if string(config.DatabaseDatasourceName) != string(defaultDatabaseDatasourceName) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseDatasourceName, config.DatabaseDatasourceName)
+	}
 }
 
 func TestNewWithConfigFile(t *testing.T) {
@@ -87,6 +93,12 @@ logger_log_level: "debug"
 	}
 	if config.LoggerFormat != defaultLoggerFormat {
 		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultLoggerFormat, config.LoggerFormat)
+	}
+	if string(config.DatabaseType) != string(defaultDatabaseType) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseType, config.DatabaseType)
+	}
+	if string(config.DatabaseDatasourceName) != string(defaultDatabaseDatasourceName) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseDatasourceName, config.DatabaseDatasourceName)
 	}
 }
 
@@ -152,5 +164,11 @@ func TestNewWithEnvVars(t *testing.T) {
 	}
 	if config.LoggerFormat != defaultLoggerFormat {
 		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultLoggerFormat, config.LoggerFormat)
+	}
+	if string(config.DatabaseType) != string(defaultDatabaseType) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseType, config.DatabaseType)
+	}
+	if string(config.DatabaseDatasourceName) != string(defaultDatabaseDatasourceName) {
+		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseDatasourceName, config.DatabaseDatasourceName)
 	}
 }

@@ -16,7 +16,11 @@ spec:
       containers:
       - name: espresso-api-go
         image: espresso-api-go
-        env: []
+        env:
+        - name: DATABASE_TYPE
+          value: "mysql"
+        - name: DATABASE_DATASOURCE_NAME
+          value: "root:root@tcp(mysql:3306)/espresso-api?parseTime=true"
         ports:
         - name: http
           containerPort: 8080
