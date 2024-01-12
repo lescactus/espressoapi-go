@@ -18,8 +18,12 @@ type CreateSheetRequest struct {
 func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 	var sheetReq CreateSheetRequest
 
-	err := jsonDecodeBody(w, r, &sheetReq)
-	if err != nil {
+	if err := h.parseContentType(r); err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+
+	if err := jsonDecodeBody(r, &sheetReq); err != nil {
 		h.SetErrorResponse(w, err)
 		return
 	}
@@ -90,8 +94,12 @@ type UpdateSheetByIdRequest struct {
 func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 	var sheetReq UpdateSheetByIdRequest
 
-	err := jsonDecodeBody(w, r, &sheetReq)
-	if err != nil {
+	if err := h.parseContentType(r); err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+
+	if err := jsonDecodeBody(r, &sheetReq); err != nil {
 		h.SetErrorResponse(w, err)
 		return
 	}

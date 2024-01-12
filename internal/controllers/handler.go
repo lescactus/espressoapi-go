@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
 )
@@ -32,4 +33,23 @@ func (h *Handler) MaxReqSize() func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// parseContentType checks if the "Content-Type" header of the HTTP request is "application/json".
+// It returns an error if the header is missing or has a different value.
+func (h *Handler) parseContentType(r *http.Request) error {
+	// If the "Content-Type" header is present, check that it has the value "application/json".
+	// Parse and normalize the header to remove any additional parameters by stripping
+	// whitespace and converting to lowercase before we checking the value
+	ct := r.Header.Get("Content-Type")
+	if ct != "" {
+		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
+		if mediaType != "application/json" {
+			return &ErrorResponse{status: http.StatusUnsupportedMediaType, Msg: "Content-Type header is not application/json"}
+		}
+	} else {
+		return &ErrorResponse{status: http.StatusUnsupportedMediaType, Msg: "Content-Type header is not application/json"}
+	}
+
+	return nil
 }
