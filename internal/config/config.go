@@ -92,10 +92,10 @@ type App struct {
 //
 // * dotenv
 func New() (*App, error) {
-	c := App{}
+	app := App{}
 
 	// Set default configurations
-	c.setDefaults()
+	app.setDefaults()
 
 	viper.AddConfigPath(".")
 	viper.SetConfigName("config")
@@ -115,26 +115,24 @@ func New() (*App, error) {
 		default:
 			return nil, fmt.Errorf("error while loading config file: %s", err)
 		case viper.ConfigFileNotFoundError:
-			readConfigFromEnvVars(c)
+			readConfigFromEnvVars(app)
 		}
 	}
 
-	err = viper.Unmarshal(&c)
-	if err != nil {
-		return nil, err
+	if err := viper.Unmarshal(&app); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal the config into struct, %w", err)
 	}
 
-	err = validateConfig(&c)
-	if err != nil {
-		return nil, err
+	if err := app.validateConfig(); err != nil {
+		return nil, fmt.Errorf("failed to validate the config, %w", err)
 	}
 
-	return &c, nil
+	return &app, nil
 }
 
 // validateConfig will make sure the provided configuration is valid
 // by looking if the values are present when they are expected to be present
-func validateConfig(c *App) error {
+func (app *App) validateConfig() error {
 	return nil
 }
 

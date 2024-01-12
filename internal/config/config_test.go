@@ -172,3 +172,26 @@ func TestNewWithEnvVars(t *testing.T) {
 		t.Errorf("Expected LoggerFormat to be %s, got %s", defaultDatabaseDatasourceName, config.DatabaseDatasourceName)
 	}
 }
+
+func TestAppValidateConfig(t *testing.T) {
+	type fields struct{}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name:    "not implemented",
+			fields:  fields{},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := &App{}
+			if err := app.validateConfig(); (err != nil) != tt.wantErr {
+				t.Errorf("App.validateConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
