@@ -43,7 +43,7 @@ func NewErrorResponse(status int, msg string) *ErrorResponse {
 // SetErrorResponse will attempt to parse the given error
 // and set the response status code and using the ResponseWriter
 // according to the type of the error.
-func SetErrorResponse(w http.ResponseWriter, err error) {
+func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 	if err == nil {
 		return
 	}
@@ -75,7 +75,7 @@ func SetErrorResponse(w http.ResponseWriter, err error) {
 		// In some circumstances Decode() may also return an
 		// io.ErrUnexpectedEOF error for syntax errors in the JSON
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := "request body contains badly-formed JSON"
+			msg := "request body contains badly-formed json"
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: msg}
 
 		// Catch any type errors
@@ -101,13 +101,12 @@ func SetErrorResponse(w http.ResponseWriter, err error) {
 
 		// Catch the error caused by the request body being too large
 		case err.Error() == "http: request body too large":
-			msg := "request body must not be larger than 1MB"
+			msg := fmt.Sprintf("request body must not be larger than %d bytes", h.maxRequestSize)
 			errResp = &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: msg}
 
 		default:
 			errResp = &ErrorResponse{status: http.StatusInternalServerError, Msg: "internal server error"}
 		}
-
 	}
 
 	w.WriteHeader(errResp.status)

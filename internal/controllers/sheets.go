@@ -20,13 +20,13 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 
 	err := jsonDecodeBody(w, r, &sheetReq)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	sheet, err := h.SheetService.CreateSheetByName(r.Context(), sheetReq.Name)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -44,13 +44,13 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetSheetById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	sheet, err := h.SheetService.GetSheetById(r.Context(), id)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *Handler) GetSheetById(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAllSheets(w http.ResponseWriter, r *http.Request) {
 	sheets, err := h.SheetService.GetAllSheets(r.Context())
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -92,13 +92,13 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 
 	err := jsonDecodeBody(w, r, &sheetReq)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 
 	sheet, err = h.SheetService.UpdateSheetById(r.Context(), id, sheet)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -132,13 +132,13 @@ type SheetDeletedResponse struct {
 func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	err = h.SheetService.DeleteSheetById(r.Context(), id)
 	if err != nil {
-		SetErrorResponse(w, err)
+		h.SetErrorResponse(w, err)
 		return
 	}
 

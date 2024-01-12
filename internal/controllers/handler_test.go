@@ -9,7 +9,8 @@ import (
 
 func TestNewHandler(t *testing.T) {
 	type args struct {
-		sheetService sheet.Service
+		sheetService         sheet.Service
+		serverMaxRequestSize int64
 	}
 	tests := []struct {
 		name string
@@ -18,18 +19,18 @@ func TestNewHandler(t *testing.T) {
 	}{
 		{
 			name: "nil args",
-			args: args{nil},
-			want: &Handler{nil},
+			args: args{nil, 0},
+			want: &Handler{nil, 0},
 		},
 		{
 			name: "non nil args",
-			args: args{sheet.New(nil)},
-			want: &Handler{sheet.New(nil)},
+			args: args{sheet.New(nil), 10},
+			want: &Handler{sheet.New(nil), 10},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHandler(tt.args.sheetService); !reflect.DeepEqual(got, tt.want) {
+			if got := NewHandler(tt.args.sheetService, tt.args.serverMaxRequestSize); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewHandler() = %v, want %v", got, tt.want)
 			}
 		})

@@ -37,7 +37,7 @@ func main() {
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(sheetService)
+	h := controllers.NewHandler(sheetService, int64(10*1024*1024)) // 10MiB)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              cfg.ServerAddr,
@@ -46,6 +46,8 @@ func main() {
 		ReadHeaderTimeout: cfg.ServerReadHeaderTimeout,
 		WriteTimeout:      cfg.ServerWriteTimeout,
 	}
+
+	c = c.Append(h.MaxReqSize())
 
 	r.Handler(http.MethodGet, "/rest/v1/ping", c.ThenFunc(h.Ping))
 	r.Handler(http.MethodPost, "/rest/v1/sheets", c.ThenFunc(h.CreateSheet))
