@@ -15,7 +15,16 @@ runs:
         kubectl get pods -A
         echo "current-context:" $(kubectl config current-context)
         echo "environment-kubeconfig:" ${KUBECONFIG}
-    
+
+    - name: Deploy standalone mysql
+      shell: bash
+      run: |
+        kubectl create deployment mysql --image mysql:8 --port 3306
+        kubectl expose deployment mysql --port=3306 --target-port=3306 --name=mysql
+        kubectl set env deployment/mysql MYSQL_ROOT_PASSWORD=root
+        kubectl set env deployment/mysql MYSQL_DATABASE=espresso-api
+        kubectl rollout status deployment mysql
+
     - name: Cache skaffold image builds & config
       uses: actions/cache@v3
       with:
@@ -28,4 +37,3 @@ runs:
         skaffold-version: 2.2.0
         command: run
         verbosity: warning #debug
-
