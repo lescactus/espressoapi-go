@@ -1,0 +1,9 @@
+development-mysql:
+  dialect: mysql
+  datasource: root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true
+  dir: migrations/sql/mysql
+
+development-postgres:
+  dialect: postgres
+  datasource: host=127.0.0.1 dbname=espresso-api user=root password=root sslmode=disable
+  dir: migrations/sql/postgres

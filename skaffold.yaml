@@ -1,0 +1,31 @@
+apiVersion: skaffold/v2beta28
+kind: Config
+metadata:
+  name: espresso-api-go
+build:
+  local:
+    push: false
+  artifacts:
+  - image: espresso-api-go
+    docker:
+      dockerfile: Dockerfile
+  tagPolicy:
+    dateTime:
+      format: 2006-01-02_15-04-05.999_MST
+# Allow running unit tests before a run
+test:
+  - image: espresso-api-go
+    custom:
+    - command: go test ./...
+deploy:
+  kubectl:
+    manifests:
+    - deploy/k8s/deployment.yaml
+    - deploy/k8s/service.yaml
+    - deploy/k8s/serviceaccount.yaml
+
+portForward:
+- resourceType: service
+  resourceName: espresso-api-go
+  port: 80
+  localPort: 8080

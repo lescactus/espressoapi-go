@@ -1,0 +1,37 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+  api:
+    build:
+      context: .
+    ports:
+      - 8080:8080
+    environment: []
+    network_mode: host
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8
+    restart: always
+    network_mode: host
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: espresso-api
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:16
+    restart: always
+    network_mode: host
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: espresso-api
