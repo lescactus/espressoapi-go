@@ -499,3 +499,48 @@ func TestSheetServicePing(t *testing.T) {
 		})
 	}
 }
+
+func TestSQLToSheet(t *testing.T) {
+	t.Run("SQLToSheet", func(t *testing.T) {
+
+		want := &Sheet{
+			Id:        1,
+			Name:      "sheet01",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		sheet := SQLToSheet(&sql.Sheet{
+			Id:        1,
+			Name:      "sheet01",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		})
+
+		if !reflect.DeepEqual(sheet, want) {
+			t.Errorf("SQLToSheet() = %v, want %v", sheet, want)
+		}
+	})
+}
+
+func TestSheeToSQL(t *testing.T) {
+	t.Run("SheetToSQL", func(t *testing.T) {
+		sheet := SheetToSQL(&Sheet{
+			Id:        1,
+			Name:      "sheet01",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		})
+
+		want := &sql.Sheet{
+			Id:        1,
+			Name:      "sheet01",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		if !reflect.DeepEqual(sheet, want) {
+			t.Errorf("SheetToSQL() = %v, want %v", sheet, want)
+		}
+	})
+}

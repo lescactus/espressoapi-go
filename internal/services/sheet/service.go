@@ -16,7 +16,8 @@ type Sheet struct {
 	UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
 }
 
-func (s *Sheet) SQLToSheet(sheet *sql.Sheet) *Sheet {
+func SQLToSheet(sheet *sql.Sheet) *Sheet {
+	s := new(Sheet)
 	s.Id = sheet.Id
 	s.Name = sheet.Name
 	s.CreatedAt = sheet.CreatedAt
@@ -25,13 +26,13 @@ func (s *Sheet) SQLToSheet(sheet *sql.Sheet) *Sheet {
 	return s
 }
 
-func (s *Sheet) SheetToSQL() *sql.Sheet {
+func SheetToSQL(sheet *Sheet) *sql.Sheet {
 	sqlSheet := new(sql.Sheet)
 
-	sqlSheet.Id = s.Id
-	sqlSheet.Name = s.Name
-	sqlSheet.CreatedAt = s.CreatedAt
-	sqlSheet.UpdatedAt = s.UpdatedAt
+	sqlSheet.Id = sheet.Id
+	sqlSheet.Name = sheet.Name
+	sqlSheet.CreatedAt = sheet.CreatedAt
+	sqlSheet.UpdatedAt = sheet.UpdatedAt
 
 	return sqlSheet
 }
@@ -73,7 +74,7 @@ func (s *SheetService) GetSheetById(ctx context.Context, id int) (*Sheet, error)
 		return nil, fmt.Errorf("could not get sheet by id: %w", err)
 	}
 
-	return (&Sheet{}).SQLToSheet(sheet), nil
+	return SQLToSheet(sheet), nil
 }
 
 func (s *SheetService) GetAllSheets(ctx context.Context) ([]Sheet, error) {
@@ -82,10 +83,9 @@ func (s *SheetService) GetAllSheets(ctx context.Context) ([]Sheet, error) {
 		return nil, fmt.Errorf("could not get all sheets: %w", err)
 	}
 
-	sheets := make([]Sheet, 0)
-
-	for _, v := range sqlSheets {
-		sheets = append(sheets, *(&Sheet{}).SQLToSheet(&v))
+	sheets := make([]Sheet, len(sqlSheets))
+	for i, v := range sqlSheets {
+		sheets[i] = *SQLToSheet(&v)
 	}
 
 	return sheets, nil
@@ -93,15 +93,14 @@ func (s *SheetService) GetAllSheets(ctx context.Context) ([]Sheet, error) {
 
 func (s *SheetService) UpdateSheetById(ctx context.Context, id int, sheet *Sheet) (*Sheet, error) {
 	sheet.Id = id
-
-	sqlSheet := sheet.SheetToSQL()
+	sqlSheet := SheetToSQL(sheet)
 
 	sqlSheet, err := s.repository.UpdateSheetById(ctx, id, sqlSheet)
 	if err != nil {
 		return nil, fmt.Errorf("could not update sheet by id: %w", err)
 	}
 
-	return (&Sheet{}).SQLToSheet(sqlSheet), nil
+	return SQLToSheet(sqlSheet), nil
 }
 
 func (s *SheetService) DeleteSheetById(ctx context.Context, id int) error {
@@ -118,5 +117,5 @@ func (s *SheetService) getSheetByName(ctx context.Context, name string) (*Sheet,
 		return nil, fmt.Errorf("could not get sheet by name: %w", err)
 	}
 
-	return (&Sheet{}).SQLToSheet(sheet), nil
+	return SQLToSheet(sheet), nil
 }
