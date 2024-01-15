@@ -1,13 +1,19 @@
 package controllers
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/rs/zerolog"
 )
 
 func TestNewHandler(t *testing.T) {
@@ -158,4 +164,64 @@ func TestHandlerParseContentType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandlerIdParameterLoggerHandler(t *testing.T) {
+	handler := NewHandler(nil, 1024)
+
+	// Create a chain with the IdParameterLoggerHandler
+	c := alice.New().Append(handler.IdParameterLoggerHandler("id"))
+
+	// Create a test server with the handler chain
+	ts := httptest.NewServer(c.ThenFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	}))
+
+	defer ts.Close()
+
+	// Make a request to the test server with a sample ID
+	req, err := http.NewRequest("GET", ts.URL+"/rest/v1/sheets/123", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a test context with httprouter parameters
+	params := httprouter.Params{httprouter.Param{Key: "id", Value: "123"}}
+	ctx := context.WithValue(req.Context(), httprouter.ParamsKey, params)
+
+	// Set the context with parameters to the request
+	req = req.WithContext(ctx)
+
+	// Perform the request
+	http.DefaultClient.Do(req)
+}
+
+func TestHandlerIDParameterLoggerHTTPHandler(t *testing.T) {
+	// Create a mock handler
+	mockHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(r.URL)
+
+		_ = zerolog.Ctx(r.Context())
+	})
+
+	// Create a mock request with a context containing the ID parameter
+	req := httptest.NewRequest(http.MethodGet, "/test/123", nil)
+	params := httprouter.Params{httprouter.Param{Key: "id", Value: "123"}}
+
+	logger := zerolog.New(io.Discard)
+	ctx := context.WithValue(req.Context(), httprouter.ParamsKey, params)
+	ctx = logger.WithContext(ctx)
+	req = req.WithContext(ctx)
+
+	// Create a mock response recorder
+	rr := httptest.NewRecorder()
+
+	// Create a mock Handler instance
+	handler := NewHandler(nil, 1024)
+
+	// Call the idParameterLoggerHttpHandler function
+	idParamLoggerHandler := handler.idParameterLoggerHttpHandler(mockHandler, "id")
+
+	// Serve the request using the idParameterLoggerHttpHandler
+	idParamLoggerHandler.ServeHTTP(rr, req)
 }

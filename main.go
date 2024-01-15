@@ -15,8 +15,10 @@ import (
 	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/internal/config"
 	"github.com/lescactus/espressoapi-go/internal/controllers"
+	"github.com/lescactus/espressoapi-go/internal/logger"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/rs/zerolog/hlog"
 )
 
 func main() {
@@ -26,18 +28,24 @@ func main() {
 		log.Fatalf("unable to build a new app config: %v", err)
 	}
 
+	logger := logger.New(
+		cfg.LoggerLogLevel,
+		cfg.LoggerDurationFieldUnit,
+		cfg.LoggerFormat,
+	)
+
 	var sqlxdb *sqlx.DB
 	switch cfg.DatabaseType {
 	case config.DatabaseTypeMySQL:
 		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
 		if err != nil {
-			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err.Error())
+			logger.Fatal().Err(err).Msgf("unable to connect to %s", config.DatabaseTypeMySQL)
 		}
 	// Using mysql by default
 	default:
 		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
 		if err != nil {
-			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err.Error())
+			logger.Fatal().Err(err).Msgf("unable to connect to %s", config.DatabaseTypeMySQL)
 		}
 	}
 
@@ -57,9 +65,30 @@ func main() {
 		WriteTimeout:      cfg.ServerWriteTimeout,
 	}
 
+	// logger fields
+	*logger = logger.With().Str("svc", config.AppName).Logger()
+
+	// Register logging middleware
+	c = c.Append(hlog.NewHandler(*logger))
+	c = c.Append(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+		hlog.FromRequest(r).Info().
+			Str("method", r.Method).
+			Stringer("url", r.URL).
+			Int("status", status).
+			Int("size", size).
+			Dur("duration", duration).
+			Msg("")
+	}))
+	c = c.Append(hlog.ProtoHandler("proto"))
+	c = c.Append(hlog.RefererHandler("referer"))
+	c = c.Append(hlog.RemoteAddrHandler("remote_client"))
+	c = c.Append(hlog.UserAgentHandler("user_agent"))
+	c = c.Append(hlog.RequestIDHandler("req_id", "X-Request-ID"))
+	c = c.Append(h.IdParameterLoggerHandler("id"))
+	//c = c.Append(h.IdParameterLoggerHandler(h, "id"))
 	c = c.Append(h.MaxReqSize())
 
-	r.Handler(http.MethodGet, "/rest/v1/ping", c.ThenFunc(h.Ping))
+	r.Handler(http.MethodGet, "/ping", c.ThenFunc(h.Ping))
 	r.Handler(http.MethodPost, "/rest/v1/sheets", c.ThenFunc(h.CreateSheet))
 	r.Handler(http.MethodGet, "/rest/v1/sheets/:id", c.ThenFunc(h.GetSheetById))
 	r.Handler(http.MethodGet, "/rest/v1/sheets", c.ThenFunc(h.GetAllSheets))

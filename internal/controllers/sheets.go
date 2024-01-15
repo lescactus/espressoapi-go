@@ -1,14 +1,13 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 )
 
 type CreateSheetRequest struct {
@@ -33,6 +32,11 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	hlog.FromRequest(r).Debug().Dict("sheet", zerolog.Dict().
+		Int("id", sheet.Id).
+		Str("name", sheet.Name).
+		Time("created_at", *sheet.CreatedAt)).
+		Msg("sheet successfully created")
 
 	resp, em := json.Marshal(&sheet)
 	if em != nil {
@@ -57,6 +61,11 @@ func (h *Handler) GetSheetById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	hlog.FromRequest(r).Debug().Dict("sheet", zerolog.Dict().
+		Int("id", sheet.Id).
+		Str("name", sheet.Name).
+		Time("created_at", *sheet.CreatedAt)).
+		Msg("sheet found by id")
 
 	resp, err := json.Marshal(sheet)
 	if err != nil {
@@ -120,6 +129,10 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	hlog.FromRequest(r).Debug().Dict("sheet", zerolog.Dict().
+		Int("id", sheet.Id).
+		Str("name", sheet.Name)).
+		Msg("sheet successfully updated")
 
 	resp, err := json.Marshal(sheet)
 	if err != nil {
@@ -149,6 +162,7 @@ func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	hlog.FromRequest(r).Debug().Msg("sheet successfully deleted")
 
 	s := SheetDeletedResponse{
 		Id:  id,
@@ -164,19 +178,4 @@ func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
-}
-
-func (h *Handler) getIdFromParams(ctx context.Context) (int, error) {
-	params := httprouter.ParamsFromContext(ctx)
-	idParam := params.ByName("id")
-	if idParam == "" {
-		return 0, ErrIDNotFound
-	}
-
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		return 0, ErrIDNotInteger
-	}
-
-	return id, nil
 }

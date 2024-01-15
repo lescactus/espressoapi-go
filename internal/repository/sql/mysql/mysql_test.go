@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	dbsql "database/sql"
+	"database/sql/driver"
 	"fmt"
 	"reflect"
 	"testing"
@@ -342,6 +343,15 @@ func TestMysqlDBGetAllSheets(t *testing.T) {
 	}
 }
 
+// ref: https://github.com/DATA-DOG/go-sqlmock#matching-arguments-like-timetime
+type AnyTime struct{}
+
+// Match satisfies sqlmock.Argument interface
+func (a AnyTime) Match(v driver.Value) bool {
+	_, ok := v.(time.Time)
+	return ok
+}
+
 func TestMysqlDBUpdateSheetById(t *testing.T) {
 	type args struct {
 		ctx   context.Context
@@ -359,7 +369,7 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 			name: "Sheet.Id matching id - No error",
 			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 1, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 1).WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetnewname", AnyTime{}, 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			want:    &sql.Sheet{Id: 1, Name: "sheetnewname"},
 			wantErr: false,
@@ -368,7 +378,7 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 			name: "Sheet.Id matching id - Error",
 			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 1, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 1).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetnewname", AnyTime{}, 1).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -377,7 +387,7 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 			name: "Sheet.Id not matching id - No error",
 			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 2, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 1).WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetnewname", AnyTime{}, 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			want:    &sql.Sheet{Id: 1, Name: "sheetnewname"},
 			wantErr: false,
@@ -386,7 +396,7 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 			name: "Sheet.Id not matching id - Error",
 			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 2, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 1).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetnewname", AnyTime{}, 1).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -395,7 +405,7 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 			name: "Sheet does not exist",
 			args: args{ctx: context.TODO(), id: 2, sheet: &sql.Sheet{Id: 2, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 2).WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetnewname", AnyTime{}, 2).WillReturnResult(sqlmock.NewResult(0, 0))
 			},
 			want:    nil,
 			wantErr: true,
@@ -422,7 +432,12 @@ func TestMysqlDBUpdateSheetById(t *testing.T) {
 				t.Errorf("MysqlDB.UpdateSheetById() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+
+			isEqual := func(a, b *sql.Sheet) bool {
+				return a == b || (a != nil && b != nil && a.Id == b.Id && a.Name == b.Name)
+			}
+
+			if !isEqual(got, tt.want) {
 				t.Errorf("MysqlDB.UpdateSheetById() = %v, want %v", got, tt.want)
 			}
 

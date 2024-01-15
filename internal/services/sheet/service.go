@@ -7,6 +7,7 @@ import (
 
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
+	"github.com/rs/zerolog"
 )
 
 type Sheet struct {
@@ -61,7 +62,9 @@ func (s *SheetService) CreateSheetByName(ctx context.Context, name string) (*She
 
 	err := s.repository.CreateSheet(ctx, &sheet)
 	if err != nil {
-		return nil, fmt.Errorf("could not create sheet: %w", err)
+		msg := "could not create sheet"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
 	// Will return the full Sheet as it exists in the DB instead of just the name
@@ -71,7 +74,9 @@ func (s *SheetService) CreateSheetByName(ctx context.Context, name string) (*She
 func (s *SheetService) GetSheetById(ctx context.Context, id int) (*Sheet, error) {
 	sheet, err := s.repository.GetSheetById(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("could not get sheet by id: %w", err)
+		msg := "could not get sheet by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
 	return SQLToSheet(sheet), nil
@@ -80,7 +85,9 @@ func (s *SheetService) GetSheetById(ctx context.Context, id int) (*Sheet, error)
 func (s *SheetService) GetAllSheets(ctx context.Context) ([]Sheet, error) {
 	sqlSheets, err := s.repository.GetAllSheets(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("could not get all sheets: %w", err)
+		msg := "could not get all sheets"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
 	sheets := make([]Sheet, len(sqlSheets))
@@ -97,24 +104,38 @@ func (s *SheetService) UpdateSheetById(ctx context.Context, id int, sheet *Sheet
 
 	sqlSheet, err := s.repository.UpdateSheetById(ctx, id, sqlSheet)
 	if err != nil {
-		return nil, fmt.Errorf("could not update sheet by id: %w", err)
+		msg := "could not update sheet by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
 	return SQLToSheet(sqlSheet), nil
 }
 
 func (s *SheetService) DeleteSheetById(ctx context.Context, id int) error {
-	return s.repository.DeleteSheetById(ctx, id)
+	if err := s.repository.DeleteSheetById(ctx, id); err != nil {
+		msg := "could not delete sheet by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return fmt.Errorf("%s: %w", msg, err)
+	}
+	return nil
 }
 
 func (s *SheetService) Ping(ctx context.Context) error {
-	return s.repository.Ping(ctx)
+	if err := s.repository.Ping(ctx); err != nil {
+		msg := "could not ping database"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return fmt.Errorf("%s: %w", msg, err)
+	}
+	return nil
 }
 
 func (s *SheetService) getSheetByName(ctx context.Context, name string) (*Sheet, error) {
 	sheet, err := s.repository.GetSheetByName(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("could not get sheet by name: %w", err)
+		msg := "could not get sheet by name"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
 	return SQLToSheet(sheet), nil

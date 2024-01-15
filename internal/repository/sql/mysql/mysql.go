@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"fmt"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -78,11 +79,12 @@ func (db *MysqlDB) GetAllSheets(ctx context.Context) ([]sql.Sheet, error) {
 }
 
 func (db *MysqlDB) UpdateSheetById(ctx context.Context, id int, sheet *sql.Sheet) (*sql.Sheet, error) {
+	now := time.Now()
 	sheet.Id = id
+	sheet.UpdatedAt = &now
 
 	// CreatedAt should be immutable
-	// UpdatedAt should be changed by the RDBMS
-	res, err := db.db.ExecContext(ctx, `UPDATE sheets SET name = ? WHERE id = ?`, sheet.Name, sheet.Id)
+	res, err := db.db.ExecContext(ctx, `UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?`, sheet.Name, sheet.UpdatedAt, sheet.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update record for sheet id=%d: %w", id, err)
 	}

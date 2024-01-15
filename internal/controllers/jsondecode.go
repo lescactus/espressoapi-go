@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/hlog"
 )
 
 func jsonDecodeBody(r *http.Request, dst interface{}) error {
@@ -18,6 +20,7 @@ func jsonDecodeBody(r *http.Request, dst interface{}) error {
 
 	err := dec.Decode(&dst)
 	if err != nil {
+		hlog.FromRequest(r).Err(err).Msg("error decoding json body")
 		return err
 	}
 

@@ -1,10 +1,14 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -35,6 +39,30 @@ func (h *Handler) MaxReqSize() func(next http.Handler) http.Handler {
 	}
 }
 
+// IdParameterLoggerHandler returns a middleware function that logs the value of the specified
+// field key from the request URL parameters.
+func (h *Handler) IdParameterLoggerHandler(fieldKey string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return h.idParameterLoggerHttpHandler(next, fieldKey)
+	}
+}
+
+// idParameterLoggerHttpHandler extracts the ID from the request parameters and adds it to
+// the logger context.
+// If the ID cannot be fetched from the request params, it is not added to the logger context.
+func (hr *Handler) idParameterLoggerHttpHandler(h http.Handler, fieldKey string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, err := hr.getIdFromParams(r.Context())
+		// In case the id is fetched from the request params, we add it to the logger context
+		if err == nil {
+			zerolog.Ctx(r.Context()).UpdateContext(func(c zerolog.Context) zerolog.Context {
+				return c.Int(fieldKey, id)
+			})
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 // parseContentType checks if the "Content-Type" header of the HTTP request is "application/json".
 // It returns an error if the header is missing or has a different value.
 func (h *Handler) parseContentType(r *http.Request) error {
@@ -52,4 +80,21 @@ func (h *Handler) parseContentType(r *http.Request) error {
 	}
 
 	return nil
+}
+
+// getIdFromParams extracts the ID parameter from the context and converts it to an integer.
+// It returns the extracted ID and any error encountered during the process.
+func (h *Handler) getIdFromParams(ctx context.Context) (int, error) {
+	params := httprouter.ParamsFromContext(ctx)
+	idParam := params.ByName("id")
+	if idParam == "" {
+		return 0, ErrIDNotFound
+	}
+
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return 0, ErrIDNotInteger
+	}
+
+	return id, nil
 }
