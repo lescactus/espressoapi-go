@@ -15,3 +15,12 @@ type SheetRepository interface {
 	DeleteSheetById(ctx context.Context, id int) error
 	Ping(ctx context.Context) error
 }
+
+type BeansRepository interface {
+	CreateBeans(ctx context.Context, beans *sql.Beans) error
+	GetBeansById(ctx context.Context, id int) (*sql.Beans, error)
+	GetAllBeans(ctx context.Context) ([]sql.Beans, error)
+	UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (*sql.Beans, error)
+	DeleteBeansById(ctx context.Context, id int) error
+	Ping(ctx context.Context) error
+}
