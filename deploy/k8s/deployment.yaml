@@ -21,6 +21,8 @@ spec:
           value: "mysql"
         - name: DATABASE_DATASOURCE_NAME
           value: "root:root@tcp(mysql:3306)/espresso-api?parseTime=true"
+        - name: LOGGER_LOG_LEVEL
+          value: "debug"
         ports:
         - name: http
           containerPort: 8080
@@ -33,7 +35,7 @@ spec:
             cpu: "100m"
         readinessProbe:
           httpGet:
-            path: /rest/v1/ping
+            path: /ping
             port: 8080
           timeoutSeconds: 3
           successThreshold: 1
@@ -44,7 +46,7 @@ spec:
           periodSeconds: 15
           successThreshold: 1
           httpGet:
-            path: /rest/v1/ping
+            path: /ping
             port: 8080
           timeoutSeconds: 3
       serviceAccountName: espresso-api-go
