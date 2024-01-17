@@ -17,6 +17,7 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/controllers"
 	"github.com/lescactus/espressoapi-go/internal/logger"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql"
+	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
 	"github.com/rs/zerolog/hlog"
 )
@@ -52,10 +53,11 @@ func main() {
 	db := mysql.New(sqlxdb)
 
 	sheetService := sheet.New(db)
+	roasterService := roaster.New(db)
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(sheetService, cfg.ServerMaxRequestSize)
+	h := controllers.NewHandler(sheetService, roasterService, cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              cfg.ServerAddr,
@@ -94,6 +96,12 @@ func main() {
 	r.Handler(http.MethodGet, "/rest/v1/sheets", c.ThenFunc(h.GetAllSheets))
 	r.Handler(http.MethodPut, "/rest/v1/sheets/:id", c.ThenFunc(h.UpdateSheetById))
 	r.Handler(http.MethodDelete, "/rest/v1/sheets/:id", c.ThenFunc(h.DeleteSheetById))
+
+	r.Handler(http.MethodPost, "/rest/v1/roasters", c.ThenFunc(h.CreateRoaster))
+	r.Handler(http.MethodGet, "/rest/v1/roasters/:id", c.ThenFunc(h.GetRoasterById))
+	r.Handler(http.MethodGet, "/rest/v1/roasters", c.ThenFunc(h.GetAllRoasters))
+	r.Handler(http.MethodPut, "/rest/v1/roasters/:id", c.ThenFunc(h.UpdateRoasterById))
+	r.Handler(http.MethodDelete, "/rest/v1/roasters/:id", c.ThenFunc(h.DeleteRoasterById))
 
 	// Start server
 	go func() {

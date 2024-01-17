@@ -16,6 +16,16 @@ type SheetRepository interface {
 	Ping(ctx context.Context) error
 }
 
+type RoasterRepository interface {
+	CreateRoaster(ctx context.Context, roaster *sql.Roaster) error
+	GetRoasterById(ctx context.Context, id int) (*sql.Roaster, error)
+	GetRoasterByName(ctx context.Context, name string) (*sql.Roaster, error)
+	GetAllRoasters(ctx context.Context) ([]sql.Roaster, error)
+	UpdateRoasterById(ctx context.Context, id int, roaster *sql.Roaster) (*sql.Roaster, error)
+	DeleteRoasterById(ctx context.Context, id int) error
+	Ping(ctx context.Context) error
+}
+
 type BeansRepository interface {
 	CreateBeans(ctx context.Context, beans *sql.Beans) error
 	GetBeansById(ctx context.Context, id int) (*sql.Beans, error)
