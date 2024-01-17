@@ -11,8 +11,12 @@ on:
 
 jobs:
   e2e:
+    strategy:
+      matrix:
+          testsuites:
+            - venom.e2e.roasters.yaml
+            - venom.e2e.sheets.yaml
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
@@ -36,10 +40,14 @@ jobs:
     - name: Docker compose up
       run: docker compose up -d --wait
 
+    - name: Debug when failure happened
+      if: ${{ failure() }}
+      run: docker compose logs
+
     - name: Run sql migrations
       run: sql-migrate up -env=development-mysql
 
     - name: Run e2e tests with venom
       run: |
         export IS_TTY=true
-        venom run -vv ./e2e/venom.e2e.yaml
+        venom run -vv ./e2e/${{ matrix.testsuites }}
