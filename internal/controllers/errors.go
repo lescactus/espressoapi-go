@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lescactus/espressoapi-go/internal/repository"
+	domerrors "github.com/lescactus/espressoapi-go/internal/errors"
 )
 
 var (
@@ -60,12 +60,20 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 
 		switch {
 		// Catch if the sheet does not exist
-		case errors.Is(err, repository.ErrSheetDoesNotExist):
+		case errors.Is(err, domerrors.ErrSheetDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no sheet found for given id"}
 
 		// Catch if the sheet already exists
-		case errors.Is(err, repository.ErrSheetAlreadyExists):
+		case errors.Is(err, domerrors.ErrSheetAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a sheet with the given name already exists"}
+
+		// Catch if the roaster does not exist
+		case errors.Is(err, domerrors.ErrRoasterDoesNotExist):
+			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"}
+
+		// Catch if the roaster already exists
+		case errors.Is(err, domerrors.ErrRoasterAlreadyExists):
+			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"}
 
 		// Catch any syntax errors
 		case errors.As(err, &syntaxError):

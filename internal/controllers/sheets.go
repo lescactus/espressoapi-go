@@ -15,7 +15,7 @@ type CreateSheetRequest struct {
 }
 
 func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
-	var sheetReq CreateSheetRequest
+	var sheetReq CreateRoasterRequest
 
 	if err := h.parseContentType(r); err != nil {
 		h.SetErrorResponse(w, err)

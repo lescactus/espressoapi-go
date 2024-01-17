@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lescactus/espressoapi-go/internal/repository"
+	domerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
 )
 
@@ -66,15 +66,27 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
-			name:           "repository.ErrSheetDoesNotExist error",
-			args:           args{w: httptest.NewRecorder(), err: repository.ErrSheetDoesNotExist},
+			name:           "errors.ErrSheetDoesNotExist error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrSheetDoesNotExist},
 			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no sheet found for given id"},
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
-			name:           "repository.ErrSheetAlreadyExists error",
-			args:           args{w: httptest.NewRecorder(), err: repository.ErrSheetAlreadyExists},
+			name:           "errors.ErrSheetAlreadyExists error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrSheetAlreadyExists},
 			want:           &ErrorResponse{status: http.StatusConflict, Msg: "a sheet with the given name already exists"},
+			wantStatusCode: http.StatusConflict,
+		},
+		{
+			name:           "errors.ErrRoasterDoesNotExist error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterDoesNotExist},
+			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"},
+			wantStatusCode: http.StatusNotFound,
+		},
+		{
+			name:           "errors.ErrRoasterAlreadyExists error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterAlreadyExists},
+			want:           &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"},
 			wantStatusCode: http.StatusConflict,
 		},
 		{

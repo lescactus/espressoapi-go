@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 )
@@ -23,7 +24,7 @@ type MockSheetRepository struct{}
 func (m *MockSheetRepository) CreateSheet(ctx context.Context, sheet *sql.Sheet) error {
 	switch sheet.Name {
 	case "duplicatesheet":
-		return repository.ErrSheetAlreadyExists
+		return errors.ErrSheetAlreadyExists
 	default:
 		return nil
 	}
@@ -33,14 +34,14 @@ func (m *MockSheetRepository) GetSheetById(ctx context.Context, id int) (*sql.Sh
 	if id == 1 {
 		return &sql.Sheet{Id: id, Name: "sheetexists"}, nil
 	} else {
-		return nil, repository.ErrSheetDoesNotExist
+		return nil, errors.ErrSheetDoesNotExist
 	}
 }
 
 func (m *MockSheetRepository) GetSheetByName(ctx context.Context, name string) (*sql.Sheet, error) {
 	switch name {
 	case "sheetdoesnotexists":
-		return nil, repository.ErrSheetDoesNotExist
+		return nil, errors.ErrSheetDoesNotExist
 
 	case "sheeterror":
 		return nil, fmt.Errorf("mock error")
@@ -73,7 +74,7 @@ func (m *MockSheetRepository) UpdateSheetById(ctx context.Context, id int, sheet
 	if id == 1 {
 		return &sql.Sheet{Id: id, Name: sheet.Name, UpdatedAt: &now}, nil
 	} else {
-		return nil, repository.ErrSheetDoesNotExist
+		return nil, errors.ErrSheetDoesNotExist
 	}
 }
 
@@ -523,7 +524,7 @@ func TestSQLToSheet(t *testing.T) {
 	})
 }
 
-func TestSheeToSQL(t *testing.T) {
+func TestSheetToSQL(t *testing.T) {
 	t.Run("SheetToSQL", func(t *testing.T) {
 		sheet := SheetToSQL(&Sheet{
 			Id:        1,
