@@ -13,9 +13,11 @@ const (
 )
 
 type Beans struct {
-	Id          int        `db:"id"`
-	RoasterName string     `db:"roaster_name"`
-	BeansName   string     `db:"beans_name"`
-	RoastDate   time.Time  `db:"roast_date"`
-	RoastLevel  RoastLevel `db:"roast_level"`
+	Id         int        `db:"id"`
+	Roasters   *Roaster   `db:"roasters"`
+	Name       string     `db:"name"`
+	RoastDate  *time.Time `db:"roast_date"`
+	RoastLevel RoastLevel `db:"roast_level"`
+	CreatedAt  *time.Time `db:"created_at"`
+	UpdatedAt  *time.Time `db:"updated_at"`
 }

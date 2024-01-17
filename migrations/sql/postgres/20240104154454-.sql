@@ -27,8 +27,13 @@ CREATE TABLE IF NOT EXISTS "beans" (
     "roast_date" DATE NULL,
     "roast_level" SMALLINT NOT NULL,
     "roaster_id" INT NOT NULL,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updated_at" TIMESTAMP WITH TIME ZONE, -- updated by trigger
     FOREIGN KEY (roaster_id) REFERENCES roasters(id)
 );
+-- -- Trigger the "update_updated_at" function
+CREATE TRIGGER update_updated_at_beans BEFORE
+UPDATE ON beans FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
 CREATE TABLE IF NOT EXISTS "shots" (
     "id" SERIAL PRIMARY KEY,
     "grind_setting" INT NOT NULL,
@@ -59,6 +64,7 @@ ALTER TABLE IF EXISTS shots DROP CONSTRAINT shots_beans_id_fkey;
 ALTER TABLE IF EXISTS results DROP CONSTRAINT results_shot_id_fkey;
 DROP TRIGGER IF EXISTS update_updated_at_sheets ON sheets;
 DROP TRIGGER IF EXISTS update_updated_at_roasters ON roasters;
+DROP TRIGGER IF EXISTS update_updated_at_beans ON beans;
 DROP FUNCTION IF EXISTS update_updated_at;
 DROP TABLE IF EXISTS beans;
 DROP TABLE IF EXISTS roasters;

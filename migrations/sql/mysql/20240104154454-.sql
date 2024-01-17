@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS `beans` (
     `roast_date` DATE NULL,
     `roast_level` TINYINT NOT NULL,
     `roaster_id` INT NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     FOREIGN KEY (roaster_id) REFERENCES roasters(id)
 );
