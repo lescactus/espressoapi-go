@@ -7,27 +7,32 @@ INSERT INTO sheets (name)
 VALUES ('long blacks');
 INSERT INTO sheets (name)
 VALUES ('lattes');
+-- roasters
+INSERT INTO roasters (name)
+VALUES ('Coffee Collective');
+INSERT INTO roasters (name)
+VALUES ('Nordic Roasting');
 -- beans
 INSERT INTO beans (
-        roaster_name,
+        roaster_id,
         beans_name,
         roast_date,
         roast_level
     )
 VALUES (
-        'Coffee Collective',
+        1,
         'Kieni',
         '2023-12-29',
         '0'
     );
 INSERT INTO beans (
-        roaster_name,
+        roaster_id,
         beans_name,
         roast_date,
         roast_level
     )
 VALUES (
-        'Nordic Roasting',
+        2,
         'Vikings do it better',
         '2024-01-01',
         '1'
