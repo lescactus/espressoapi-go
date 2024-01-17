@@ -11,11 +11,11 @@ import (
 )
 
 type Bean struct {
-	Id          int            `db:"id" json:"id"`
-	RoasterName string         `db:"roaster_name" json:"roaster_name"`
-	BeansName   string         `db:"beans_name" json:"beans_name"`
-	RoastDate   time.Time      `db:"roast_date" json:"roast_date"`
-	RoastLevel  sql.RoastLevel `db:"roast_level" json:"roast_level"`
+	Id          int            `json:"id"`
+	RoasterName string         `json:"roaster_name"`
+	BeansName   string         `json:"beans_name"`
+	RoastDate   time.Time      `json:"roast_date"`
+	RoastLevel  sql.RoastLevel `json:"roast_level"`
 }
 
 func SQLToBeans(beans *sql.Beans) *Bean {
