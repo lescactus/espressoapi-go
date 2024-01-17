@@ -16,9 +16,11 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/config"
 	"github.com/lescactus/espressoapi-go/internal/controllers"
 	"github.com/lescactus/espressoapi-go/internal/logger"
-	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql"
-	"github.com/lescactus/espressoapi-go/internal/services/roaster"
-	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	mysqlroaster "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/roaster"
+	mysqlsheet "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/sheet"
+
+	svcroaster "github.com/lescactus/espressoapi-go/internal/services/roaster"
+	svcsheet "github.com/lescactus/espressoapi-go/internal/services/sheet"
 	"github.com/rs/zerolog/hlog"
 )
 
@@ -50,14 +52,15 @@ func main() {
 		}
 	}
 
-	db := mysql.New(sqlxdb)
+	dbSheet := mysqlsheet.New(sqlxdb)
+	dbRoaster := mysqlroaster.New(sqlxdb)
 
-	sheetService := sheet.New(db)
-	roasterService := roaster.New(db)
+	svcSheet := svcsheet.New(dbSheet)
+	svcRoaster := svcroaster.New(dbRoaster)
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(sheetService, roasterService, cfg.ServerMaxRequestSize)
+	h := controllers.NewHandler(svcSheet, svcRoaster, cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              cfg.ServerAddr,
