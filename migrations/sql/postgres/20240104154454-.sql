@@ -23,10 +23,10 @@ CREATE TRIGGER update_updated_at_roasters BEFORE
 UPDATE ON roasters FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
 CREATE TABLE IF NOT EXISTS "beans" (
     "id" SERIAL PRIMARY KEY,
-    "roaster_id" INT NOT NULL,
-    "beans_name" VARCHAR(255) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
     "roast_date" DATE NULL,
     "roast_level" SMALLINT NOT NULL,
+    "roaster_id" INT NOT NULL,
     FOREIGN KEY (roaster_id) REFERENCES roasters(id)
 );
 CREATE TABLE IF NOT EXISTS "shots" (

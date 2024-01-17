@@ -16,10 +16,10 @@ CREATE TABLE IF NOT EXISTS `roasters` (
 );
 CREATE TABLE IF NOT EXISTS `beans` (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `roaster_id` INT NOT NULL,
-    `beans_name` VARCHAR(255) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     `roast_date` DATE NULL,
     `roast_level` TINYINT NOT NULL,
+    `roaster_id` INT NOT NULL,
     PRIMARY KEY (`id`),
     FOREIGN KEY (roaster_id) REFERENCES roasters(id)
 );
