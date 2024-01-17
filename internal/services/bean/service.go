@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type Beans struct {
+type Bean struct {
 	Id          int            `db:"id" json:"id"`
 	RoasterName string         `db:"roaster_name" json:"roaster_name"`
 	BeansName   string         `db:"beans_name" json:"beans_name"`
@@ -18,8 +18,8 @@ type Beans struct {
 	RoastLevel  sql.RoastLevel `db:"roast_level" json:"roast_level"`
 }
 
-func SQLToBeans(beans *sql.Beans) *Beans {
-	b := new(Beans)
+func SQLToBeans(beans *sql.Beans) *Bean {
+	b := new(Bean)
 	b.Id = beans.Id
 	b.RoasterName = beans.RoasterName
 	b.BeansName = beans.BeansName
@@ -29,7 +29,7 @@ func SQLToBeans(beans *sql.Beans) *Beans {
 	return b
 }
 
-func BeansToSQL(beans *Beans) *sql.Beans {
+func BeansToSQL(beans *Bean) *sql.Beans {
 	sqlBeans := new(sql.Beans)
 
 	sqlBeans.Id = beans.Id
