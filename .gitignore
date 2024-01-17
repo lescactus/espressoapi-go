@@ -28,3 +28,4 @@ espressoapi-go
 config.*
 !config.go
 venom*
+!e2e/venom*

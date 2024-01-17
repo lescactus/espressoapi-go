@@ -9,8 +9,7 @@ services:
       - 8080:8080
     environment:
     - DATABASE_TYPE=mysql
-    - DATABASE_DATASOURCE_NAME="root:root@tcp(mysql:3306)/espresso-api?parseTime=true"
-    network_mode: host
+    - DATABASE_DATASOURCE_NAME=root:root@tcp(mysql:3306)/espresso-api?parseTime=true
     depends_on:
       mysql:
         condition: service_healthy
@@ -18,7 +17,8 @@ services:
   mysql:
     image: mysql:8
     restart: always
-    network_mode: host
+    ports:
+      - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: espresso-api
@@ -32,7 +32,8 @@ services:
   postgres:
     image: postgres:16
     restart: always
-    network_mode: host
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
