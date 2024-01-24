@@ -134,6 +134,8 @@ func TestBeanGetBeansById(t *testing.T) {
 		beans.name,
 		beans.roast_date,
 		beans.roast_level,
+		beans.created_at,
+		beans.updated_at,
 		roaster.id AS "roaster.id",
 		roaster.name AS "roaster.name"
 	FROM beans
@@ -227,6 +229,8 @@ func TestBeanGetAllBeans(t *testing.T) {
 		beans.name,
 		beans.roast_date,
 		beans.roast_level,
+		beans.created_at,
+		beans.updated_at,
 		roaster.id AS "roaster.id",
 		roaster.name AS "roaster.name"
 	FROM beans
