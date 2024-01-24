@@ -18,6 +18,10 @@ type Roaster struct {
 }
 
 func SQLToRoaster(roaster *sql.Roaster) *Roaster {
+	if roaster == nil {
+		return nil
+	}
+
 	s := new(Roaster)
 	s.Id = roaster.Id
 	s.Name = roaster.Name
@@ -28,6 +32,9 @@ func SQLToRoaster(roaster *sql.Roaster) *Roaster {
 }
 
 func RoasterToSQL(roaster *Roaster) *sql.Roaster {
+	if roaster == nil {
+		return nil
+	}
 	sqlRoaster := new(sql.Roaster)
 
 	sqlRoaster.Id = roaster.Id

@@ -502,46 +502,79 @@ func TestRoasterServicePing(t *testing.T) {
 }
 
 func TestSQLToRoaster(t *testing.T) {
-	t.Run("SQLToRoaster", func(t *testing.T) {
-
-		want := &Roaster{
-			Id:        1,
-			Name:      "roaster01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		roaster := SQLToRoaster(&sql.Roaster{
-			Id:        1,
-			Name:      "roaster01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
+	type args struct {
+		roaster *sql.Roaster
+	}
+	tests := []struct {
+		name string
+		args args
+		want *Roaster
+	}{
+		{
+			name: "Non nil",
+			args: args{&sql.Roaster{
+				Id:        1,
+				Name:      "roaster01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			}},
+			want: &Roaster{
+				Id:        1,
+				Name:      "roaster01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			},
+		},
+		{
+			name: "Nil",
+			args: args{nil},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SQLToRoaster(tt.args.roaster); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SQLToRoaster() = %v, want %v", got, tt.want)
+			}
 		})
-
-		if !reflect.DeepEqual(roaster, want) {
-			t.Errorf("SQLToRoaster() = %v, want %v", roaster, want)
-		}
-	})
+	}
 }
 
 func TestRoasterToSQL(t *testing.T) {
-	t.Run("RoasterToSQL", func(t *testing.T) {
-		roaster := RoasterToSQL(&Roaster{
-			Id:        1,
-			Name:      "roaster01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
+	type args struct {
+		roaster *Roaster
+	}
+	tests := []struct {
+		name string
+		args args
+		want *sql.Roaster
+	}{
+		{
+			name: "Non nil",
+			args: args{&Roaster{
+				Id:        1,
+				Name:      "roaster01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			}},
+			want: &sql.Roaster{
+				Id:        1,
+				Name:      "roaster01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			},
+		},
+		{
+			name: "Nil",
+			args: args{nil},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RoasterToSQL(tt.args.roaster); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RoasterToSQL() = %v, want %v", got, tt.want)
+			}
 		})
-
-		want := &sql.Roaster{
-			Id:        1,
-			Name:      "roaster01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		if !reflect.DeepEqual(roaster, want) {
-			t.Errorf("RoasterToSQL() = %v, want %v", roaster, want)
-		}
-	})
+	}
 }
