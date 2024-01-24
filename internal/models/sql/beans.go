@@ -14,7 +14,7 @@ const (
 
 type Beans struct {
 	Id         int        `db:"id"`
-	Roasters   *Roaster   `db:"roasters"`
+	Roaster    *Roaster   `db:"roaster"`
 	Name       string     `db:"name"`
 	RoastDate  *time.Time `db:"roast_date"`
 	RoastLevel RoastLevel `db:"roast_level"`

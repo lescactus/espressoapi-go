@@ -24,9 +24,9 @@ func New(db *sqlx.DB) *Bean {
 }
 
 func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) error {
-	query := `INSERT INTO beans (roaster_name, beans_name, roast_date, roast_level) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)`
 	_, err := db.db.ExecContext(ctx, query,
-		beans.RoasterName, beans.BeansName, beans.RoastDate, beans.RoastLevel)
+		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel)
 	if err != nil {
 		return fmt.Errorf("failed to insert record to the database: %w", err)
 	}
@@ -37,8 +37,21 @@ func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) error {
 func (db *Bean) GetBeansById(ctx context.Context, id int) (*sql.Beans, error) {
 	var b sql.Beans
 
-	err := db.db.QueryRowxContext(ctx, "SELECT * FROM beans WHERE id = ?", id).StructScan(&b)
-	if err != nil {
+	get := `
+SELECT
+	beans.id,
+	beans.name,
+	beans.roast_date,
+	beans.roast_level,
+	roaster.id AS "roaster.id",
+	roaster.name AS "roaster.name"
+FROM beans
+	INNER JOIN roasters roaster
+		ON beans.roaster_id = roaster.id
+WHERE
+	beans.id = ?`
+
+	if err := db.db.QueryRowxContext(ctx, get, id).StructScan(&b); err != nil {
 		// No row found, return nil
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrBeansDoesNotExist
@@ -51,8 +64,20 @@ func (db *Bean) GetBeansById(ctx context.Context, id int) (*sql.Beans, error) {
 
 func (db *Bean) GetAllBeans(ctx context.Context) ([]sql.Beans, error) {
 	var beans = make([]sql.Beans, 0)
-	err := db.db.SelectContext(ctx, &beans, "SELECT * FROM beans")
-	if err != nil {
+
+	get := `
+	SELECT
+		beans.id,
+		beans.name,
+		beans.roast_date,
+		beans.roast_level,
+		roaster.id AS "roaster.id",
+		roaster.name AS "roaster.name"
+	FROM beans
+		INNER JOIN roasters roaster
+			ON beans.roaster_id = roaster.id`
+
+	if err := db.db.SelectContext(ctx, &beans, get); err != nil {
 		return beans, fmt.Errorf("failed to read records for beans: %w", err)
 	}
 
@@ -62,8 +87,8 @@ func (db *Bean) GetAllBeans(ctx context.Context) ([]sql.Beans, error) {
 func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (*sql.Beans, error) {
 	beans.Id = id
 
-	res, err := db.db.ExecContext(ctx, `UPDATE beans SET roaster_name = ?, beans_name = ?, roast_date = ?, roast_level = ? WHERE id = ?`,
-		beans.RoasterName, beans.BeansName, beans.RoastDate, beans.RoastLevel, beans.Id)
+	res, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ? roast_date = ?, roast_level = ? WHERE id = ?`,
+		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, beans.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update record for beans id=%d: %w", id, err)
 	}
