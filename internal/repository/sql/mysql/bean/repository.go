@@ -5,6 +5,8 @@ import (
 	dbsql "database/sql"
 	"fmt"
 
+	"github.com/go-sql-driver/mysql"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
@@ -28,6 +30,13 @@ func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) error {
 	_, err := db.db.ExecContext(ctx, query,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel)
 	if err != nil {
+		// Checking if the error is due to a foreign key constraint
+		// which will indicate the roaste does not exists:
+		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
+		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1452 {
+			return errors.ErrRoasterDoesNotExist
+		}
+
 		return fmt.Errorf("failed to insert record to the database: %w", err)
 	}
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
@@ -62,7 +63,7 @@ func TestDBCreateBeans(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name: "Unique beans - no error",
+			name: "Beans - no error",
 			args: args{ctx: context.TODO(), beans: &sql.Beans{Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
@@ -72,7 +73,19 @@ func TestDBCreateBeans(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Unique beans - error",
+			name: "Beans - foreign key constraint error - roaster does not exist",
+			args: args{ctx: context.TODO(), beans: &sql.Beans{Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
+					WithArgs("beans01", 1, now, sql.RoastLevelMediumToDark).
+					WillReturnError(&mysql.MySQLError{
+						Number: 1452, // Error 1452 is "Cannot add or update a child row: a foreign key constraint fails"
+					})
+			},
+			wantErr: true,
+		},
+		{
+			name: "Beans - error",
 			args: args{ctx: context.TODO(), beans: &sql.Beans{Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
