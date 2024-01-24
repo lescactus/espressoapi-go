@@ -137,7 +137,9 @@ func TestBeanGetBeansById(t *testing.T) {
 		beans.created_at,
 		beans.updated_at,
 		roaster.id AS "roaster.id",
-		roaster.name AS "roaster.name"
+		roaster.name AS "roaster.name",
+		roaster.created_at AS "roaster.created_at",
+		roaster.updated_at AS "roaster.updated_at"
 	FROM beans
 		INNER JOIN roasters roaster
 			ON beans.roaster_id = roaster.id
@@ -232,7 +234,9 @@ func TestBeanGetAllBeans(t *testing.T) {
 		beans.created_at,
 		beans.updated_at,
 		roaster.id AS "roaster.id",
-		roaster.name AS "roaster.name"
+		roaster.name AS "roaster.name",
+		roaster.created_at AS "roaster.created_at",
+		roaster.updated_at AS "roaster.updated_at"
 	FROM beans
 		INNER JOIN roasters roaster
 			ON beans.roaster_id = roaster.id`
