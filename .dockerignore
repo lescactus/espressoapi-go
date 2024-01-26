@@ -1,0 +1,13 @@
+Dockerfile
+docker-compose.yaml
+
+*.yml
+*.yaml
+*.md
+
+.github/
+.git/
+e2e/
+migrations/
+testsdata/
+deploy/

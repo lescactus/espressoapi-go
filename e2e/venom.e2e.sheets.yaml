@@ -1,0 +1,214 @@
+name: HTTP tests suite for the sheets service
+
+vars:
+  baseuri: http://127.0.0.1:8080
+
+testcases:
+- name: GET /ping
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/ping"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.ping ShouldEqual pong
+
+- name: POST /ping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/ping"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: POST /rest/v1/sheets - no body - no Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/sheets - with body - no Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    body: |
+      {"name":"sheet01"}
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/sheets - no body - with incorrect Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: text/plain
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/sheets - no body - with correct Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body must not be empty"
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - malformated json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name"sheet01"}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains badly-formed json (at position 8)"
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - invalid value in json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": 1}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains an invalid value for the "name" field (at position 10)"
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - unknown field in json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"unknownfield": 1}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains unknown field "unknownfield""
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - correct json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet01"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.name ShouldEqual "sheet01"
+    - result.bodyjson ShouldContainKey "created_at"
+    - result.bodyjson ShouldContainKey "updated_at"
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - correct json - already exists
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet01"}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "a sheet with the given name already exists"
+
+- name: POST /rest/v1/sheets/:id
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: GET /rest/v1/sheets/:id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "1"
+    - result.bodyjson ShouldContainKey "name"
+    - result.bodyjson ShouldContainKey "created_at"
+    - result.bodyjson ShouldContainKey "updated_at"
+
+- name: GET /rest/v1/sheets
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.__type__ ShouldEqual Array
+    - result.bodyjson ShouldNotBeEmpty
+    - result.bodyjson.bodyjson0.id ShouldEqual "1"
+    - result.bodyjson.bodyjson0 ShouldContainKey "name"
+    - result.bodyjson.bodyjson0 ShouldContainKey "created_at"
+    - result.bodyjson.bodyjson0 ShouldContainKey "updated_at"
+
+- name: PUT /rest/v1/sheets/:id - not found
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/sheets/1000000"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet01-updated"}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: PUT /rest/v1/sheets/:id
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet01-updated"}
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "1"
+    - result.bodyjson ShouldContainKey "name"
+    - result.bodyjson ShouldContainKey "created_at"
+    - result.bodyjson ShouldContainKey "updated_at"
+
+- name: DELETE /rest/v1/sheets/:id - not found
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/sheets/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: DELETE /rest/v1/sheets/:id
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "1"
+    - result.bodyjson.msg ShouldEqual "sheet 1 deleted successfully"

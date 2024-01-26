@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+.vscode/
+tmp/
+dist/
+main
+espressoapi-go
+config.*
+!config.go
+venom*
+!e2e/venom*

@@ -1,0 +1,39 @@
+name: "Bootstrap service"
+description: "Bootstrap a Kubernetes cluster with kind and execute skaffold"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Kubernetes
+      uses: nolar/setup-k3d-k3s@v1
+      with:
+        version: v1.27
+     
+    - name: Debug
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        echo "current-context:" $(kubectl config current-context)
+        echo "environment-kubeconfig:" ${KUBECONFIG}
+
+    - name: Deploy standalone mysql
+      shell: bash
+      run: |
+        kubectl create deployment mysql --image mysql:8 --port 3306
+        kubectl expose deployment mysql --port=3306 --target-port=3306 --name=mysql
+        kubectl set env deployment/mysql MYSQL_ROOT_PASSWORD=root
+        kubectl set env deployment/mysql MYSQL_DATABASE=espresso-api
+        kubectl rollout status deployment mysql
+
+    - name: Cache skaffold image builds & config
+      uses: actions/cache@v3
+      with:
+        path: ~/.skaffold/
+        key: fixed
+    
+    - name: Skaffold run
+      uses: hiberbee/github-action-skaffold@1.27.0
+      with:
+        skaffold-version: 2.2.0
+        command: run
+        verbosity: warning #debug

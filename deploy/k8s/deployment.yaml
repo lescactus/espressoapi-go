@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: espresso-api-go
+  labels:
+    app: espresso-api-go
+spec:
+  selector:
+    matchLabels:
+      app: espresso-api-go
+  template:
+    metadata:
+      labels:
+        app: espresso-api-go
+    spec:
+      containers:
+      - name: espresso-api-go
+        image: espresso-api-go
+        env:
+        - name: DATABASE_TYPE
+          value: "mysql"
+        - name: DATABASE_DATASOURCE_NAME
+          value: "root:root@tcp(mysql:3306)/espresso-api?parseTime=true"
+        - name: LOGGER_LOG_LEVEL
+          value: "debug"
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "8Mi"
+            cpu: "10m"
+          limits:
+            memory: "16Mi"
+            cpu: "100m"
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 8080
+          timeoutSeconds: 3
+          successThreshold: 1
+          periodSeconds: 10
+          failureThreshold: 2
+        startupProbe:
+          failureThreshold: 20
+          periodSeconds: 15
+          successThreshold: 1
+          httpGet:
+            path: /ping
+            port: 8080
+          timeoutSeconds: 3
+      serviceAccountName: espresso-api-go
