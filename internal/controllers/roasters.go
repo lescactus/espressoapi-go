@@ -40,7 +40,7 @@ func (h *Handler) CreateRoaster(w http.ResponseWriter, r *http.Request) {
 
 	resp, em := json.Marshal(&roaster)
 	if em != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *Handler) GetRoasterById(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(roaster)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (h *Handler) GetAllRoasters(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(&roasters)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -136,18 +136,13 @@ func (h *Handler) UpdateRoasterById(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(roaster)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
-}
-
-type RoasterDeletedResponse struct {
-	Id  int    `json:"id"`
-	Msg string `json:"msg"`
 }
 
 func (h *Handler) DeleteRoasterById(w http.ResponseWriter, r *http.Request) {
@@ -164,14 +159,14 @@ func (h *Handler) DeleteRoasterById(w http.ResponseWriter, r *http.Request) {
 	}
 	hlog.FromRequest(r).Debug().Msg("roaster successfully deleted")
 
-	s := RoasterDeletedResponse{
+	i := ItemDeletedResponse{
 		Id:  id,
 		Msg: fmt.Sprintf("roaster %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(s)
+	resp, err := json.Marshal(i)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 

@@ -40,7 +40,7 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 
 	resp, em := json.Marshal(&sheet)
 	if em != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *Handler) GetSheetById(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(sheet)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (h *Handler) GetAllSheets(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(&sheets)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
@@ -136,18 +136,13 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(sheet)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
 	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
-}
-
-type SheetDeletedResponse struct {
-	Id  int    `json:"id"`
-	Msg string `json:"msg"`
 }
 
 func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
@@ -164,14 +159,14 @@ func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
 	}
 	hlog.FromRequest(r).Debug().Msg("sheet successfully deleted")
 
-	s := SheetDeletedResponse{
+	i := ItemDeletedResponse{
 		Id:  id,
 		Msg: fmt.Sprintf("sheet %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(s)
+	resp, err := json.Marshal(i)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		h.SetErrorResponse(w, err)
 		return
 	}
 
