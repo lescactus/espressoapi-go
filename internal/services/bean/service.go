@@ -78,13 +78,21 @@ func New(repo repository.BeansRepository) *BeanService {
 }
 
 func (b *BeanService) CreateBean(ctx context.Context, bean *Bean) (*Bean, error) {
-	if err := b.repository.CreateBeans(ctx, BeanToSQL(bean)); err != nil {
+	id, err := b.repository.CreateBeans(ctx, BeanToSQL(bean))
+	if err != nil {
 		msg := "could not create bean"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
-	return bean, nil
+	createdBean, err := b.GetBeanById(ctx, id)
+	if err != nil {
+		msg := "could not get newly created bean"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	return createdBean, nil
 }
 
 func (b *BeanService) GetBeanById(ctx context.Context, id int) (*Bean, error) {
@@ -118,14 +126,20 @@ func (b *BeanService) UpdateBeanById(ctx context.Context, id int, bean *Bean) (*
 	bean.Id = id
 	sqlBean := BeanToSQL(bean)
 
-	sqlBean, err := b.repository.UpdateBeansById(ctx, id, sqlBean)
-	if err != nil {
+	if _, err := b.repository.UpdateBeansById(ctx, id, sqlBean); err != nil {
 		msg := "could not update bean by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
-	return SQLToBean(sqlBean), nil
+	updatedBean, err := b.GetBeanById(ctx, id)
+	if err != nil {
+		msg := "could not get newly created bean"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	return updatedBean, nil
 }
 
 func (b *BeanService) DeleteBeanById(ctx context.Context, id int) error {

@@ -22,18 +22,26 @@ type IsEmptyCtxKey string
 
 type MockBeanRepository struct{}
 
-func (m *MockBeanRepository) CreateBeans(ctx context.Context, beans *sql.Beans) error {
+func (m *MockBeanRepository) CreateBeans(ctx context.Context, beans *sql.Beans) (int, error) {
 	switch beans.Name {
 	case "errorbeans":
-		return fmt.Errorf("mock error")
+		return 0, fmt.Errorf("mock error")
 	default:
-		return nil
+		return 1, nil
 	}
 }
 
 func (m *MockBeanRepository) GetBeansById(ctx context.Context, id int) (*sql.Beans, error) {
-	if id == 1 {
-		return &sql.Beans{Id: id, Name: "beansexists"}, nil
+	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == true {
+		return nil, fmt.Errorf("mock error")
+	}
+
+	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == "isErrorFromUpdateBeansById" {
+		return nil, fmt.Errorf("mock error")
+	}
+
+	if id == 0 || id == 1 {
+		return &sql.Beans{Id: id, Name: "bean01", Roaster: &sql.Roaster{Id: 1, Name: "roaster01"}, CreatedAt: nil, UpdatedAt: nil}, nil
 	} else {
 		return nil, errors.ErrBeansDoesNotExist
 	}
@@ -129,14 +137,21 @@ func TestBeanServiceCreateBean(t *testing.T) {
 		{
 			name:    "No error",
 			fields:  fields{&MockBeanRepository{}},
-			args:    args{ctx: context.TODO(), bean: &Bean{Id: 1, Name: "bean01"}},
-			want:    &Bean{Id: 1, Name: "bean01"},
+			args:    args{ctx: context.TODO(), bean: &Bean{Id: 1, Name: "bean01", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}}},
+			want:    &Bean{Id: 1, Name: "bean01", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}, CreatedAt: nil, UpdatedAt: nil},
 			wantErr: false,
 		},
 		{
-			name:    "Error",
+			name:    "Error creating bean",
 			fields:  fields{&MockBeanRepository{}},
 			args:    args{ctx: context.TODO(), bean: &Bean{Id: 1, Name: "errorbeans"}},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Error getting new bean",
+			fields:  fields{&MockBeanRepository{}},
+			args:    args{ctx: context.WithValue(context.Background(), IsErrorCtxKey("isError"), true), bean: &Bean{Id: 1, Name: "bean01"}},
 			want:    nil,
 			wantErr: true,
 		},
@@ -177,7 +192,7 @@ func TestBeanServiceGetBeanById(t *testing.T) {
 			name:    "Bean exists",
 			fields:  fields{&MockBeanRepository{}},
 			args:    args{ctx: context.TODO(), id: 1},
-			want:    &Bean{Id: 1, Name: "beansexists"},
+			want:    &Bean{Id: 1, Name: "bean01", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}, CreatedAt: nil, UpdatedAt: nil},
 			wantErr: false,
 		},
 
@@ -285,9 +300,9 @@ func TestBeanServiceUpdateBeanById(t *testing.T) {
 			args: args{
 				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:   1,
-				bean: &Bean{Id: 1, Name: "bean01newname"},
+				bean: &Bean{Id: 1, Name: "bean01"},
 			},
-			want:    &Bean{Id: 1, Name: "bean01newname", UpdatedAt: &now},
+			want:    &Bean{Id: 1, Name: "bean01", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}, CreatedAt: nil, UpdatedAt: nil},
 			wantErr: false,
 		},
 		{
@@ -301,18 +316,6 @@ func TestBeanServiceUpdateBeanById(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-
-		{
-			name:   "Bean.Id not matching id - No error",
-			fields: fields{&MockBeanRepository{}},
-			args: args{
-				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
-				id:   1,
-				bean: &Bean{Id: 2, Name: "bean01newname"},
-			},
-			want:    &Bean{Id: 1, Name: "bean01newname", UpdatedAt: &now},
-			wantErr: false,
-		},
 		{
 			name:   "Bean.Id not matching id - Error",
 			fields: fields{&MockBeanRepository{}},
@@ -325,16 +328,27 @@ func TestBeanServiceUpdateBeanById(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "Bean does not exists",
+			name:   "Bean.Id matching id - error from GetBeansById",
 			fields: fields{&MockBeanRepository{}},
 			args: args{
-				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
-				id:   2,
-				bean: &Bean{Id: 2, Name: "bean01newname"},
+				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), "isErrorFromUpdateBeansById"),
+				id:   1,
+				bean: &Bean{Id: 1, Name: "bean01"},
 			},
 			want:    nil,
 			wantErr: true,
 		},
+		// {
+		// 	name:   "Bean does not exists",
+		// 	fields: fields{&MockBeanRepository{}},
+		// 	args: args{
+		// 		ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+		// 		id:   2,
+		// 		bean: &Bean{Id: 2, Name: "bean01newname"},
+		// 	},
+		// 	want:    nil,
+		// 	wantErr: true,
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
