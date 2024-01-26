@@ -8,5 +8,5 @@ type Shot struct {
 	QuantityIn       float64
 	QuantityOut      float64
 	ShotTime         time.Duration
-	WaterTemperature int
+	WaterTemperature float64
 }

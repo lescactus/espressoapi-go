@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `shots` (
     `quantity_in` DOUBLE NOT NULL,
     `quantity_out` DOUBLE NOT NULL,
     `shot_time` INT NOT NULL,
-    `water_temperature` INT NOT NULL DEFAULT(93),
+    `water_temperature` DOUBLE NOT NULL DEFAULT(93.0),
     `sheet_id` INT NOT NULL,
     `beans_id` INT NOT NULL,
     PRIMARY KEY (`id`),

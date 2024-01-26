@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "shots" (
     "quantity_in" DECIMAL NOT NULL,
     "quantity_out" DECIMAL NOT NULL,
     "shot_time" INT NOT NULL,
-    "water_temperature" INT NOT NULL DEFAULT(93),
+    "water_temperature" DECIMAL NOT NULL DEFAULT(93.0),
     "sheet_id" INT NOT NULL,
     "beans_id" INT NOT NULL,
     FOREIGN KEY (sheet_id) REFERENCES sheets(id),
