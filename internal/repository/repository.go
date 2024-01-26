@@ -27,7 +27,7 @@ type RoasterRepository interface {
 }
 
 type BeansRepository interface {
-	CreateBeans(ctx context.Context, beans *sql.Beans) error
+	CreateBeans(ctx context.Context, beans *sql.Beans) (int, error)
 	GetBeansById(ctx context.Context, id int) (*sql.Beans, error)
 	GetAllBeans(ctx context.Context) ([]sql.Beans, error)
 	UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (*sql.Beans, error)

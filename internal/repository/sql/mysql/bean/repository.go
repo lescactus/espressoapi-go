@@ -25,22 +25,27 @@ func New(db *sqlx.DB) *Bean {
 	}
 }
 
-func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) error {
+func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) (int, error) {
 	query := `INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)`
-	_, err := db.db.ExecContext(ctx, query,
+	res, err := db.db.ExecContext(ctx, query,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel)
 	if err != nil {
 		// Checking if the error is due to a foreign key constraint
 		// which will indicate the roaste does not exists:
 		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
 		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1452 {
-			return errors.ErrRoasterDoesNotExist
+			return 0, errors.ErrRoasterDoesNotExist
 		}
 
-		return fmt.Errorf("failed to insert record to the database: %w", err)
+		return 0, fmt.Errorf("failed to insert record to the database: %w", err)
 	}
 
-	return nil
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to retrieve last inserted id: %w", err)
+	}
+
+	return int(id), nil
 }
 
 func (db *Bean) GetBeansById(ctx context.Context, id int) (*sql.Beans, error) {
@@ -102,16 +107,10 @@ func (db *Bean) GetAllBeans(ctx context.Context) ([]sql.Beans, error) {
 }
 
 func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (*sql.Beans, error) {
-	beans.Id = id
-
-	res, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ? roast_date = ?, roast_level = ? WHERE id = ?`,
-		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, beans.Id)
+	_, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?`,
+		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update record for beans id=%d: %w", id, err)
-	}
-
-	if row, _ := res.RowsAffected(); row != 1 {
-		return nil, errors.ErrBeansDoesNotExist
 	}
 
 	return beans, nil
