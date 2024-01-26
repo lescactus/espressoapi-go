@@ -137,7 +137,7 @@ func TestSetErrorResponse(t *testing.T) {
 			args: args{w: httptest.NewRecorder(), err: &time.ParseError{
 				Layout: "2024-01-26T14:05:54Z",
 			}},
-			want:           &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: fmt.Sprintf("invalid time format: parsing time \"\" as \"2024-01-26T14:05:54Z\": cannot parse \"\" as \"\"")},
+			want:           &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: "invalid time format: parsing time \"\" as \"2024-01-26T14:05:54Z\": cannot parse \"\" as \"\""},
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
