@@ -7,8 +7,9 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
-	domerrors "github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 )
 
 var (
@@ -57,23 +58,28 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 	} else {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
+		var timeParseError *time.ParseError
 
 		switch {
 		// Catch if the sheet does not exist
-		case errors.Is(err, domerrors.ErrSheetDoesNotExist):
+		case errors.Is(err, domainerrors.ErrSheetDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no sheet found for given id"}
 
 		// Catch if the sheet already exists
-		case errors.Is(err, domerrors.ErrSheetAlreadyExists):
+		case errors.Is(err, domainerrors.ErrSheetAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a sheet with the given name already exists"}
 
 		// Catch if the roaster does not exist
-		case errors.Is(err, domerrors.ErrRoasterDoesNotExist):
+		case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"}
 
 		// Catch if the roaster already exists
-		case errors.Is(err, domerrors.ErrRoasterAlreadyExists):
+		case errors.Is(err, domainerrors.ErrRoasterAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"}
+
+		// Catch if the roaster does not exist
+		case errors.Is(err, domainerrors.ErrBeansDoesNotExist):
+			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no beans found for given id"}
 
 		// Catch any syntax errors
 		case errors.As(err, &syntaxError):
@@ -111,6 +117,11 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case err.Error() == "http: request body too large":
 			msg := fmt.Sprintf("request body must not be larger than %d bytes", h.maxRequestSize)
 			errResp = &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: msg}
+
+		// Catch if the error is due to a time parsing error
+		case errors.As(err, &timeParseError):
+			msg := fmt.Sprintf("invalid time format: %s", timeParseError)
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: msg}
 
 		default:
 			errResp = &ErrorResponse{status: http.StatusInternalServerError, Msg: "internal server error"}

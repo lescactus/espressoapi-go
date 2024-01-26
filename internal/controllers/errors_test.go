@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	domerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
@@ -90,6 +91,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusConflict,
 		},
 		{
+			name:           "errors.ErrBeansDoesNotExist error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansDoesNotExist},
+			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no beans found for given id"},
+			wantStatusCode: http.StatusNotFound,
+		},
+		{
 			name:           "json.SyntaxError error",
 			args:           args{w: httptest.NewRecorder(), err: &json.SyntaxError{}},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "request body contains badly-formed json (at position 0)"},
@@ -124,6 +131,14 @@ func TestSetErrorResponse(t *testing.T) {
 			args:           args{w: httptest.NewRecorder(), err: errors.New("http: request body too large")},
 			want:           &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: fmt.Sprintf("request body must not be larger than %d bytes", h.maxRequestSize)},
 			wantStatusCode: http.StatusRequestEntityTooLarge,
+		},
+		{
+			name: "invalid time format",
+			args: args{w: httptest.NewRecorder(), err: &time.ParseError{
+				Layout: "2024-01-26T14:05:54Z",
+			}},
+			want:           &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: fmt.Sprintf("invalid time format: parsing time \"\" as \"2024-01-26T14:05:54Z\": cannot parse \"\" as \"\"")},
+			wantStatusCode: http.StatusBadRequest,
 		},
 		{
 			name:           "default error",

@@ -16,9 +16,11 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/config"
 	"github.com/lescactus/espressoapi-go/internal/controllers"
 	"github.com/lescactus/espressoapi-go/internal/logger"
+	mysqlbean "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/bean"
 	mysqlroaster "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/roaster"
 	mysqlsheet "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/sheet"
 
+	svcbean "github.com/lescactus/espressoapi-go/internal/services/bean"
 	svcroaster "github.com/lescactus/espressoapi-go/internal/services/roaster"
 	svcsheet "github.com/lescactus/espressoapi-go/internal/services/sheet"
 	"github.com/rs/zerolog/hlog"
@@ -54,13 +56,15 @@ func main() {
 
 	dbSheet := mysqlsheet.New(sqlxdb)
 	dbRoaster := mysqlroaster.New(sqlxdb)
+	dbBean := mysqlbean.New(sqlxdb)
 
 	svcSheet := svcsheet.New(dbSheet)
 	svcRoaster := svcroaster.New(dbRoaster)
+	svcBean := svcbean.New(dbBean)
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(svcSheet, svcRoaster, cfg.ServerMaxRequestSize)
+	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              cfg.ServerAddr,
@@ -105,6 +109,12 @@ func main() {
 	r.Handler(http.MethodGet, "/rest/v1/roasters", c.ThenFunc(h.GetAllRoasters))
 	r.Handler(http.MethodPut, "/rest/v1/roasters/:id", c.ThenFunc(h.UpdateRoasterById))
 	r.Handler(http.MethodDelete, "/rest/v1/roasters/:id", c.ThenFunc(h.DeleteRoasterById))
+
+	r.Handler(http.MethodPost, "/rest/v1/beans", c.ThenFunc(h.CreateBeans))
+	r.Handler(http.MethodGet, "/rest/v1/beans/:id", c.ThenFunc(h.GetBeansById))
+	r.Handler(http.MethodGet, "/rest/v1/beans", c.ThenFunc(h.GetAllBeans))
+	r.Handler(http.MethodPut, "/rest/v1/beans/:id", c.ThenFunc(h.UpdateBeanById))
+	r.Handler(http.MethodDelete, "/rest/v1/beans/:id", c.ThenFunc(h.DeleteBeansById))
 
 	// Start server
 	go func() {
