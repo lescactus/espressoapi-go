@@ -8,6 +8,5 @@ docker-compose.yaml
 .github/
 .git/
 e2e/
-migrations/
 testsdata/
 deploy/

@@ -13,6 +13,17 @@ spec:
       labels:
         app: espresso-api-go
     spec:
+      initContainers:
+      - name: migrate-up
+        image: espresso-api-go
+        command: ["/main", "migrate", "up"]
+        env:
+        - name: DATABASE_TYPE
+          value: "mysql"
+        - name: DATABASE_DATASOURCE_NAME
+          value: "root:root@tcp(mysql:3306)/espresso-api?parseTime=true"
+        - name: LOGGER_LOG_LEVEL
+          value: "debug"
       containers:
       - name: espresso-api-go
         image: espresso-api-go

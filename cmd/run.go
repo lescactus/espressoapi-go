@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
-	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
+	"github.com/lescactus/espressoapi-go/cmd/app"
 	"github.com/lescactus/espressoapi-go/internal/config"
 	"github.com/lescactus/espressoapi-go/internal/controllers"
-	"github.com/lescactus/espressoapi-go/internal/logger"
 	"github.com/rs/zerolog/hlog"
 	"github.com/spf13/cobra"
 
@@ -45,31 +44,9 @@ Refer to the documentation for more information about configuration files and en
 }
 
 func runCmdMain(cmd *cobra.Command, args []string) {
-	logger := logger.New(
-		cfg.LoggerLogLevel,
-		cfg.LoggerDurationFieldUnit,
-		cfg.LoggerFormat,
-	)
-
-	var sqlxdb *sqlx.DB
-	var err error
-	switch cfg.DatabaseType {
-	case config.DatabaseTypeMySQL:
-		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
-		if err != nil {
-			logger.Fatal().Err(err).Msgf("unable to connect to %s", config.DatabaseTypeMySQL)
-		}
-	// Using mysql by default
-	default:
-		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
-		if err != nil {
-			logger.Fatal().Err(err).Msgf("unable to connect to %s", config.DatabaseTypeMySQL)
-		}
-	}
-
-	dbSheet := mysqlsheet.New(sqlxdb)
-	dbRoaster := mysqlroaster.New(sqlxdb)
-	dbBean := mysqlbean.New(sqlxdb)
+	dbSheet := mysqlsheet.New(app.App.Db)
+	dbRoaster := mysqlroaster.New(app.App.Db)
+	dbBean := mysqlbean.New(app.App.Db)
 
 	svcSheet := svcsheet.New(dbSheet)
 	svcRoaster := svcroaster.New(dbRoaster)
@@ -77,21 +54,22 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, cfg.ServerMaxRequestSize)
+	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, app.App.Cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
-		Addr:              cfg.ServerAddr,
+		Addr:              app.App.Cfg.ServerAddr,
 		Handler:           handlers.RecoveryHandler(handlers.PrintRecoveryStack(true))(r), // recover from panics and print recovery stack
-		ReadTimeout:       cfg.ServerReadTimeout,
-		ReadHeaderTimeout: cfg.ServerReadHeaderTimeout,
-		WriteTimeout:      cfg.ServerWriteTimeout,
+		ReadTimeout:       app.App.Cfg.ServerReadTimeout,
+		ReadHeaderTimeout: app.App.Cfg.ServerReadHeaderTimeout,
+		WriteTimeout:      app.App.Cfg.ServerWriteTimeout,
 	}
 
-	// logger fields
-	*logger = logger.With().Str("svc", config.AppName).Logger()
+	// Logger fields
+	*app.App.Logger = app.App.Logger.With().Str("svc", config.AppName).Logger()
 
 	// Register logging middleware
-	c = c.Append(hlog.NewHandler(*logger))
+	c = c.Append(hlog.NewHandler(*app.App.Logger))
+
 	c = c.Append(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
 		hlog.FromRequest(r).Info().
 			Str("method", r.Method).
@@ -107,7 +85,6 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	c = c.Append(hlog.UserAgentHandler("user_agent"))
 	c = c.Append(hlog.RequestIDHandler("req_id", "X-Request-ID"))
 	c = c.Append(h.IdParameterLoggerHandler("id"))
-	//c = c.Append(h.IdParameterLoggerHandler(h, "id"))
 	c = c.Append(h.MaxReqSize())
 
 	r.Handler(http.MethodGet, "/ping", c.ThenFunc(h.Ping))
@@ -131,9 +108,9 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 
 	// Start server
 	go func() {
-		logger.Info().Msg("Starting server ...")
+		app.App.Logger.Info().Msg("Starting server ...")
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal().Err(err).Msg("Could not start server on port " + cfg.ServerAddr)
+			app.App.Logger.Fatal().Err(err).Msg("Could not start server on port " + app.App.Cfg.ServerAddr)
 		}
 	}()
 
@@ -143,7 +120,7 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	// Blocking until receiving a shutdown signal
 	sig := <-sigChan
 
-	logger.Info().Str("signal", sig.String()).Msg("Server received signal. Shutting down...")
+	app.App.Logger.Info().Str("signal", sig.String()).Msg("Server received signal. Shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer func() {
 		cancel()
@@ -151,6 +128,6 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 
 	// Attempting to gracefully shutdown the server
 	if err := s.Shutdown(ctx); err != nil {
-		logger.Err(err).Msg("Failed to gracefully shutdown the server")
+		app.App.Logger.Err(err).Msg("Failed to gracefully shutdown the server")
 	}
 }

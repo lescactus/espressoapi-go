@@ -35,9 +35,6 @@ jobs:
         curl https://github.com/ovh/venom/releases/download/v1.1.0/venom.linux-amd64 -L -o /usr/local/bin/venom && chmod +x /usr/local/bin/venom
         venom version
 
-    - name: Install sql-migrate
-      run: go install github.com/rubenv/sql-migrate/...@latest
-
     - name: Docker compose up
       run: docker compose up -d --wait
 
@@ -46,7 +43,7 @@ jobs:
       run: docker compose logs
 
     - name: Run sql migrations
-      run: sql-migrate up -env=development-mysql
+      run: go run main.go migrate up
 
     - name: Run e2e tests with venom
       run: |
