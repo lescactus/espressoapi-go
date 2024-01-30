@@ -17,5 +17,4 @@ func init() {
 	migrateCmd.AddCommand(migrate.DownCmd)
 	migrateCmd.AddCommand(migrate.RedoCmd)
 	migrateCmd.AddCommand(migrate.SkipCmd)
-	migrateCmd.AddCommand(migrate.StatusCmd)
 }
