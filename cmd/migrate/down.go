@@ -13,7 +13,7 @@ var DownCmd = &cobra.Command{
 	Long: `Undo a database migration. 
 It is the equivalent of running "sql-migrate down".`,
 	Run: func(cmd *cobra.Command, args []string) {
-		n, err := execMigrations(sqlmigrate.Up)
+		n, err := execMigrations(sqlmigrate.Down)
 		if err != nil {
 			app.App.Logger.Fatal().Err(err).Msg("Failed to apply (down) migrations")
 		}
