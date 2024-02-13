@@ -14,6 +14,7 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
 	"github.com/rs/zerolog"
 )
 
@@ -21,6 +22,8 @@ func TestNewHandler(t *testing.T) {
 	type args struct {
 		sheetService         sheet.Service
 		roasterService       roaster.Service
+		beanService          bean.Service
+		shotService          shot.Service
 		serverMaxRequestSize int64
 	}
 	tests := []struct {
@@ -30,18 +33,18 @@ func TestNewHandler(t *testing.T) {
 	}{
 		{
 			name: "nil args",
-			args: args{nil, nil, 0},
-			want: &Handler{nil, nil, nil, 0},
+			args: args{nil, nil, nil, nil, 0},
+			want: &Handler{nil, nil, nil, nil, 0},
 		},
 		{
 			name: "non nil args",
-			args: args{sheet.New(nil), roaster.New(nil), 10},
-			want: &Handler{sheet.New(nil), roaster.New(nil), bean.New(nil), 10},
+			args: args{sheet.New(nil), roaster.New(nil), bean.New(nil), shot.New(nil), 10},
+			want: &Handler{sheet.New(nil), roaster.New(nil), bean.New(nil), shot.New(nil), 10},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHandler(tt.args.sheetService, tt.args.roasterService, tt.want.BeanService, tt.args.serverMaxRequestSize); !reflect.DeepEqual(got, tt.want) {
+			if got := NewHandler(tt.args.sheetService, tt.args.roasterService, tt.args.beanService, tt.args.shotService, tt.args.serverMaxRequestSize); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewHandler() = %v, want %v", got, tt.want)
 			}
 		})
@@ -59,7 +62,7 @@ func TestMaxReqSizeMiddleware(t *testing.T) {
 	})
 
 	// Create an instance of the Handler with a test SheetService and maxRequestSize
-	handler := NewHandler(nil, nil, nil, 1024)
+	handler := NewHandler(nil, nil, nil, nil, 1024)
 
 	// Create a request with a body larger than maxRequestSize
 	requestBody := "a" + strings.Repeat("b", 1024)
@@ -169,7 +172,7 @@ func TestHandlerParseContentType(t *testing.T) {
 }
 
 func TestHandlerIdParameterLoggerHandler(t *testing.T) {
-	handler := NewHandler(nil, nil, nil, 1024)
+	handler := NewHandler(nil, nil, nil, nil, 1024)
 
 	// Create a chain with the IdParameterLoggerHandler
 	c := alice.New().Append(handler.IdParameterLoggerHandler("id"))
@@ -217,7 +220,7 @@ func TestHandlerIDParameterLoggerHTTPHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Create a mock Handler instance
-	handler := NewHandler(nil, nil, nil, 1024)
+	handler := NewHandler(nil, nil, nil, nil, 1024)
 
 	// Call the idParameterLoggerHttpHandler function
 	idParamLoggerHandler := handler.idParameterLoggerHttpHandler(mockHandler, "id")

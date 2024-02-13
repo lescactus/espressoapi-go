@@ -97,6 +97,18 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
+			name:           "errors.ErrShotDoesNotExist error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotDoesNotExist},
+			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no shot found for given id"},
+			wantStatusCode: http.StatusNotFound,
+		},
+		{
+			name:           "errors.ErrShotRatingOutOfRange error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotRatingOutOfRange},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "json.SyntaxError error",
 			args:           args{w: httptest.NewRecorder(), err: &json.SyntaxError{}},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "request body contains badly-formed json (at position 0)"},
