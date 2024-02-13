@@ -25,4 +25,6 @@ type Shot struct {
 	IsTooSour                     bool                          `db:"is_too_sour"`
 	ComparaisonWithPreviousResult ComparaisonWithPreviousResult `db:"comparaison_with_previous_result"`
 	AdditionalNotes               string                        `db:"additional_notes"`
+	CreatedAt                     *time.Time                    `db:"created_at"`
+	UpdatedAt                     *time.Time                    `db:"updated_at"`
 }
