@@ -389,17 +389,6 @@ func TestBeanUpdateBeansById(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// {
-		// 	name: "Beans does not exist",
-		// 	args: args{ctx: context.TODO(), id: 2, beans: &sql.Beans{Id: 2, Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
-		// 	mockClosure: func(mock sqlmock.Sqlmock) {
-		// 		mock.ExpectExec("UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?").
-		// 			WithArgs("beans01", 1, AnyTime{}, sql.RoastLevelMediumToDark, 2).
-		// 			WillReturnResult(sqlmock.NewResult(0, 0))
-		// 	},
-		// 	want:    nil,
-		// 	wantErr: true,
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -558,7 +547,7 @@ func TestBeanPing(t *testing.T) {
 			// Set mock expectations
 			tt.mockClosure(mock)
 			if err := mdb.Ping(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("Bean.DeleteBeansById() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Bean.Ping() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			// Make sure all expectations were met

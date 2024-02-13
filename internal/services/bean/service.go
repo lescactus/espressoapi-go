@@ -134,7 +134,7 @@ func (b *BeanService) UpdateBeanById(ctx context.Context, id int, bean *Bean) (*
 
 	updatedBean, err := b.GetBeanById(ctx, id)
 	if err != nil {
-		msg := "could not get newly created bean"
+		msg := "could not get updated bean"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}

@@ -338,17 +338,17 @@ func TestBeanServiceUpdateBeanById(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		// {
-		// 	name:   "Bean does not exists",
-		// 	fields: fields{&MockBeanRepository{}},
-		// 	args: args{
-		// 		ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
-		// 		id:   2,
-		// 		bean: &Bean{Id: 2, Name: "bean01newname"},
-		// 	},
-		// 	want:    nil,
-		// 	wantErr: true,
-		// },
+		{
+			name:   "Bean does not exists",
+			fields: fields{&MockBeanRepository{}},
+			args: args{
+				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:   2,
+				bean: &Bean{Id: 2, Name: "bean01newname"},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
