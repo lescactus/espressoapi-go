@@ -20,10 +20,12 @@ import (
 	mysqlbean "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/bean"
 	mysqlroaster "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/roaster"
 	mysqlsheet "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/sheet"
+	mysqlshot "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/shot"
 
 	svcbean "github.com/lescactus/espressoapi-go/internal/services/bean"
 	svcroaster "github.com/lescactus/espressoapi-go/internal/services/roaster"
 	svcsheet "github.com/lescactus/espressoapi-go/internal/services/sheet"
+	svcshot "github.com/lescactus/espressoapi-go/internal/services/shot"
 )
 
 // runCmd represents the run command
@@ -47,14 +49,16 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	dbSheet := mysqlsheet.New(app.App.Db)
 	dbRoaster := mysqlroaster.New(app.App.Db)
 	dbBean := mysqlbean.New(app.App.Db)
+	dbShot := mysqlshot.New(app.App.Db)
 
 	svcSheet := svcsheet.New(dbSheet)
 	svcRoaster := svcroaster.New(dbRoaster)
 	svcBean := svcbean.New(dbBean)
+	svcShot := svcshot.New(dbShot)
 
 	// Create http router, server and handler controller
 	r := httprouter.New()
-	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, app.App.Cfg.ServerMaxRequestSize)
+	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, svcShot, app.App.Cfg.ServerMaxRequestSize)
 	c := alice.New()
 	s := &http.Server{
 		Addr:              app.App.Cfg.ServerAddr,
@@ -105,6 +109,12 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	r.Handler(http.MethodGet, "/rest/v1/beans", c.ThenFunc(h.GetAllBeans))
 	r.Handler(http.MethodPut, "/rest/v1/beans/:id", c.ThenFunc(h.UpdateBeanById))
 	r.Handler(http.MethodDelete, "/rest/v1/beans/:id", c.ThenFunc(h.DeleteBeansById))
+
+	r.Handler(http.MethodPost, "/rest/v1/shots", c.ThenFunc(h.CreateShot))
+	r.Handler(http.MethodGet, "/rest/v1/shots/:id", c.ThenFunc(h.GetShotById))
+	r.Handler(http.MethodGet, "/rest/v1/shots", c.ThenFunc(h.GetAllShots))
+	r.Handler(http.MethodPut, "/rest/v1/shots/:id", c.ThenFunc(h.UpdateShotById))
+	r.Handler(http.MethodDelete, "/rest/v1/shots/:id", c.ThenFunc(h.DeleteShotById))
 
 	// Start server
 	go func() {

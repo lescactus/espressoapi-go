@@ -10,6 +10,7 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
 	"github.com/rs/zerolog"
 )
 
@@ -22,14 +23,21 @@ type Handler struct {
 	SheetService   sheet.Service
 	RoasterService roaster.Service
 	BeanService    bean.Service
+	ShotService    shot.Service
 	maxRequestSize int64
 }
 
-func NewHandler(sheetService sheet.Service, roasterService roaster.Service, beanService bean.Service, serverMaxRequestSize int64) *Handler {
+func NewHandler(
+	sheetService sheet.Service,
+	roasterService roaster.Service,
+	beanService bean.Service,
+	ShotService shot.Service,
+	serverMaxRequestSize int64) *Handler {
 	return &Handler{
 		SheetService:   sheetService,
 		RoasterService: roasterService,
 		BeanService:    beanService,
+		ShotService:    ShotService,
 		maxRequestSize: serverMaxRequestSize,
 	}
 }
