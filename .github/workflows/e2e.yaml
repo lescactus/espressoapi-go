@@ -17,6 +17,7 @@ jobs:
             - venom.e2e.roasters.yaml
             - venom.e2e.sheets.yaml
             - venom.e2e.beans.yaml
+            - venom.e2e.shots.yaml
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

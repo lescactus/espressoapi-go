@@ -1,0 +1,336 @@
+name: HTTP tests suite for the shots service
+
+vars:
+  baseuri: http://127.0.0.1:8080
+
+testcases:
+- name: GET /ping
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/ping"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.ping ShouldEqual pong
+
+- name: POST /ping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/ping"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: POST /rest/v1/shots - no body - no Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/shots - with body - no Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    body: |
+      {"sheet_id":1}
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/shots - no body - with incorrect Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: text/plain
+    assertions:
+    - result.statuscode ShouldEqual 415
+    - result.bodyjson.msg ShouldEqual "Content-Type header is not application/json"
+
+- name: POST /rest/v1/shots - no body - with correct Content-Type header
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body must not be empty"
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - malformated json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id"1"}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains badly-formed json (at position 12)"
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - invalid value in json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": "1","beans_id": 2.0}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains an invalid value for the "sheet_id" field (at position 16)"
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - unknown field in json
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"unknownfield": 1}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "request body contains unknown field "unknownfield""
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - correct json - sheet does not exist
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 36.0}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: Create sheet (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet01"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - correct json - beans does not exist
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 36.0}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no beans found for given id"
+
+- name: Create roaster (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/roasters"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "roaster01"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: Create beans (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - rating is too high
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 11}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot rating is out of range. Must be between 0.0 and 10.0"
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - correct json - sheet and beans exists
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "additional_notes":"this is a test"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.sheet ShouldContainKey "id"
+    - result.bodyjson.sheet.name ShouldEqual "sheet01"
+    - result.bodyjson.beans ShouldContainKey "id"
+    - result.bodyjson.beans.name ShouldEqual "beans01"
+    - result.bodyjson.beans.roaster ShouldContainKey "id"
+    - result.bodyjson.beans.roaster.name ShouldEqual "roaster01"
+    - result.bodyjson.grind_setting ShouldEqual "12"
+    - result.bodyjson.quantity_in ShouldEqual "18"
+    - result.bodyjson.quantity_out ShouldEqual "35.5"
+    - result.bodyjson.shot_time ShouldEqual "24"
+    - result.bodyjson.water_temperature ShouldEqual "93"
+    - result.bodyjson.rating ShouldEqual "8"
+    - result.bodyjson.is_too_bitter ShouldEqual "false"
+    - result.bodyjson.is_too_sour ShouldEqual "false"
+    - result.bodyjson.comparaison_with_previous_result ShouldEqual "0"
+    - result.bodyjson.additional_notes ShouldEqual "this is a test"
+    - result.bodyjson.created_at ShouldNotBeBlank
+    - result.bodyjson.updated_at ShouldBeBlank
+
+- name: POST /rest/v1/shots/:id
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots/1"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: GET /rest/v1/shots/:id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    - result.bodyjson.grind_setting ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.grind_setting }}"
+    - result.bodyjson.quantity_in ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.quantity_in }}"
+    - result.bodyjson.quantity_out ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.quantity_out }}"
+    - result.bodyjson.shot_time ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.shot_time }}"
+    - result.bodyjson.water_temperature ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.water_temperature }}"
+    - result.bodyjson.rating ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.rating }}"
+    - result.bodyjson.is_too_bitter ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_bitter }}"
+    - result.bodyjson.is_too_sour ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_sour }}"
+    - result.bodyjson.comparaison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparaison_with_previous_result }}"
+    - result.bodyjson.additional_notes ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.additional_notes }}"
+    - result.bodyjson.created_at ShouldNotBeBlank
+    - result.bodyjson.updated_at ShouldBeBlank
+
+- name: GET /rest/v1/shots
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/shots"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.__type__ ShouldEqual Array
+    - result.bodyjson ShouldNotBeEmpty
+    - result.bodyjson.bodyjson0.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    - result.bodyjson.bodyjson0.grind_setting ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.grind_setting }}"
+    - result.bodyjson.bodyjson0.quantity_in ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.quantity_in }}"
+    - result.bodyjson.bodyjson0.quantity_out ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.quantity_out }}"
+    - result.bodyjson.bodyjson0.shot_time ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.shot_time }}"
+    - result.bodyjson.bodyjson0.water_temperature ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.water_temperature }}"
+    - result.bodyjson.bodyjson0.rating ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.rating }}"
+    - result.bodyjson.bodyjson0.is_too_bitter ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_bitter }}"
+    - result.bodyjson.bodyjson0.is_too_sour ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_sour }}"
+    - result.bodyjson.bodyjson0.comparaison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparaison_with_previous_result }}"
+    - result.bodyjson.bodyjson0.additional_notes ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.additional_notes }}"
+    - result.bodyjson.bodyjson0.created_at ShouldNotBeBlank
+    - result.bodyjson.bodyjson0.updated_at ShouldBeBlank
+
+- name: PUT /rest/v1/shots/:id - not found
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/1000000"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 9}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no shot found for given id"
+
+- name: PUT /rest/v1/shots/:id - rating is too high
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/1000000"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 11}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot rating is out of range. Must be between 0.0 and 10.0"
+
+- name: PUT /rest/v1/shots/:id
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "additional_notes":"this is a test - updated"}
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    - result.bodyjson.sheet.name ShouldEqual "sheet01"
+    - result.bodyjson.beans ShouldContainKey "id"
+    - result.bodyjson.beans.name ShouldEqual "beans01"
+    - result.bodyjson.beans.roaster ShouldContainKey "id"
+    - result.bodyjson.beans.roaster.name ShouldEqual "roaster01"
+    - result.bodyjson.grind_setting ShouldEqual "12"
+    - result.bodyjson.quantity_in ShouldEqual "18"
+    - result.bodyjson.quantity_out ShouldEqual "35.5"
+    - result.bodyjson.shot_time ShouldEqual "24"
+    - result.bodyjson.water_temperature ShouldEqual "93"
+    - result.bodyjson.rating ShouldEqual "8"
+    - result.bodyjson.is_too_bitter ShouldEqual "false"
+    - result.bodyjson.is_too_sour ShouldEqual "false"
+    - result.bodyjson.comparaison_with_previous_result ShouldEqual "0"
+    - result.bodyjson.additional_notes ShouldEqual "this is a test - updated"
+    - result.bodyjson.created_at ShouldNotBeBlank
+    - result.bodyjson.updated_at ShouldNotBeBlank
+
+- name: DELETE /rest/v1/shots/:id - not found
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/shots/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no shot found for given id"
+
+- name: DELETE /rest/v1/shots/:id
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    - result.bodyjson.msg ShouldEqual "shot {{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }} deleted successfully"
