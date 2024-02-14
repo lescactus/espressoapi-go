@@ -1,8 +1,6 @@
 package migrate
 
 import (
-	"embed"
-
 	"github.com/lescactus/espressoapi-go/cmd/app"
 	sqlmigrate "github.com/rubenv/sql-migrate"
 	"github.com/spf13/cobra"
@@ -16,7 +14,7 @@ var RedoCmd = &cobra.Command{
 "sql-migrate redo" do.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		source := sqlmigrate.EmbedFileSystemMigrationSource{
-			FileSystem: (*app.App.MigrationsFS).(embed.FS),
+			FileSystem: *app.App.MigrationsFS,
 			Root:       "migrations/sql/mysql",
 		}
 

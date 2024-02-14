@@ -13,6 +13,16 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Shot
+//
+// An espresso shot is made from coffee beans, ground at a specific setting,
+// with a specific quantity of coffee in and out.
+// It also has a specific shot time and water temperature.
+//
+// The result of a shot can be rated and compared to the previous shot.
+// It can also be too bitter or too sour.
+//
+// swagger:model
 type Shot struct {
 	Id                            int                                   `json:"id"`
 	Sheet                         *sheet.Sheet                          `json:"sheet"`

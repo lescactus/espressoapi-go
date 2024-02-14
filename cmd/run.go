@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/handlers"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
@@ -115,6 +116,12 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	r.Handler(http.MethodGet, "/rest/v1/shots", c.ThenFunc(h.GetAllShots))
 	r.Handler(http.MethodPut, "/rest/v1/shots/:id", c.ThenFunc(h.UpdateShotById))
 	r.Handler(http.MethodDelete, "/rest/v1/shots/:id", c.ThenFunc(h.DeleteShotById))
+
+	redocOpts := middleware.RedocOpts{Path: "redoc", SpecURL: "swagger.json"}
+	swaggerUiOpts := middleware.SwaggerUIOpts{Path: "swagger", SpecURL: "swagger.json"}
+	r.Handler(http.MethodGet, "/redoc", middleware.Redoc(redocOpts, nil))
+	r.Handler(http.MethodGet, "/swagger", middleware.SwaggerUI(swaggerUiOpts, nil))
+	r.Handler(http.MethodGet, "/swagger.json", c.ThenFunc(h.Swagger))
 
 	// Start server
 	go func() {

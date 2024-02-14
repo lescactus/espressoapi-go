@@ -9,6 +9,9 @@ import (
 //go:embed migrations/sql/*
 var dbMigrations embed.FS
 
+//go:embed docs/swagger.json
+var swagger embed.FS
+
 func main() {
-	cmd.Execute(dbMigrations)
+	cmd.Execute(&dbMigrations, swagger)
 }

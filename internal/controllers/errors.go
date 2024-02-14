@@ -18,7 +18,10 @@ var (
 )
 
 // ErrorResponse represents the json response
-// for http errors
+// for http errors.
+// It contains a message describing the error
+//
+// swagger:response ErrorResponse
 type ErrorResponse struct {
 	status int
 	Msg    string `json:"msg"`

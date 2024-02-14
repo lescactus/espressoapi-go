@@ -10,10 +10,24 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Roaster
+//
+// # Represents a roaster for this application
+//
+// A roaster is the professional who roasts coffee beans.
+//
+// swagger:model
 type Roaster struct {
-	Id        int        `json:"id"`
-	Name      string     `json:"name"`
+	// The id for the roaster
+	Id int `json:"id"`
+
+	// The name for the roaster
+	Name string `json:"name"`
+
+	// The creation date of the roaster
 	CreatedAt *time.Time `json:"created_at"`
+
+	// The last update date of the roaster
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 

@@ -24,6 +24,7 @@ func (r RoastDate) MarshalJSON() ([]byte, error) {
 }
 
 // ItemDeletedResponse represents the response when an item is deleted
+// swagger:model
 type ItemDeletedResponse struct {
 	Id  int    `json:"id"`
 	Msg string `json:"msg"`

@@ -12,6 +12,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Bean
+//
+// Beans have a name, a roaster, a roast date and a roast level.
+//
+// swagger:model
 type Bean struct {
 	Id         int              `json:"id"`
 	Roaster    *roaster.Roaster `json:"roaster"`

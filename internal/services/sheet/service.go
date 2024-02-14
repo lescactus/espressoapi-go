@@ -10,10 +10,25 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Sheet
+//
+// # Represents a sheet for this application
+//
+// A sheet is a collection of shots. It's used to group shots together
+// in a logical way.
+//
+// swagger:model
 type Sheet struct {
-	Id        int        `json:"id"`
-	Name      string     `json:"name"`
+	// The id for the sheet
+	Id int `json:"id"`
+
+	// The name for the sheet
+	Name string `json:"name"`
+
+	// The creation date of the sheet
 	CreatedAt *time.Time `json:"created_at"`
+
+	// The last update date of the sheet
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 

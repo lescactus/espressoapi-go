@@ -14,6 +14,16 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
+// swagger:parameters createShot
+type CreateShotParams struct {
+	// The request body for creating a shot
+	// in: body
+	// required: true
+	Body CreateShotRequest
+}
+
+// CreateShotRequest represents the request body for creating a shot
+// swagger:model
 type CreateShotRequest struct {
 	SheetId                       int                               `json:"sheet_id"`
 	BeansId                       int                               `json:"beans_id"`
@@ -27,6 +37,21 @@ type CreateShotRequest struct {
 	IsTooSour                     bool                              `json:"is_too_sour"`
 	ComparaisonWithPreviousResult sql.ComparaisonWithPreviousResult `json:"comparaison_with_previous_result"`
 	AdditionalNotes               string                            `json:"additional_notes"`
+}
+
+// ShotResponse represents an espresso shot for this application
+//
+// An espresso shot is made from coffee beans, ground at a specific setting,
+// with a specific quantity of coffee in and out.
+// It also has a specific shot time and water temperature.
+//
+// The result of a shot can be rated and compared to the previous shot.
+// It can also be too bitter or too sour.
+//
+// swagger:response ShotResponse
+type ShotResponse struct {
+	// swagger:allOf
+	shot.Shot
 }
 
 func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
@@ -57,6 +82,31 @@ func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
 		Msg(msg)
 }
 
+// swagger:route POST /rest/v1/shots shots createShot
+//
+// # Create shots
+//
+// This will create a new shot.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Responses:
+//	  201: ShotResponse
+//	  400: ErrorResponse
+//	  409: ErrorResponse
+//	  413: ErrorResponse
 func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	var shotReq CreateShotRequest
 
@@ -90,9 +140,10 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot successfully created")
 
-	resp, err := json.Marshal(shot)
+	resp, err := json.Marshal(shotResp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -103,6 +154,38 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route GET /rest/v1/shots/{id} shots getShot
+//
+// # Get shots
+//
+// This will get the shot with the given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the shot to get
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: ShotResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) GetShotById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
@@ -115,9 +198,10 @@ func (h *Handler) GetShotById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot found by id")
 
-	resp, err := json.Marshal(shot)
+	resp, err := json.Marshal(shotResp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -128,14 +212,42 @@ func (h *Handler) GetShotById(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route GET /rest/v1/shots shots getAllShots
+//
+// # Get all shots
+//
+// This will show all shots by default.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Responses:
+//	  200: ShotResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) GetAllShots(w http.ResponseWriter, r *http.Request) {
 	shots, err := h.ShotService.GetAllShots(r.Context())
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	shotsResp := make([]ShotResponse, len(shots))
+	for k, v := range shots {
+		shotsResp[k] = ShotResponse{v}
+	}
 
-	resp, err := json.Marshal(&shots)
+	resp, err := json.Marshal(&shotsResp)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -146,6 +258,17 @@ func (h *Handler) GetAllShots(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:parameters updateShotById
+type UpdateShotByIdRequestParams struct {
+	// The request body for updating a shot
+	// in: body
+	// required: true
+	Body UpdateShotByIdRequest
+}
+
+// UpdateShotByIdRequest represents the request body for updating a shot
+// with the given id
+// swagger:model
 type UpdateShotByIdRequest struct {
 	SheetId                       int                               `json:"sheet_id"`
 	BeansId                       int                               `json:"beans_id"`
@@ -161,6 +284,39 @@ type UpdateShotByIdRequest struct {
 	AdditionalNotes               string                            `json:"additional_notes"`
 }
 
+// swagger:route PUT /rest/v1/shots/{id} shots updateShotById
+//
+// # Update shots
+//
+// This will update a shot by its given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the shot to update
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: ShotResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
+//	  413: ErrorResponse
 func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 	var shotReq UpdateShotByIdRequest
 
@@ -201,9 +357,10 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot successfully updated")
 
-	resp, err := json.Marshal(shot)
+	resp, err := json.Marshal(shotResp)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -214,6 +371,38 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route DELETE /rest/v1/shots/{id} shots deleteShot
+//
+// # Delete shots
+//
+// This will delete a shot by its given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the shot to delete
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: ItemDeletedResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) DeleteShotById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
