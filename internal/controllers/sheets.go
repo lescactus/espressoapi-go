@@ -78,13 +78,15 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	sheetResp := SheetResponse{*sheet}
+
 	hlog.FromRequest(r).Debug().Dict("sheet", zerolog.Dict().
 		Int("id", sheet.Id).
 		Str("name", sheet.Name).
 		Time("created_at", *sheet.CreatedAt)).
 		Msg("sheet successfully created")
 
-	resp, em := json.Marshal(&sheet)
+	resp, em := json.Marshal(&sheetResp)
 	if em != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -281,12 +283,14 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	sheetResp := SheetResponse{*sheet}
+
 	hlog.FromRequest(r).Debug().Dict("sheet", zerolog.Dict().
 		Int("id", sheet.Id).
 		Str("name", sheet.Name)).
 		Msg("sheet successfully updated")
 
-	resp, err := json.Marshal(sheet)
+	resp, err := json.Marshal(sheetResp)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -326,7 +330,7 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 //	    format: int32
 //
 //	Responses:
-//	  200: SheetResponse
+//	  200: ItemDeletedResponse
 //	  400: ErrorResponse
 //	  404: ErrorResponse
 func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {

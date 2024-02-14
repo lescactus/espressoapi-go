@@ -1,6 +1,254 @@
 {
   "swagger": "2.0",
   "paths": {
+    "/rest/v1/roasters": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will show all roasters by default.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "roasters"
+        ],
+        "summary": "Get all roasters",
+        "operationId": "getAllRoasters",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RoasterResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will create a new roaster.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "roasters"
+        ],
+        "summary": "Create roasters",
+        "operationId": "createRoaster",
+        "parameters": [
+          {
+            "description": "The request body for creating a roaster",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateRoasterRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/RoasterResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/v1/roasters/{id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will get the roaster with the given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "roasters"
+        ],
+        "summary": "Get roasters",
+        "operationId": "getRoaster",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the roaster to get",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RoasterResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will update a roaster by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "roasters"
+        ],
+        "summary": "Update roasters",
+        "operationId": "updateRoasterById",
+        "parameters": [
+          {
+            "description": "The request body for updating a roaster",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateRoasterByIdRequest"
+            }
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the roaster to update",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/RoasterResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will delete a roaster by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "roasters"
+        ],
+        "summary": "Delete roasters",
+        "operationId": "deleteRoaster",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the roaster to delete",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ItemDeletedResponse",
+            "schema": {
+              "$ref": "#/definitions/ItemDeletedResponse"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/rest/v1/sheets": {
       "get": {
         "security": [
@@ -235,7 +483,10 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/SheetResponse"
+            "description": "ItemDeletedResponse",
+            "schema": {
+              "$ref": "#/definitions/ItemDeletedResponse"
+            }
           },
           "400": {
             "$ref": "#/responses/ErrorResponse"
@@ -248,6 +499,17 @@
     }
   },
   "definitions": {
+    "CreateRoasterRequest": {
+      "description": "CreateRoasterRequest represents the request body for creating a roaster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
     "CreateSheetRequest": {
       "description": "CreateSheetRequest represents the request body for creating a sheet",
       "type": "object",
@@ -258,6 +520,53 @@
         }
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "ItemDeletedResponse": {
+      "description": "ItemDeletedResponse represents the response when an item is deleted",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Id"
+        },
+        "msg": {
+          "type": "string",
+          "x-go-name": "Msg"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "Roaster": {
+      "description": "# Represents a roaster for this application\n\nA roaster is the professional who roasts coffee beans.",
+      "type": "object",
+      "title": "Roaster",
+      "properties": {
+        "created_at": {
+          "description": "The creation date of the roaster",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "id": {
+          "description": "The id for the roaster",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Id"
+        },
+        "name": {
+          "description": "The name for the roaster",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "updated_at": {
+          "description": "The last update date of the roaster",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/roaster"
     },
     "Sheet": {
       "description": "# Represents a sheet for this application\n\nA sheet is a collection of shots. It's used to group shots together\nin a logical way.",
@@ -290,6 +599,17 @@
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/sheet"
     },
+    "UpdateRoasterByIdRequest": {
+      "description": "UpdateRoasterByIdRequest represents the request body for updating a roaster\nwith the given id",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
     "UpdateSheetByIdRequest": {
       "description": "UpdateSheetByIdRequest represents the request body for updating a sheet\nwith the given id",
       "type": "object",
@@ -312,6 +632,30 @@
         "status": {
           "type": "integer",
           "format": "int64"
+        }
+      }
+    },
+    "RoasterResponse": {
+      "description": "RoasterResponse represents a roaster for this application\n\nA roaster is the professional who roasts coffee beans.",
+      "headers": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The creation date of the roaster"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The id for the roaster"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name for the roaster"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last update date of the roaster"
         }
       }
     },
