@@ -1,0 +1,343 @@
+{
+  "swagger": "2.0",
+  "paths": {
+    "/rest/v1/sheets": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will show all sheets by default.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Get all sheets",
+        "operationId": "getAllSheets",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/SheetResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will create a new sheet.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Create sheets",
+        "operationId": "createSheet",
+        "parameters": [
+          {
+            "description": "The request body for creating a sheet",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateSheetRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/SheetResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/v1/sheets/{id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will get the sheet with the given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Get sheets",
+        "operationId": "getSheet",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the sheet to get",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/SheetResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will update a sheet by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Update sheets",
+        "operationId": "updateSheetById",
+        "parameters": [
+          {
+            "description": "The request body for updating a sheet",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateSheetByIdRequest"
+            }
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the sheet to update",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/SheetResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will delete a sheet by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Delete sheets",
+        "operationId": "deleteSheet",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the sheet to delete",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/SheetResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "CreateSheetRequest": {
+      "description": "CreateSheetRequest represents the request body for creating a sheet",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "Sheet": {
+      "description": "# Represents a sheet for this application\n\nA sheet is a collection of shots. It's used to group shots together\nin a logical way.",
+      "type": "object",
+      "title": "Sheet",
+      "properties": {
+        "created_at": {
+          "description": "The creation date of the sheet",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "id": {
+          "description": "The id for the sheet",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Id"
+        },
+        "name": {
+          "description": "The name for the sheet",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "updated_at": {
+          "description": "The last update date of the sheet",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/sheet"
+    },
+    "UpdateSheetByIdRequest": {
+      "description": "UpdateSheetByIdRequest represents the request body for updating a sheet\nwith the given id",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    }
+  },
+  "responses": {
+    "ErrorResponse": {
+      "description": "ErrorResponse represents the json response\nfor http errors.\nIt contains a message describing the error",
+      "headers": {
+        "msg": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "SheetResponse": {
+      "description": "SheetResponse represents a sheet for this application\n\nA sheet is a collection of shots. It's used to group shots together\nin a logical way.",
+      "headers": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The creation date of the sheet"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The id for the sheet"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name for the sheet"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last update date of the sheet"
+        }
+      }
+    }
+  }
+}
