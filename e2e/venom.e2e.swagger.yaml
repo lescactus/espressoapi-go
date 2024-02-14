@@ -1,0 +1,23 @@
+name: HTTP tests suite for swagger
+
+vars:
+  baseuri: http://127.0.0.1:8080
+
+testcases:
+- name: Read swagger.json
+  steps:
+  - type: readfile
+    path: ../docs/swagger.json
+    assertions:
+    - result.err ShouldBeEmpty
+    - result.content ShouldNotBeEmpty
+
+- name: GET /swagger.json
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/swagger.json"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.content-type ShouldEqual "application/json"
+    # TODO: compare body result with swagger.json
