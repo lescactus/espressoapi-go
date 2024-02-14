@@ -1,6 +1,254 @@
 {
   "swagger": "2.0",
   "paths": {
+    "/rest/v1/beans": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will show all beans by default.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "beans"
+        ],
+        "summary": "Get all beans",
+        "operationId": "getAllBeans",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BeansResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will create new beans.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "beans"
+        ],
+        "summary": "Create beans",
+        "operationId": "createBeans",
+        "parameters": [
+          {
+            "description": "The request body for creating beans",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateBeansRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/BeansResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/v1/beans/{id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will get the beans with the given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "beans"
+        ],
+        "summary": "Get beans",
+        "operationId": "getBeans",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the beans to get",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BeansResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will update beans by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "beans"
+        ],
+        "summary": "Update beans",
+        "operationId": "updateBeansById",
+        "parameters": [
+          {
+            "description": "The request body for updating beans",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateBeansByIdRequest"
+            }
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the beans to update",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BeansResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will delete beans by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "beans"
+        ],
+        "summary": "Delete beans",
+        "operationId": "deleteBeans",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the beans to delete",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ItemDeletedResponse",
+            "schema": {
+              "$ref": "#/definitions/ItemDeletedResponse"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/rest/v1/roasters": {
       "get": {
         "security": [
@@ -499,6 +747,66 @@
     }
   },
   "definitions": {
+    "Bean": {
+      "description": "Beans have a name, a roaster, a roast date and a roast level.",
+      "type": "object",
+      "title": "Bean",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Id"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "roast_date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "RoastDate"
+        },
+        "roast_level": {
+          "$ref": "#/definitions/RoastLevel"
+        },
+        "roaster": {
+          "$ref": "#/definitions/Roaster"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/bean"
+    },
+    "CreateBeansRequest": {
+      "description": "CreateBeansRequest represents the request body for creating beans",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "roast_date": {
+          "$ref": "#/definitions/RoastDate"
+        },
+        "roast_level": {
+          "$ref": "#/definitions/RoastLevel"
+        },
+        "roaster_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RoasterId"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
     "CreateRoasterRequest": {
       "description": "CreateRoasterRequest represents the request body for creating a roaster",
       "type": "object",
@@ -536,6 +844,16 @@
         }
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "RoastDate": {
+      "type": "string",
+      "format": "date-time",
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "RoastLevel": {
+      "type": "integer",
+      "format": "uint8",
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "Roaster": {
       "description": "# Represents a roaster for this application\n\nA roaster is the professional who roasts coffee beans.",
@@ -599,6 +917,28 @@
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/sheet"
     },
+    "UpdateBeansByIdRequest": {
+      "description": "UpdateBeansByIdRequest represents the request body for updating beans\nwith the given id",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "roast_date": {
+          "$ref": "#/definitions/RoastDate"
+        },
+        "roast_level": {
+          "$ref": "#/definitions/RoastLevel"
+        },
+        "roaster_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RoasterId"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
     "UpdateRoasterByIdRequest": {
       "description": "UpdateRoasterByIdRequest represents the request body for updating a roaster\nwith the given id",
       "type": "object",
@@ -623,6 +963,35 @@
     }
   },
   "responses": {
+    "BeansResponse": {
+      "description": "BeansResponse represents coffee beans for this application\n\nBeans have a name, a roaster, a roast date and a roast level.",
+      "schema": {
+        "$ref": "#/definitions/RoastLevel"
+      },
+      "headers": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "roast_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "roast_level": {},
+        "roaster": {},
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "ErrorResponse": {
       "description": "ErrorResponse represents the json response\nfor http errors.\nIt contains a message describing the error",
       "headers": {

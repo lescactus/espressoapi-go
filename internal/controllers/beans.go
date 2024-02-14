@@ -13,11 +13,31 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
+// swagger:parameters createBeans
+type CreateBeansParams struct {
+	// The request body for creating beans
+	// in: body
+	// required: true
+	Body CreateBeansRequest
+}
+
+// CreateBeansRequest represents the request body for creating beans
+// swagger:model
 type CreateBeansRequest struct {
 	Name       string         `json:"name"`
 	RoasterId  int            `json:"roaster_id"`
 	RoastDate  RoastDate      `json:"roast_date"`
 	RoastLevel sql.RoastLevel `json:"roast_level"`
+}
+
+// BeansResponse represents coffee beans for this application
+//
+// Beans have a name, a roaster, a roast date and a roast level.
+//
+// swagger:response BeansResponse
+type BeansResponse struct {
+	// swagger:allOf
+	bean.Bean
 }
 
 func logBeansFromRequest(r *http.Request, beans *bean.Bean, msg string) {
@@ -34,6 +54,31 @@ func logBeansFromRequest(r *http.Request, beans *bean.Bean, msg string) {
 		Msg(msg)
 }
 
+// swagger:route POST /rest/v1/beans beans createBeans
+//
+// # Create beans
+//
+// This will create new beans.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Responses:
+//	  201: BeansResponse
+//	  400: ErrorResponse
+//	  409: ErrorResponse
+//	  413: ErrorResponse
 func (h *Handler) CreateBeans(w http.ResponseWriter, r *http.Request) {
 	var beansReq CreateBeansRequest
 
@@ -61,9 +106,10 @@ func (h *Handler) CreateBeans(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	beansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans successfully created")
 
-	resp, err := json.Marshal(beans)
+	resp, err := json.Marshal(beansResp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -74,6 +120,38 @@ func (h *Handler) CreateBeans(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route GET /rest/v1/beans/{id} beans getBeans
+//
+// # Get beans
+//
+// This will get the beans with the given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the beans to get
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: BeansResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) GetBeansById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
@@ -86,9 +164,10 @@ func (h *Handler) GetBeansById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	BeansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans found by id")
 
-	resp, err := json.Marshal(beans)
+	resp, err := json.Marshal(BeansResp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -99,6 +178,30 @@ func (h *Handler) GetBeansById(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route GET /rest/v1/beans beans getAllBeans
+//
+// # Get all beans
+//
+// This will show all beans by default.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Responses:
+//	  200: BeansResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) GetAllBeans(w http.ResponseWriter, r *http.Request) {
 	beans, err := h.BeanService.GetAllBeans(r.Context())
 	if err != nil {
@@ -106,7 +209,12 @@ func (h *Handler) GetAllBeans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(&beans)
+	beansResp := make([]BeansResponse, len(beans))
+	for k, v := range beans {
+		beansResp[k] = BeansResponse{v}
+	}
+
+	resp, err := json.Marshal(&beansResp)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -117,6 +225,17 @@ func (h *Handler) GetAllBeans(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:parameters updateBeansById
+type UpdateBeansByIdRequestParams struct {
+	// The request body for updating beans
+	// in: body
+	// required: true
+	Body UpdateBeansByIdRequest
+}
+
+// UpdateBeansByIdRequest represents the request body for updating beans
+// with the given id
+// swagger:model
 type UpdateBeansByIdRequest struct {
 	Name       string         `json:"name"`
 	RoasterId  int            `json:"roaster_id"`
@@ -124,6 +243,39 @@ type UpdateBeansByIdRequest struct {
 	RoastLevel sql.RoastLevel `json:"roast_level"`
 }
 
+// swagger:route PUT /rest/v1/beans/{id} beans updateBeansById
+//
+// # Update beans
+//
+// This will update beans by its given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the beans to update
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: BeansResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
+//	  413: ErrorResponse
 func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 	var beansReq UpdateBeansByIdRequest
 
@@ -158,9 +310,10 @@ func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
+	beansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans successfully updated")
 
-	resp, err := json.Marshal(beans)
+	resp, err := json.Marshal(beansResp)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return
@@ -171,6 +324,38 @@ func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// swagger:route DELETE /rest/v1/beans/{id} beans deleteBeans
+//
+// # Delete beans
+//
+// This will delete beans by its given id.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the beans to delete
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: ItemDeletedResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
 func (h *Handler) DeleteBeansById(w http.ResponseWriter, r *http.Request) {
 	id, err := h.getIdFromParams(r.Context())
 	if err != nil {
