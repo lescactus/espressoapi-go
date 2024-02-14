@@ -1,6 +1,7 @@
 package app
 
 import (
+	"embed"
 	"io/fs"
 
 	"github.com/jmoiron/sqlx"
@@ -12,7 +13,8 @@ type Application struct {
 	Db           *sqlx.DB
 	Cfg          *config.App
 	Logger       *zerolog.Logger
-	MigrationsFS *fs.FS
+	MigrationsFS *embed.FS
+	SwaggerFS    fs.FS
 }
 
 var App *Application
