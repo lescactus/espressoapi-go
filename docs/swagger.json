@@ -744,6 +744,254 @@
           }
         }
       }
+    },
+    "/rest/v1/shots": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will show all shots by default.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "shots"
+        ],
+        "summary": "Get all shots",
+        "operationId": "getAllShots",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ShotResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will create a new shot.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "shots"
+        ],
+        "summary": "Create shots",
+        "operationId": "createShot",
+        "parameters": [
+          {
+            "description": "The request body for creating a shot",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateShotRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/ShotResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/v1/shots/{id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will get the shot with the given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "shots"
+        ],
+        "summary": "Get shots",
+        "operationId": "getShot",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the shot to get",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ShotResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will update a shot by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "shots"
+        ],
+        "summary": "Update shots",
+        "operationId": "updateShotById",
+        "parameters": [
+          {
+            "description": "The request body for updating a shot",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateShotByIdRequest"
+            }
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the shot to update",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ShotResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "description": "This will delete a shot by its given id.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "shots"
+        ],
+        "summary": "Delete shots",
+        "operationId": "deleteShot",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the shot to delete",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ItemDeletedResponse",
+            "schema": {
+              "$ref": "#/definitions/ItemDeletedResponse"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -784,6 +1032,11 @@
         }
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/bean"
+    },
+    "ComparaisonWithPreviousResult": {
+      "type": "integer",
+      "format": "uint8",
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "CreateBeansRequest": {
       "description": "CreateBeansRequest represents the request body for creating beans",
@@ -828,6 +1081,72 @@
         }
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "CreateShotRequest": {
+      "description": "CreateShotRequest represents the request body for creating a shot",
+      "type": "object",
+      "properties": {
+        "additional_notes": {
+          "type": "string",
+          "x-go-name": "AdditionalNotes"
+        },
+        "beans_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "BeansId"
+        },
+        "comparaison_with_previous_result": {
+          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        },
+        "grind_setting": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GrindSetting"
+        },
+        "is_too_bitter": {
+          "type": "boolean",
+          "x-go-name": "IsTooBitter"
+        },
+        "is_too_sour": {
+          "type": "boolean",
+          "x-go-name": "IsTooSour"
+        },
+        "quantity_in": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityIn"
+        },
+        "quantity_out": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityOut"
+        },
+        "rating": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Rating"
+        },
+        "sheet_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "SheetId"
+        },
+        "shot_time": {
+          "$ref": "#/definitions/Duration"
+        },
+        "water_temperature": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "WaterTemperature"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "Duration": {
+      "description": "A Duration represents the elapsed time between two instants\nas an int64 nanosecond count. The representation limits the\nlargest representable duration to approximately 290 years.",
+      "type": "integer",
+      "format": "int64",
+      "x-go-package": "time"
     },
     "ItemDeletedResponse": {
       "description": "ItemDeletedResponse represents the response when an item is deleted",
@@ -917,6 +1236,78 @@
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/sheet"
     },
+    "Shot": {
+      "description": "An espresso shot is made from coffee beans, ground at a specific setting,\nwith a specific quantity of coffee in and out.\nIt also has a specific shot time and water temperature.\n\nThe result of a shot can be rated and compared to the previous shot.\nIt can also be too bitter or too sour.",
+      "type": "object",
+      "title": "Shot",
+      "properties": {
+        "additional_notes": {
+          "type": "string",
+          "x-go-name": "AdditionalNotes"
+        },
+        "beans": {
+          "$ref": "#/definitions/Bean"
+        },
+        "comparaison_with_previous_result": {
+          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "grind_setting": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GrindSetting"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Id"
+        },
+        "is_too_bitter": {
+          "type": "boolean",
+          "x-go-name": "IsTooBitter"
+        },
+        "is_too_sour": {
+          "type": "boolean",
+          "x-go-name": "IsTooSour"
+        },
+        "quantity_in": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityIn"
+        },
+        "quantity_out": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityOut"
+        },
+        "rating": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Rating"
+        },
+        "sheet": {
+          "$ref": "#/definitions/Sheet"
+        },
+        "shot_time": {
+          "$ref": "#/definitions/Duration"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        },
+        "water_temperature": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "WaterTemperature"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/shot"
+    },
     "UpdateBeansByIdRequest": {
       "description": "UpdateBeansByIdRequest represents the request body for updating beans\nwith the given id",
       "type": "object",
@@ -957,6 +1348,66 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+    },
+    "UpdateShotByIdRequest": {
+      "description": "UpdateShotByIdRequest represents the request body for updating a shot\nwith the given id",
+      "type": "object",
+      "properties": {
+        "additional_notes": {
+          "type": "string",
+          "x-go-name": "AdditionalNotes"
+        },
+        "beans_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "BeansId"
+        },
+        "comparaison_with_previous_result": {
+          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        },
+        "grind_setting": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GrindSetting"
+        },
+        "is_too_bitter": {
+          "type": "boolean",
+          "x-go-name": "IsTooBitter"
+        },
+        "is_too_sour": {
+          "type": "boolean",
+          "x-go-name": "IsTooSour"
+        },
+        "quantity_in": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityIn"
+        },
+        "quantity_out": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "QuantityOut"
+        },
+        "rating": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Rating"
+        },
+        "sheet_id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "SheetId"
+        },
+        "shot_time": {
+          "$ref": "#/definitions/Duration"
+        },
+        "water_temperature": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "WaterTemperature"
         }
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
@@ -1049,6 +1500,59 @@
           "type": "string",
           "format": "date-time",
           "description": "The last update date of the sheet"
+        }
+      }
+    },
+    "ShotResponse": {
+      "description": "ShotResponse represents an espresso shot for this application\n\nAn espresso shot is made from coffee beans, ground at a specific setting,\nwith a specific quantity of coffee in and out.\nIt also has a specific shot time and water temperature.\n\nThe result of a shot can be rated and compared to the previous shot.\nIt can also be too bitter or too sour.",
+      "schema": {
+        "$ref": "#/definitions/ComparaisonWithPreviousResult"
+      },
+      "headers": {
+        "additional_notes": {
+          "type": "string"
+        },
+        "beans": {},
+        "comparaison_with_previous_result": {},
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "grind_setting": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "is_too_bitter": {
+          "type": "boolean"
+        },
+        "is_too_sour": {
+          "type": "boolean"
+        },
+        "quantity_in": {
+          "type": "number",
+          "format": "double"
+        },
+        "quantity_out": {
+          "type": "number",
+          "format": "double"
+        },
+        "rating": {
+          "type": "number",
+          "format": "double"
+        },
+        "sheet": {},
+        "shot_time": {},
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "water_temperature": {
+          "type": "number",
+          "format": "double"
         }
       }
     }
