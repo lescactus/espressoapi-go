@@ -109,6 +109,18 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:           "errors.ErrBeansForeignKeyConstraint error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansForeignKeyConstraint},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domerrors.ErrBeansForeignKeyConstraint)},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:           "errors.ErrShotForeignKeyConstraint error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotForeignKeyConstraint},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domerrors.ErrShotForeignKeyConstraint)},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "json.SyntaxError error",
 			args:           args{w: httptest.NewRecorder(), err: &json.SyntaxError{}},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "request body contains badly-formed json (at position 0)"},

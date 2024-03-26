@@ -190,6 +190,19 @@ testcases:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no beans found for given id"
 
+- name: PUT /rest/v1/beans/:id - roaster does not exist
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 100000000, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no roaster found for given id"
+
 - name: PUT /rest/v1/beans/:id
   steps:
   - type: http
@@ -214,6 +227,16 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no beans found for given id"
+
+- name: DELETE /rest/v1/roasters/1 - cannot delete due to existing references - beans foreign key constraint failed
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/roasters/1"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - >
+      result.bodyjson.msg ShouldEqual "cannot delete due to existing references: beans foreign key constraint failed"
 
 - name: DELETE /rest/v1/beans/:id
   steps:

@@ -5,12 +5,11 @@ import (
 	dbsql "database/sql"
 	"fmt"
 
-	"github.com/go-sql-driver/mysql"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
+	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
 )
 
 var _ repository.BeansRepository = (*Bean)(nil)
@@ -30,14 +29,7 @@ func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) (int, error) 
 	res, err := db.db.ExecContext(ctx, query,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel)
 	if err != nil {
-		// Checking if the error is due to a foreign key constraint
-		// which will indicate the roaster does not exists:
-		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
-		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1452 {
-			return 0, errors.ErrRoasterDoesNotExist
-		}
-
-		return 0, fmt.Errorf("failed to insert record to the database: %w", err)
+		return 0, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
 	id, err := res.LastInsertId()
@@ -110,7 +102,7 @@ func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (
 	_, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?`,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update record for beans id=%d: %w", id, err)
+		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to update record for beans id=%d: %w", id, err))
 	}
 
 	return beans, nil
@@ -119,7 +111,7 @@ func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (
 func (db *Bean) DeleteBeansById(ctx context.Context, id int) error {
 	res, err := db.db.ExecContext(ctx, `DELETE FROM beans WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete record for beans id=%d: %w", id, err)
+		return mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to delete record for beans id=%d: %w", id, err))
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {

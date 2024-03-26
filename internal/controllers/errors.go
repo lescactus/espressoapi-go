@@ -92,6 +92,14 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrShotRatingOutOfRange):
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"}
 
+		// Catch if the beans foreign key constraint failed
+		case errors.Is(err, domainerrors.ErrBeansForeignKeyConstraint):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domainerrors.ErrBeansForeignKeyConstraint)}
+
+		// Catch if the shot foreign key constraint failed
+		case errors.Is(err, domainerrors.ErrShotForeignKeyConstraint):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domainerrors.ErrShotForeignKeyConstraint)}
+
 		// Catch any syntax errors
 		case errors.As(err, &syntaxError):
 			msg := fmt.Sprintf("request body contains badly-formed json (at position %d)", syntaxError.Offset)

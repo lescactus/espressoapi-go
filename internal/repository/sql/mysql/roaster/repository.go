@@ -7,11 +7,11 @@ import (
 
 	dbsql "database/sql"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
+	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
 )
 
 var _ repository.RoasterRepository = (*Roaster)(nil)
@@ -30,12 +30,7 @@ func (db *Roaster) CreateRoaster(ctx context.Context, sheet *sql.Roaster) error 
 	query := `INSERT INTO roasters (name) VALUES (?)`
 	_, err := db.db.ExecContext(ctx, query, sheet.Name)
 	if err != nil {
-		// Checking if the entry inserted is a duplicate:
-		// ERROR 1062 (23000): Duplicate entry 'xxxxx' for key 'yyyy'
-		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1062 {
-			return errors.ErrRoasterAlreadyExists
-		}
-		return fmt.Errorf("failed to insert record to the database: %w", err)
+		return mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
 	return nil
@@ -102,7 +97,7 @@ func (db *Roaster) UpdateRoasterById(ctx context.Context, id int, roaster *sql.R
 func (db *Roaster) DeleteRoasterById(ctx context.Context, id int) error {
 	res, err := db.db.ExecContext(ctx, `DELETE FROM roasters WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete record for roaster id=%d: %w", id, err)
+		return mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to delete record for roaster id=%d: %w", id, err))
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {

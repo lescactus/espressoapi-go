@@ -7,11 +7,11 @@ import (
 
 	dbsql "database/sql"
 
-	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
+	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
 )
 
 var _ repository.SheetRepository = (*Sheet)(nil)
@@ -30,14 +30,8 @@ func (db *Sheet) CreateSheet(ctx context.Context, sheet *sql.Sheet) error {
 	query := `INSERT INTO sheets (name) VALUES (?)`
 	_, err := db.db.ExecContext(ctx, query, sheet.Name)
 	if err != nil {
-		// Checking if the entry inserted is a duplicate:
-		// ERROR 1062 (23000): Duplicate entry 'xxxxx' for key 'yyyy'
-		if me, ok := err.(*mysqldriver.MySQLError); ok && me.Number == 1062 {
-			return errors.ErrSheetAlreadyExists
-		}
-		return fmt.Errorf("failed to insert record to the database: %w", err)
+		return mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntitySheet, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
-
 	return nil
 }
 
@@ -102,7 +96,7 @@ func (db *Sheet) UpdateSheetById(ctx context.Context, id int, sheet *sql.Sheet) 
 func (db *Sheet) DeleteSheetById(ctx context.Context, id int) error {
 	res, err := db.db.ExecContext(ctx, `DELETE FROM sheets WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete record for sheet id=%d: %w", id, err)
+		return mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to delete record for sheet id=%d: %w", id, err))
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {

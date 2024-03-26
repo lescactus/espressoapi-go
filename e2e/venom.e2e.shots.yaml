@@ -286,6 +286,32 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "shot rating is out of range. Must be between 0.0 and 10.0"
 
+- name: PUT /rest/v1/shots/:id - sheet does not exist
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 100000000, "beans_id": 1, "rating": 8}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: PUT /rest/v1/shots/:id - beans does not exist
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 100000000, "rating": 8}
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no beans found for given id"
+
 - name: PUT /rest/v1/shots/:id
   steps:
   - type: http
@@ -324,6 +350,27 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no shot found for given id"
+
+- name: DELETE /rest/v1/sheets/1 - cannot delete due to existing references - shot foreign key constraint failed
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - >
+      result.bodyjson.msg ShouldEqual "cannot delete due to existing references: shot foreign key constraint failed"
+
+- name: DELETE /rest/v1/beans/1 - cannot delete due to existing references - shot foreign key constraint failed
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/beans/1"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - >
+      result.bodyjson.msg ShouldEqual "cannot delete due to existing references: shot foreign key constraint failed"
+
 
 - name: DELETE /rest/v1/shots/:id
   steps:
