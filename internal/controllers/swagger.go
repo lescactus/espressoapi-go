@@ -17,7 +17,7 @@ func (h *Handler) Swagger(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 
 	var b bytes.Buffer
-	io.Copy(&b, f)
+	_, err = io.Copy(&b, f)
 	if err != nil {
 		h.SetErrorResponse(w, err)
 		return

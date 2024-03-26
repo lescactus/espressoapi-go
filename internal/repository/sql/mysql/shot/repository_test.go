@@ -48,49 +48,6 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestExtractTableNameFromError1452(t *testing.T) {
-	type args struct {
-		err mysql.MySQLError
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "Error is not 1452",
-			args:    args{err: mysql.MySQLError{Number: 1234}},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name:    "Error message does not match",
-			args:    args{err: mysql.MySQLError{Number: 1452, Message: "Some other error"}},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name:    "Error message match",
-			args:    args{err: mysql.MySQLError{Number: 1452, Message: "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"}},
-			want:    "sheets",
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractTableNameFromError1452(tt.args.err)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("extractTableNameFromError1452() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("extractTableNameFromError1452() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestShotCreateShot(t *testing.T) {
 	type args struct {
 		ctx  context.Context

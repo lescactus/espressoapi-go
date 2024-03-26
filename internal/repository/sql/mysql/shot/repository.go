@@ -4,13 +4,12 @@ import (
 	"context"
 	dbsql "database/sql"
 	"fmt"
-	"regexp"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
+	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
 )
 
 var _ repository.ShotRepository = (*Shot)(nil)
@@ -32,23 +31,7 @@ func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
 	res, err := db.db.ExecContext(ctx, query,
 		shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparaisonWithPreviousResult, shot.AdditionalNotes)
 	if err != nil {
-		// Checking if the error is due to a foreign key constraint
-		// which will indicate the sheet or beans does not exists:
-		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
-		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1452 {
-			table, err := extractTableNameFromError1452(*me)
-			if err != nil {
-				// Generic error
-				return 0, fmt.Errorf("failed to insert record to the database: %w", err)
-			}
-			switch table {
-			case "sheets":
-				return 0, errors.ErrSheetDoesNotExist
-			case "beans":
-				return 0, errors.ErrBeansDoesNotExist
-			}
-		}
-		return 0, fmt.Errorf("failed to insert record to the database: %w", err)
+		return 0, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
 	id, err := res.LastInsertId()
@@ -106,6 +89,7 @@ WHERE shots.id = ?`
 
 	return &s, nil
 }
+
 func (db *Shot) GetAllShots(ctx context.Context) ([]sql.Shot, error) {
 	var shots = make([]sql.Shot, 0)
 	get := `
@@ -147,6 +131,7 @@ INNER JOIN
 
 	return shots, nil
 }
+
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
 	_, err := db.db.ExecContext(ctx, `UPDATE shots SET
 	sheet_id = ?,
@@ -176,28 +161,12 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 		shot.AdditionalNotes,
 		id)
 	if err != nil {
-		// Checking if the error is due to a foreign key constraint
-		// which will indicate the sheet or beans does not exists:
-		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
-		if me, ok := err.(*mysql.MySQLError); ok && me.Number == 1452 {
-			table, err := extractTableNameFromError1452(*me)
-			if err != nil {
-				// Generic error
-				return nil, fmt.Errorf("failed to insert record to the database: %w", err)
-			}
-			switch table {
-			case "sheets":
-				return nil, errors.ErrSheetDoesNotExist
-			case "beans":
-				return nil, errors.ErrBeansDoesNotExist
-			}
-		}
-
-		return nil, fmt.Errorf("failed to update record for shots id=%d from the database: %w", id, err)
+		return nil, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to update record in the database: %w", err))
 	}
 
 	return shot, nil
 }
+
 func (db *Shot) DeleteShotById(ctx context.Context, id int) error {
 	res, err := db.db.ExecContext(ctx, `DELETE FROM shots WHERE id = ?`, id)
 	if err != nil {
@@ -210,33 +179,7 @@ func (db *Shot) DeleteShotById(ctx context.Context, id int) error {
 
 	return nil
 }
+
 func (db *Shot) Ping(ctx context.Context) error {
 	return db.db.PingContext(ctx)
-}
-
-// extractTableNameFromError1452 extracts the table name from a MySQL error with code 1452.
-// It uses a regular expression to find the table name in the error message.
-// If a match is found, it returns the table name. Otherwise, it returns an error.
-//
-// Example error message:
-// "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"
-func extractTableNameFromError1452(err mysql.MySQLError) (string, error) {
-	if err.Number != 1452 {
-		return "", fmt.Errorf("error is not mysql error 1452")
-	}
-
-	// Define the regular expression
-	// x60 is the backtick character (`)
-	re := regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
-
-	// Use the regular expression to find the table name in the error message
-	matches := re.FindStringSubmatch(err.Error())
-
-	// Check if a match was found
-	if len(matches) > 0 {
-		// The second element in matches will be the table name
-		return matches[2], nil
-	} else {
-		return "", fmt.Errorf("failed to extract table name from error message")
-	}
 }
