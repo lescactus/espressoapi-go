@@ -90,7 +90,7 @@ func (db *Sheet) UpdateSheetById(ctx context.Context, id int, sheet *sql.Sheet) 
 		return nil, errors.ErrSheetDoesNotExist
 	}
 
-	return sheet, nil
+	return db.GetSheetById(ctx, sheet.Id)
 }
 
 func (db *Sheet) DeleteSheetById(ctx context.Context, id int) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
@@ -99,13 +100,18 @@ func (db *Bean) GetAllBeans(ctx context.Context) ([]sql.Beans, error) {
 }
 
 func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (*sql.Beans, error) {
-	_, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?`,
-		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, id)
+	now := time.Now()
+	beans.Id = id
+	beans.UpdatedAt = &now
+
+	// CreatedAt should be immutable
+	_, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ?, updated_at = ? WHERE id = ?`,
+		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, beans.UpdatedAt, beans.Id)
 	if err != nil {
 		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to update record for beans id=%d: %w", id, err))
 	}
 
-	return beans, nil
+	return db.GetBeansById(ctx, beans.Id)
 }
 
 func (db *Bean) DeleteBeansById(ctx context.Context, id int) error {
