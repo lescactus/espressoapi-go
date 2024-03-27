@@ -117,14 +117,20 @@ func (s *SheetService) UpdateSheetById(ctx context.Context, id int, sheet *Sheet
 	sheet.Id = id
 	sqlSheet := SheetToSQL(sheet)
 
-	sqlSheet, err := s.repository.UpdateSheetById(ctx, id, sqlSheet)
-	if err != nil {
+	if _, err := s.repository.UpdateSheetById(ctx, id, sqlSheet); err != nil {
 		msg := "could not update sheet by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
-	return SQLToSheet(sqlSheet), nil
+	updatedSheet, err := s.GetSheetById(ctx, id)
+	if err != nil {
+		msg := "could not get updated sheet"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	return updatedSheet, nil
 }
 
 func (s *SheetService) DeleteSheetById(ctx context.Context, id int) error {
