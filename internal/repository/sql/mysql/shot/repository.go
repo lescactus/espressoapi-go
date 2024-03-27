@@ -4,7 +4,6 @@ import (
 	"context"
 	dbsql "database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/internal/errors"
@@ -134,11 +133,6 @@ INNER JOIN
 }
 
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
-	now := time.Now()
-	shot.Id = id
-	shot.UpdatedAt = &now
-
-	// CreatedAt should be immutable
 	_, err := db.db.ExecContext(ctx, `UPDATE shots SET
 	sheet_id = ?,
 	beans_id = ?,
@@ -151,8 +145,7 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 	is_too_bitter = ?,
 	is_too_sour = ?,
 	comparaison_with_previous_result = ?,
-	additional_notes = ?,
-	updated_at = ?
+	additional_notes = ?
 	WHERE id = ?`,
 		shot.Sheet.Id,
 		shot.Beans.Id,
@@ -166,13 +159,12 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 		shot.IsTooSour,
 		shot.ComparaisonWithPreviousResult,
 		shot.AdditionalNotes,
-		shot.UpdatedAt,
-		shot.Id)
+		id)
 	if err != nil {
 		return nil, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to update record in the database: %w", err))
 	}
 
-	return db.GetShotById(ctx, shot.Id)
+	return shot, nil
 }
 
 func (db *Shot) DeleteShotById(ctx context.Context, id int) error {

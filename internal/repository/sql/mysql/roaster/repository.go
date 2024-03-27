@@ -91,7 +91,7 @@ func (db *Roaster) UpdateRoasterById(ctx context.Context, id int, roaster *sql.R
 		return nil, errors.ErrRoasterDoesNotExist
 	}
 
-	return db.GetRoasterById(ctx, roaster.Id)
+	return roaster, nil
 }
 
 func (db *Roaster) DeleteRoasterById(ctx context.Context, id int) error {
