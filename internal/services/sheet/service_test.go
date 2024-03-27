@@ -31,8 +31,12 @@ func (m *MockSheetRepository) CreateSheet(ctx context.Context, sheet *sql.Sheet)
 }
 
 func (m *MockSheetRepository) GetSheetById(ctx context.Context, id int) (*sql.Sheet, error) {
+	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == "isErrorFromUpdateSheetById" {
+		return nil, fmt.Errorf("mock error")
+	}
+
 	if id == 1 {
-		return &sql.Sheet{Id: id, Name: "sheetexists"}, nil
+		return &sql.Sheet{Id: id, Name: "sheet01name", CreatedAt: &now, UpdatedAt: &now}, nil
 	} else {
 		return nil, errors.ErrSheetDoesNotExist
 	}
@@ -243,7 +247,7 @@ func TestSheetGetSheetById(t *testing.T) {
 			name:    "Sheet exists",
 			fields:  fields{&MockSheetRepository{}},
 			args:    args{ctx: context.TODO(), id: 1},
-			want:    &Sheet{Id: 1, Name: "sheetexists"},
+			want:    &Sheet{Id: 1, Name: "sheet01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 
@@ -351,9 +355,9 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			args: args{
 				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:    1,
-				sheet: &Sheet{Id: 1, Name: "sheet01newname"},
+				sheet: &Sheet{Id: 1, Name: "sheet01name"},
 			},
-			want:    &Sheet{Id: 1, Name: "sheet01newname", UpdatedAt: &now},
+			want:    &Sheet{Id: 1, Name: "sheet01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 		{
@@ -362,7 +366,7 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			args: args{
 				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), true),
 				id:    1,
-				sheet: &Sheet{Id: 1, Name: "sheet01newname"},
+				sheet: &Sheet{Id: 1, Name: "sheet01name"},
 			},
 			want:    nil,
 			wantErr: true,
@@ -373,9 +377,9 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			args: args{
 				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:    1,
-				sheet: &Sheet{Id: 2, Name: "sheet01newname"},
+				sheet: &Sheet{Id: 2, Name: "sheet01name"},
 			},
-			want:    &Sheet{Id: 1, Name: "sheet01newname", UpdatedAt: &now},
+			want:    &Sheet{Id: 1, Name: "sheet01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 		{
@@ -385,6 +389,17 @@ func TestSheetUpdateSheetById(t *testing.T) {
 				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), true),
 				id:    1,
 				sheet: &Sheet{Id: 2, Name: "sheet01newname"},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:   "Sheet.Id matching id - error from GetSheetById",
+			fields: fields{&MockSheetRepository{}},
+			args: args{
+				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), "isErrorFromUpdateSheetById"),
+				id:    1,
+				sheet: &Sheet{Id: 1, Name: "sheet01newname"},
 			},
 			want:    nil,
 			wantErr: true,

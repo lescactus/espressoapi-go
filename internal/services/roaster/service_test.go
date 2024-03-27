@@ -31,8 +31,12 @@ func (m *MockRoasterRepository) CreateRoaster(ctx context.Context, roaster *sql.
 }
 
 func (m *MockRoasterRepository) GetRoasterById(ctx context.Context, id int) (*sql.Roaster, error) {
+	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == "isErrorFromUpdateRoasterById" {
+		return nil, fmt.Errorf("mock error")
+	}
+
 	if id == 1 {
-		return &sql.Roaster{Id: id, Name: "roasterexists"}, nil
+		return &sql.Roaster{Id: id, Name: "roaster01name", CreatedAt: &now, UpdatedAt: &now}, nil
 	} else {
 		return nil, errors.ErrRoasterDoesNotExist
 	}
@@ -243,7 +247,7 @@ func TestRoasterGetRoasterById(t *testing.T) {
 			name:    "Roaster exists",
 			fields:  fields{&MockRoasterRepository{}},
 			args:    args{ctx: context.TODO(), id: 1},
-			want:    &Roaster{Id: 1, Name: "roasterexists"},
+			want:    &Roaster{Id: 1, Name: "roaster01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 
@@ -351,9 +355,9 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			args: args{
 				ctx:     context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:      1,
-				roaster: &Roaster{Id: 1, Name: "roaster01newname"},
+				roaster: &Roaster{Id: 1, Name: "roaster01name"},
 			},
-			want:    &Roaster{Id: 1, Name: "roaster01newname", UpdatedAt: &now},
+			want:    &Roaster{Id: 1, Name: "roaster01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 		{
@@ -373,9 +377,9 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			args: args{
 				ctx:     context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:      1,
-				roaster: &Roaster{Id: 2, Name: "roaster01newname"},
+				roaster: &Roaster{Id: 2, Name: "roaster01name"},
 			},
-			want:    &Roaster{Id: 1, Name: "roaster01newname", UpdatedAt: &now},
+			want:    &Roaster{Id: 1, Name: "roaster01name", CreatedAt: &now, UpdatedAt: &now},
 			wantErr: false,
 		},
 		{
@@ -385,6 +389,17 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 				ctx:     context.WithValue(context.Background(), IsErrorCtxKey("isError"), true),
 				id:      1,
 				roaster: &Roaster{Id: 2, Name: "roaster01newname"},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:   "Roaster.Id matching id - error from GetRoasterById",
+			fields: fields{&MockRoasterRepository{}},
+			args: args{
+				ctx:     context.WithValue(context.Background(), IsErrorCtxKey("isError"), "isErrorFromUpdateRoasterById"),
+				id:      1,
+				roaster: &Roaster{Id: 1, Name: "roaster01name"},
 			},
 			want:    nil,
 			wantErr: true,

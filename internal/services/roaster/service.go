@@ -123,14 +123,20 @@ func (s *RoasterService) UpdateRoasterById(ctx context.Context, id int, roaster 
 	roaster.Id = id
 	sqlRoaster := RoasterToSQL(roaster)
 
-	sqlRoaster, err := s.repository.UpdateRoasterById(ctx, id, sqlRoaster)
-	if err != nil {
+	if _, err := s.repository.UpdateRoasterById(ctx, id, sqlRoaster); err != nil {
 		msg := "could not update roaster by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
 
-	return SQLToRoaster(sqlRoaster), nil
+	updatedRoaster, err := s.GetRoasterById(ctx, roaster.Id)
+	if err != nil {
+		msg := "could not get updated roaster"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	return updatedRoaster, nil
 }
 
 func (s *RoasterService) DeleteRoasterById(ctx context.Context, id int) error {
