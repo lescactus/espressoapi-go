@@ -197,6 +197,13 @@ func TestRoasterCreateRoasterByName(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:    "Name is empty",
+			fields:  fields{&MockRoasterRepository{}},
+			args:    args{ctx: context.TODO(), name: ""},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name:    "Unique roaster",
 			fields:  fields{&MockRoasterRepository{}},
 			args:    args{ctx: context.TODO(), name: "roaster01"},
@@ -349,6 +356,17 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 		want    *Roaster
 		wantErr bool
 	}{
+		{
+			name:   "Roaster.Name is empty",
+			fields: fields{&MockRoasterRepository{}},
+			args: args{
+				ctx:     context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:      1,
+				roaster: &Roaster{Id: 1, Name: ""},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 		{
 			name:   "Roaster.Id matching id - No error",
 			fields: fields{&MockRoasterRepository{}},

@@ -80,6 +80,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrRoasterAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"}
 
+		// Catch if the roaster name is empty
+		case errors.Is(err, domainerrors.ErrRoasterNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "roaster name must not be empty"}
+
 		// Catch if the beans does not exist
 		case errors.Is(err, domainerrors.ErrBeansDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no beans found for given id"}

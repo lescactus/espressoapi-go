@@ -8,6 +8,7 @@ var (
 
 	ErrRoasterAlreadyExists = errors.New("roaster already exists")
 	ErrRoasterDoesNotExist  = errors.New("roaster does not exists")
+	ErrRoasterNameIsEmpty   = errors.New("roaster name is empty")
 
 	ErrBeansDoesNotExist         = errors.New("beans does not exists")
 	ErrBeansForeignKeyConstraint = errors.New("beans foreign key constraint failed")

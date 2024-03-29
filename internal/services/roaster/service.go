@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/rs/zerolog"
@@ -79,6 +80,13 @@ func New(repo repository.RoasterRepository) *RoasterService {
 }
 
 func (s *RoasterService) CreateRoasterByName(ctx context.Context, name string) (*Roaster, error) {
+	if name == "" {
+		err := errors.ErrRoasterNameIsEmpty
+		msg := "could not create roaster"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	roaster := sql.Roaster{Name: name}
 
 	err := s.repository.CreateRoaster(ctx, &roaster)
@@ -120,6 +128,13 @@ func (s *RoasterService) GetAllRoasters(ctx context.Context) ([]Roaster, error) 
 }
 
 func (s *RoasterService) UpdateRoasterById(ctx context.Context, id int, roaster *Roaster) (*Roaster, error) {
+	if roaster.Name == "" {
+		err := errors.ErrRoasterNameIsEmpty
+		msg := "could not update roaster"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	roaster.Id = id
 	sqlRoaster := RoasterToSQL(roaster)
 
