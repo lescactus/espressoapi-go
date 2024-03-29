@@ -127,7 +127,20 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 201
 
-- name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists
+- name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists - empty name
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans name must not be empty"
+
+- name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists - non empty name
   steps:
   - type: http
     method: POST
@@ -155,10 +168,10 @@ testcases:
   steps:
   - type: http
     method: GET
-    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     assertions:
     - result.statuscode ShouldEqual 200
-    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
@@ -172,7 +185,7 @@ testcases:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.__type__ ShouldEqual Array
     - result.bodyjson ShouldNotBeEmpty
-    - result.bodyjson.bodyjson0.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    - result.bodyjson.bodyjson0.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     - result.bodyjson.bodyjson0 ShouldContainKey "name"
     - result.bodyjson.bodyjson0 ShouldContainKey "created_at"
     - result.bodyjson.bodyjson0 ShouldContainKey "updated_at"
@@ -194,7 +207,7 @@ testcases:
   steps:
   - type: http
     method: PUT
-    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     headers:
       Content-Type: application/json
     body: |
@@ -203,18 +216,31 @@ testcases:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no roaster found for given id"
 
-- name: PUT /rest/v1/beans/:id
+- name: PUT /rest/v1/beans/:id - empty name
   steps:
   - type: http
     method: PUT
-    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans name must not be empty"
+
+- name: PUT /rest/v1/beans/:id - non empty name
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     headers:
       Content-Type: application/json
     body: |
       {"name": "beans01-updated", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
     assertions:
     - result.statuscode ShouldEqual 200
-    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
@@ -242,8 +268,8 @@ testcases:
   steps:
   - type: http
     method: DELETE
-    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     assertions:
     - result.statuscode ShouldEqual 200
-    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }}"
-    - result.bodyjson.msg ShouldEqual "beans {{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists.result.bodyjson.id }} deleted successfully"
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    - result.bodyjson.msg ShouldEqual "beans {{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }} deleted successfully"

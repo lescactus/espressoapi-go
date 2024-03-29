@@ -32,6 +32,8 @@ type Roaster struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
+// SQLToRoaster converts a *sql.Roaster object to a *Roaster object.
+// If the input roaster is nil, it returns nil.
 func SQLToRoaster(roaster *sql.Roaster) *Roaster {
 	if roaster == nil {
 		return nil
@@ -46,6 +48,8 @@ func SQLToRoaster(roaster *sql.Roaster) *Roaster {
 	return s
 }
 
+// RoasterToSQL converts a Roaster object to its corresponding SQL representation.
+// If the input roaster is nil, it returns nil.
 func RoasterToSQL(roaster *Roaster) *sql.Roaster {
 	if roaster == nil {
 		return nil

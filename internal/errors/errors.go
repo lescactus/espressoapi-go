@@ -13,6 +13,8 @@ var (
 
 	ErrBeansDoesNotExist         = errors.New("beans does not exists")
 	ErrBeansForeignKeyConstraint = errors.New("beans foreign key constraint failed")
+	ErrBeansIsNil                = errors.New("beans is nil")
+	ErrBeansNameIsEmpty          = errors.New("beans name is empty")
 
 	ErrShotDoesNotExist         = errors.New("shot does not exists")
 	ErrShotRatingOutOfRange     = errors.New("shot rating is out of range. Must be between 0.0 and 10.0")

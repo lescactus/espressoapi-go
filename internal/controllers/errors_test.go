@@ -133,6 +133,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:           "errors.ErrBeansNameIsEmpty error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansNameIsEmpty},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "beans name must not be empty"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "json.SyntaxError error",
 			args:           args{w: httptest.NewRecorder(), err: &json.SyntaxError{}},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "request body contains badly-formed json (at position 0)"},

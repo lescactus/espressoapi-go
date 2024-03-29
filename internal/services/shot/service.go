@@ -41,6 +41,10 @@ type Shot struct {
 	UpdatedAt                     *time.Time                            `json:"updated_at"`
 }
 
+// SQLToShot converts a SQLShot object to a Shot object.
+// If the input SQLShot is nil, it returns nil.
+// Otherwise, it creates a new Shot object and populates its fields with the corresponding values from the SQLShot.
+// The converted Shot object is then returned.
 func SQLToShot(shot *sqlshot.Shot) *Shot {
 	if shot == nil {
 		return nil
@@ -67,6 +71,8 @@ func SQLToShot(shot *sqlshot.Shot) *Shot {
 	return s
 }
 
+// ShotToSQL converts a Shot object to its corresponding SQL representation.
+// If the input Shot is nil, it returns nil.
 func ShotToSQL(shot *Shot) *sqlshot.Shot {
 	if shot == nil {
 		return nil

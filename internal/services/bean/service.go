@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
@@ -27,6 +28,8 @@ type Bean struct {
 	UpdatedAt  *time.Time       `json:"updated_at"`
 }
 
+// SQLToBean converts a sql.Beans object to a Bean object.
+// If the input bean is nil, it returns nil.
 func SQLToBean(bean *sql.Beans) *Bean {
 	if bean == nil {
 		return nil
@@ -45,6 +48,8 @@ func SQLToBean(bean *sql.Beans) *Bean {
 	return b
 }
 
+// BeanToSQL converts a Bean object to a SQL.Beans object.
+// If the input Bean is nil, it returns nil.
 func BeanToSQL(bean *Bean) *sql.Beans {
 	if bean == nil {
 		return nil
@@ -83,6 +88,20 @@ func New(repo repository.BeansRepository) *BeanService {
 }
 
 func (b *BeanService) CreateBean(ctx context.Context, bean *Bean) (*Bean, error) {
+	if bean == nil {
+		err := errors.ErrBeansIsNil
+		msg := "could not create beans"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	if bean.Name == "" {
+		err := errors.ErrBeansNameIsEmpty
+		msg := "could not create beans"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	id, err := b.repository.CreateBeans(ctx, BeanToSQL(bean))
 	if err != nil {
 		msg := "could not create bean"
@@ -128,6 +147,20 @@ func (b *BeanService) GetAllBeans(ctx context.Context) ([]Bean, error) {
 }
 
 func (b *BeanService) UpdateBeanById(ctx context.Context, id int, bean *Bean) (*Bean, error) {
+	if bean == nil {
+		err := errors.ErrBeansIsNil
+		msg := "could not update beans by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	if bean.Name == "" {
+		err := errors.ErrBeansNameIsEmpty
+		msg := "could not update beans by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	bean.Id = id
 	sqlBean := BeanToSQL(bean)
 

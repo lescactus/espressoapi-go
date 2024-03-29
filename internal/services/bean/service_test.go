@@ -135,6 +135,20 @@ func TestBeanServiceCreateBean(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:    "Bean is nil",
+			fields:  fields{&MockBeanRepository{}},
+			args:    args{context.TODO(), nil},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Name is empty",
+			fields:  fields{&MockBeanRepository{}},
+			args:    args{context.TODO(), &Bean{Name: "", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}}},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name:    "No error",
 			fields:  fields{&MockBeanRepository{}},
 			args:    args{ctx: context.TODO(), bean: &Bean{Id: 1, Name: "bean01", Roaster: &roaster.Roaster{Id: 1, Name: "roaster01"}}},
@@ -294,6 +308,24 @@ func TestBeanServiceUpdateBeanById(t *testing.T) {
 		want    *Bean
 		wantErr bool
 	}{
+		{
+			name:    "Bean is nil",
+			fields:  fields{&MockBeanRepository{}},
+			args:    args{context.TODO(), 1, nil},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:   "Bean.Name is empty",
+			fields: fields{&MockBeanRepository{}},
+			args: args{
+				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:   1,
+				bean: &Bean{Id: 1, Name: ""},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 		{
 			name:   "Bean.Id matching id - No error",
 			fields: fields{&MockBeanRepository{}},

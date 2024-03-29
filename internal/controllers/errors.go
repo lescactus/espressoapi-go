@@ -108,6 +108,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrShotForeignKeyConstraint):
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domainerrors.ErrShotForeignKeyConstraint)}
 
+			// Catch if the beans name is empty
+		case errors.Is(err, domainerrors.ErrBeansNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "beans name must not be empty"}
+
 		// Catch any syntax errors
 		case errors.As(err, &syntaxError):
 			msg := fmt.Sprintf("request body contains badly-formed json (at position %d)", syntaxError.Offset)
