@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/rs/zerolog"
@@ -32,7 +33,14 @@ type Sheet struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
+// SQLToSheet converts a sql.Sheet object to a Sheet object.
+// If the input sheet is nil, it returns nil.
 func SQLToSheet(sheet *sql.Sheet) *Sheet {
+	if sheet == nil {
+		return nil
+
+	}
+
 	s := new(Sheet)
 	s.Id = sheet.Id
 	s.Name = sheet.Name
@@ -42,7 +50,14 @@ func SQLToSheet(sheet *sql.Sheet) *Sheet {
 	return s
 }
 
+// SheetToSQL converts a Sheet object to a SQL Sheet object.
+// If the input sheet is nil, it returns nil.
 func SheetToSQL(sheet *Sheet) *sql.Sheet {
+	if sheet == nil {
+		return nil
+
+	}
+
 	sqlSheet := new(sql.Sheet)
 
 	sqlSheet.Id = sheet.Id
@@ -73,6 +88,13 @@ func New(repo repository.SheetRepository) *SheetService {
 }
 
 func (s *SheetService) CreateSheetByName(ctx context.Context, name string) (*Sheet, error) {
+	if name == "" {
+		err := errors.ErrSheetNameIsEmpty
+		msg := "could not create sheet"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	sheet := sql.Sheet{Name: name}
 
 	err := s.repository.CreateSheet(ctx, &sheet)
@@ -114,6 +136,13 @@ func (s *SheetService) GetAllSheets(ctx context.Context) ([]Sheet, error) {
 }
 
 func (s *SheetService) UpdateSheetById(ctx context.Context, id int, sheet *Sheet) (*Sheet, error) {
+	if sheet.Name == "" {
+		err := errors.ErrSheetNameIsEmpty
+		msg := "could not update sheet by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
 	sheet.Id = id
 	sqlSheet := SheetToSQL(sheet)
 

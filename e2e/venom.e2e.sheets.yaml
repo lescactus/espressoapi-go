@@ -102,7 +102,20 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "request body contains unknown field "unknownfield""
 
-- name: POST /rest/v1/sheets - with body - with correct Content-Type header - correct json
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - correct json - empty name
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": ""}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "sheet name must not be empty"
+
+- name: POST /rest/v1/sheets - with body - with correct Content-Type header - correct json - non empty name
   steps:
   - type: http
     method: POST
@@ -178,7 +191,20 @@ testcases:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no sheet found for given id"
 
-- name: PUT /rest/v1/sheets/:id
+- name: PUT /rest/v1/sheets/:id - empty name
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/sheets/1"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": ""}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "sheet name must not be empty"
+
+- name: PUT /rest/v1/sheets/:id - non empty name
   steps:
   - type: http
     method: PUT

@@ -72,6 +72,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrSheetAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a sheet with the given name already exists"}
 
+			// Catch if the sheet name is empty
+		case errors.Is(err, domainerrors.ErrSheetNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "sheet name must not be empty"}
+
 		// Catch if the roaster does not exist
 		case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"}
@@ -79,6 +83,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		// Catch if the roaster already exists
 		case errors.Is(err, domainerrors.ErrRoasterAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"}
+
+		// Catch if the roaster name is empty
+		case errors.Is(err, domainerrors.ErrRoasterNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "roaster name must not be empty"}
 
 		// Catch if the beans does not exist
 		case errors.Is(err, domainerrors.ErrBeansDoesNotExist):
@@ -99,6 +107,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		// Catch if the shot foreign key constraint failed
 		case errors.Is(err, domainerrors.ErrShotForeignKeyConstraint):
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domainerrors.ErrShotForeignKeyConstraint)}
+
+			// Catch if the beans name is empty
+		case errors.Is(err, domainerrors.ErrBeansNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "beans name must not be empty"}
 
 		// Catch any syntax errors
 		case errors.As(err, &syntaxError):

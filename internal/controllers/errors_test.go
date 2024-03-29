@@ -79,6 +79,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusConflict,
 		},
 		{
+			name:           "errors.ErrSheetNameIsEmpty error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrSheetNameIsEmpty},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "sheet name must not be empty"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "errors.ErrRoasterDoesNotExist error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterDoesNotExist},
 			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"},
@@ -89,6 +95,12 @@ func TestSetErrorResponse(t *testing.T) {
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterAlreadyExists},
 			want:           &ErrorResponse{status: http.StatusConflict, Msg: "a roaster with the given name already exists"},
 			wantStatusCode: http.StatusConflict,
+		},
+		{
+			name:           "errors.ErrRoasterNameIsEmpty error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterNameIsEmpty},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "roaster name must not be empty"},
+			wantStatusCode: http.StatusBadRequest,
 		},
 		{
 			name:           "errors.ErrBeansDoesNotExist error",
@@ -118,6 +130,12 @@ func TestSetErrorResponse(t *testing.T) {
 			name:           "errors.ErrShotForeignKeyConstraint error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotForeignKeyConstraint},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domerrors.ErrShotForeignKeyConstraint)},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:           "errors.ErrBeansNameIsEmpty error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansNameIsEmpty},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "beans name must not be empty"},
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
