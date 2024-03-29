@@ -197,6 +197,13 @@ func TestSheetCreateSheetByName(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:    "Name is empty",
+			fields:  fields{&MockSheetRepository{}},
+			args:    args{ctx: context.TODO(), name: ""},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name:    "Unique sheet",
 			fields:  fields{&MockSheetRepository{}},
 			args:    args{ctx: context.TODO(), name: "sheet01"},
@@ -349,6 +356,17 @@ func TestSheetUpdateSheetById(t *testing.T) {
 		want    *Sheet
 		wantErr bool
 	}{
+		{
+			name:   "Sheet.Name is empty",
+			fields: fields{&MockSheetRepository{}},
+			args: args{
+				ctx:   context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:    1,
+				sheet: &Sheet{Id: 1, Name: ""},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 		{
 			name:   "Sheet.Id matching id - No error",
 			fields: fields{&MockSheetRepository{}},

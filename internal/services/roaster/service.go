@@ -130,7 +130,7 @@ func (s *RoasterService) GetAllRoasters(ctx context.Context) ([]Roaster, error) 
 func (s *RoasterService) UpdateRoasterById(ctx context.Context, id int, roaster *Roaster) (*Roaster, error) {
 	if roaster.Name == "" {
 		err := errors.ErrRoasterNameIsEmpty
-		msg := "could not update roaster"
+		msg := "could not update roaster by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}

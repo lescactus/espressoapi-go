@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrSheetAlreadyExists = errors.New("sheet already exists")
 	ErrSheetDoesNotExist  = errors.New("sheet does not exists")
+	ErrSheetNameIsEmpty   = errors.New("sheet name is empty")
 
 	ErrRoasterAlreadyExists = errors.New("roaster already exists")
 	ErrRoasterDoesNotExist  = errors.New("roaster does not exists")

@@ -72,6 +72,10 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrSheetAlreadyExists):
 			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "a sheet with the given name already exists"}
 
+			// Catch if the sheet name is empty
+		case errors.Is(err, domainerrors.ErrSheetNameIsEmpty):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "sheet name must not be empty"}
+
 		// Catch if the roaster does not exist
 		case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"}

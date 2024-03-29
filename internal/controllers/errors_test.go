@@ -79,6 +79,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusConflict,
 		},
 		{
+			name:           "errors.ErrSheetNameIsEmpty error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrSheetNameIsEmpty},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "sheet name must not be empty"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "errors.ErrRoasterDoesNotExist error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrRoasterDoesNotExist},
 			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no roaster found for given id"},
