@@ -33,7 +33,14 @@ type Sheet struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
+// SQLToSheet converts a sql.Sheet object to a Sheet object.
+// If the input sheet is nil, it returns nil.
 func SQLToSheet(sheet *sql.Sheet) *Sheet {
+	if sheet == nil {
+		return nil
+
+	}
+
 	s := new(Sheet)
 	s.Id = sheet.Id
 	s.Name = sheet.Name
@@ -43,7 +50,14 @@ func SQLToSheet(sheet *sql.Sheet) *Sheet {
 	return s
 }
 
+// SheetToSQL converts a Sheet object to a SQL Sheet object.
+// If the input sheet is nil, it returns nil.
 func SheetToSQL(sheet *Sheet) *sql.Sheet {
+	if sheet == nil {
+		return nil
+
+	}
+
 	sqlSheet := new(sql.Sheet)
 
 	sqlSheet.Id = sheet.Id

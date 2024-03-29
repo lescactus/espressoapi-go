@@ -535,46 +535,79 @@ func TestSheetServicePing(t *testing.T) {
 }
 
 func TestSQLToSheet(t *testing.T) {
-	t.Run("SQLToSheet", func(t *testing.T) {
-
-		want := &Sheet{
-			Id:        1,
-			Name:      "sheet01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		sheet := SQLToSheet(&sql.Sheet{
-			Id:        1,
-			Name:      "sheet01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
+	type args struct {
+		sheet *sql.Sheet
+	}
+	tests := []struct {
+		name string
+		args args
+		want *Sheet
+	}{
+		{
+			name: "Non nil",
+			args: args{&sql.Sheet{
+				Id:        1,
+				Name:      "sheet01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			}},
+			want: &Sheet{
+				Id:        1,
+				Name:      "sheet01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			},
+		},
+		{
+			name: "Nil",
+			args: args{nil},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SQLToSheet(tt.args.sheet); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SQLToSheet() = %v, want %v", got, tt.want)
+			}
 		})
-
-		if !reflect.DeepEqual(sheet, want) {
-			t.Errorf("SQLToSheet() = %v, want %v", sheet, want)
-		}
-	})
+	}
 }
 
 func TestSheetToSQL(t *testing.T) {
-	t.Run("SheetToSQL", func(t *testing.T) {
-		sheet := SheetToSQL(&Sheet{
-			Id:        1,
-			Name:      "sheet01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
+	type args struct {
+		sheet *Sheet
+	}
+	tests := []struct {
+		name string
+		args args
+		want *sql.Sheet
+	}{
+		{
+			name: "Non nil",
+			args: args{&Sheet{
+				Id:        1,
+				Name:      "sheet01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			}},
+			want: &sql.Sheet{
+				Id:        1,
+				Name:      "sheet01",
+				CreatedAt: &now,
+				UpdatedAt: &now,
+			},
+		},
+		{
+			name: "Nil",
+			args: args{nil},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SheetToSQL(tt.args.sheet); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SheetToSQL() = %v, want %v", got, tt.want)
+			}
 		})
-
-		want := &sql.Sheet{
-			Id:        1,
-			Name:      "sheet01",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		if !reflect.DeepEqual(sheet, want) {
-			t.Errorf("SheetToSQL() = %v, want %v", sheet, want)
-		}
-	})
+	}
 }
