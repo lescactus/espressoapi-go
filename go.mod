@@ -5,7 +5,7 @@ go 1.21.5
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-openapi/runtime v0.28.0
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/julienschmidt/httprouter v1.3.0
