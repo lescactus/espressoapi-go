@@ -1,0 +1,16 @@
+<tr id="datarow-{{.Id}}">
+  <td>{{.Id}}</td>
+  <td>{{.Name}}</td>
+  <td>{{.CreatedAt}}</td>
+  <td>{{.UpdatedAt}}</td>
+  <td>
+    <a hx-get="/roasters/update/{{.Id}}" hx-target="#datarow-{{.Id}}" hx-swap="outerHTML" hx-indicator="#processing"
+      href="">
+      Edit
+    </a>
+  </td>
+  <td>
+    <a hx-delete="/roasters/delete/{{.Id}}" hx-target="#roasters"
+      hx-confirm="Are you sure you want to delete {{.Name}}?" hx-indicator="#processing" href="">Delete</a>
+  </td>
+</tr>

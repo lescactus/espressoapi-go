@@ -22,9 +22,10 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(migrationFs *embed.FS, swaggerFs fs.FS) {
+func Execute(migrationFs *embed.FS, swaggerFs fs.FS, templatesFs *embed.FS) {
 	app.App.MigrationsFS = migrationFs
 	app.App.SwaggerFS = swaggerFs
+	app.App.TemplatesFS = templatesFs
 
 	err := rootCmd.Execute()
 	if err != nil {

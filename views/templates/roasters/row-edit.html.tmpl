@@ -1,0 +1,14 @@
+<tr id="datarow-{{.Id}}">
+    <td>{{.Id}}</td>
+    <td>
+        <input type="text" data-include-edit="{{.Id}}" name="name" value="{{.Name}}" />
+    </td>
+    <td class="whitespace-nowrap px-1 py-1">
+        <a hx-put="/roasters/update/{{.Id}}" hx-target="#datarow-{{.Id}}" hx-swap="outerHTML" hx-indicator="#processing"
+            hx-include="input[data-include-edit='{{.Id}}']" href="">Save</a>
+    </td>
+    <td class="whitespace-nowrap px-1 py-1">
+        <a hx-get="/roasters/get/{{.Id}}" hx-target="#datarow-{{.Id}}" hx-swap="outerHTML" hx-indicator="#processing"
+            href="">Cancel</a>
+    </td>
+</tr>

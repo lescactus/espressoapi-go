@@ -12,6 +12,9 @@ var dbMigrations embed.FS
 //go:embed docs/swagger.json
 var swagger embed.FS
 
+//go:embed views/templates/*.tmpl views/templates/**/*.tmpl
+var templatesFS embed.FS
+
 func main() {
-	cmd.Execute(&dbMigrations, swagger)
+	cmd.Execute(&dbMigrations, swagger, &templatesFS)
 }

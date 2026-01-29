@@ -1,0 +1,6 @@
+<tbody id="table-body">
+    {{ template "row-add.html.tmpl" . }}
+    {{range .Roasters}}
+    {{ template "row.html.tmpl". }}
+    {{end}}
+</tbody>

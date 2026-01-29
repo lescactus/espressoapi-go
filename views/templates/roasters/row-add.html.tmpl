@@ -1,0 +1,16 @@
+<tr id="datarow-add">
+    <td></td>
+    <td>
+        <input type="text" data-include-add="" name="name" value="" />
+        {{ if .IsError }}
+        <span style="color:red">{{ .Error }}</span>
+        {{ end }}
+    </td>
+    <td>
+        <a hx-post="/roasters" hx-target="#roasters" hx-indicator="#processing" hx-include="input[data-include-add]"
+            href="">Save</a>
+    </td>
+    <td>
+        <a hx-get="/roasters" hx-target="#roasters" hx-indicator="#processing" href="">Cancel</a>
+    </td>
+</tr>

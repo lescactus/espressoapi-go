@@ -1,0 +1,31 @@
+<div id="roasters">
+  <div id="processing" class="htmx-indicator">Processing...</div>
+  {{ if .IsError }}
+  <span style="color:red">{{ .Error }}</span>
+  {{ end }}
+  <div>
+    <div>
+      <button hx-get="/roasters/add" hx-target="#table-body" hx-swap="outerHTML" hx-indicator="#processing" href="">
+        Add
+      </button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Id</th>
+          <th scope="col">Name</th>
+          <th scope="col">Created at</th>
+          <th scope="col">Updated at</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        {{ if .IsRoasterAdd }}
+        {{ template "row-add.html.tmpl" . }}
+        {{ end }}
+        {{range .Roasters}}
+        {{ template "row.html.tmpl". }}
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>

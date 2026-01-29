@@ -15,6 +15,7 @@ type Application struct {
 	Logger       *zerolog.Logger
 	MigrationsFS *embed.FS
 	SwaggerFS    fs.FS
+	TemplatesFS  *embed.FS
 }
 
 var App *Application
