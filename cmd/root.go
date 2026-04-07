@@ -37,6 +37,7 @@ func init() {
 
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(migrateCmd)
+	rootCmd.AddCommand(healthCmd)
 
 	cobra.OnInitialize(initConfig)
 }

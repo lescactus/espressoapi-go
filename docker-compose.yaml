@@ -1,8 +1,6 @@
-version: '3.1'
-
 services:
   api:
-    restart: always
+    restart: unless-stopped
     build:
       context: .
     ports:
@@ -13,6 +11,11 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/main", "healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql:
     image: mysql:8

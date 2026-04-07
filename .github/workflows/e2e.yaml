@@ -38,7 +38,10 @@ jobs:
         venom version
 
     - name: Docker compose up
-      run: docker compose up -d --wait
+      run: |
+        docker compose build --pull
+        docker compose up -d --wait mysql
+        docker compose up -d --wait --no-recreate
 
     - name: Debug when failure happened
       if: ${{ failure() }}
