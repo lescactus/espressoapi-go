@@ -41,16 +41,21 @@ type BeansResponse struct {
 }
 
 func logBeansFromRequest(r *http.Request, beans *bean.Bean, msg string) {
-	hlog.FromRequest(r).Debug().Dict("beans", zerolog.Dict().
+	beansLog := zerolog.Dict().
 		Int("id", beans.Id).
 		Str("name", beans.Name).
 		Dict("roaster", zerolog.Dict().
 			Int("id", beans.Roaster.Id).
 			Str("name", beans.Roaster.Name),
 		).
-		Time("roast_date", *beans.RoastDate).
 		Uint8("roast_level", uint8(beans.RoastLevel)).
-		Time("created_at", *beans.CreatedAt)).
+		Time("created_at", *beans.CreatedAt)
+
+	if beans.RoastDate != nil {
+		beansLog.Time("roast_date", *beans.RoastDate)
+	}
+
+	hlog.FromRequest(r).Debug().Dict("beans", beansLog).
 		Msg(msg)
 }
 
