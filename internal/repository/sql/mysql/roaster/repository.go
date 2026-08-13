@@ -84,7 +84,7 @@ func (db *Roaster) UpdateRoasterById(ctx context.Context, id int, roaster *sql.R
 	// CreatedAt should be immutable
 	res, err := db.db.ExecContext(ctx, `UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?`, roaster.Name, roaster.UpdatedAt, roaster.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update record for roaster id=%d: %w", id, err)
+		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to update record for roaster id=%d: %w", id, err))
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {

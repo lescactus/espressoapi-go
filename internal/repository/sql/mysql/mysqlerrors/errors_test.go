@@ -1,10 +1,12 @@
 package mysqlerrors
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 )
 
 func TestTtt(t *testing.T) {
@@ -115,6 +117,7 @@ func TestParseMySQLError(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
+		want    error
 	}{
 		{
 			name:    "Error is nil",
@@ -135,6 +138,7 @@ func TestParseMySQLError(t *testing.T) {
 			name:    "Error is MySQLError 1062 - non nil entity",
 			args:    args{err: &mysql.MySQLError{Number: 1062}, entity: &EntitySheet, fallback: nil},
 			wantErr: true,
+			want:    domainerrors.ErrSheetAlreadyExists,
 		},
 		{
 			name:    "Error is MySQLError 1451 - nil entity - nil fallback",
@@ -169,8 +173,12 @@ func TestParseMySQLError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ParseMySQLError(tt.args.err, tt.args.entity, tt.args.fallback); (err != nil) != tt.wantErr {
+			err := ParseMySQLError(tt.args.err, tt.args.entity, tt.args.fallback)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseMySQLError() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.want != nil && !errors.Is(err, tt.want) {
+				t.Errorf("ParseMySQLError() error = %v, want %v", err, tt.want)
 			}
 		})
 	}

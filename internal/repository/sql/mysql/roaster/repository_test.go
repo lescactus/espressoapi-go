@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
@@ -362,6 +364,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 		mockClosure func(mock sqlmock.Sqlmock)
 		want        *sql.Roaster
 		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Roaster.Id matching id - No error",
@@ -371,6 +374,16 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			},
 			want:    &sql.Roaster{Id: 1, Name: "roasternewname"},
 			wantErr: false,
+		},
+		{
+			name: "Duplicate roaster name",
+			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasteralreadyexists"}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasteralreadyexists", AnyTime{}, 1).WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:        nil,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrRoasterAlreadyExists,
 		},
 		{
 			name: "Roaster.Id matching id - Error",
@@ -429,6 +442,9 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Roaster.Roaster() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Roaster.UpdateRoasterById() error = %v, want %v", err, tt.expectedErr)
 			}
 
 			isEqual := func(a, b *sql.Roaster) bool {

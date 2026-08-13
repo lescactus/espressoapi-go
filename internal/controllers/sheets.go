@@ -253,6 +253,7 @@ type UpdateSheetByIdRequest struct {
 //	  200: SheetResponse
 //	  400: ErrorResponse
 //	  404: ErrorResponse
+//	  409: ErrorResponse
 //	  413: ErrorResponse
 func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 	var sheetReq UpdateSheetByIdRequest

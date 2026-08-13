@@ -83,7 +83,7 @@ func (db *Sheet) UpdateSheetById(ctx context.Context, id int, sheet *sql.Sheet) 
 	// CreatedAt should be immutable
 	res, err := db.db.ExecContext(ctx, `UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?`, sheet.Name, sheet.UpdatedAt, sheet.Id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update record for sheet id=%d: %w", id, err)
+		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntitySheet, fmt.Errorf("failed to update record for sheet id=%d: %w", id, err))
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {
