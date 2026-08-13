@@ -252,6 +252,7 @@ type UpdateRoasterByIdRequest struct {
 //	  200: RoasterResponse
 //	  400: ErrorResponse
 //	  404: ErrorResponse
+//	  409: ErrorResponse
 //	  413: ErrorResponse
 func (h *Handler) UpdateRoasterById(w http.ResponseWriter, r *http.Request) {
 	var roasterReq UpdateRoasterByIdRequest

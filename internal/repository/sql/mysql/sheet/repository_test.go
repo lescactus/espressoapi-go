@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
@@ -362,6 +364,7 @@ func TestSheetUpdateSheetById(t *testing.T) {
 		mockClosure func(mock sqlmock.Sqlmock)
 		want        *sql.Sheet
 		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Sheet.Id matching id - No error",
@@ -371,6 +374,16 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			},
 			want:    &sql.Sheet{Id: 1, Name: "sheetnewname"},
 			wantErr: false,
+		},
+		{
+			name: "Duplicate sheet name",
+			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 1, Name: "sheetalreadyexists"}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?").WithArgs("sheetalreadyexists", AnyTime{}, 1).WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:        nil,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrSheetAlreadyExists,
 		},
 		{
 			name: "Sheet.Id matching id - Error",
@@ -429,6 +442,9 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Sheet.UpdateSheetById() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Sheet.UpdateSheetById() error = %v, want %v", err, tt.expectedErr)
 			}
 
 			isEqual := func(a, b *sql.Sheet) bool {
