@@ -8,23 +8,31 @@ import (
 )
 
 func TestPing(t *testing.T) {
-	t.Run("healthy", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		service.ping = func(context.Context) error { return nil }
-		req := newControllerRequest(t, http.MethodGet, "/ping", "", "", "")
+	tests := []struct {
+		name     string
+		pingErr  error
+		status   int
+		expected any
+	}{
+		{
+			name: "healthy", status: http.StatusOK,
+			expected: PingResponse{Ping: "pong"},
+		},
+		{
+			name: "unhealthy", pingErr: errors.New("database unavailable"), status: http.StatusInternalServerError,
+			expected: ErrorResponse{Msg: "unhealthy database"},
+		},
+	}
 
-		recorder := executeHandler(handler.Ping, req)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, service, _, _, _ := newTestHandler(t)
+			service.ping = func(context.Context) error { return tt.pingErr }
+			req := newControllerRequest(t, http.MethodGet, "/ping", "", "", "")
 
-		assertJSONResponse(t, recorder, http.StatusOK, PingResponse{Ping: "pong"})
-	})
+			recorder := executeHandler(handler.Ping, req)
 
-	t.Run("unhealthy", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		service.ping = func(context.Context) error { return errors.New("database unavailable") }
-		req := newControllerRequest(t, http.MethodGet, "/ping", "", "", "")
-
-		recorder := executeHandler(handler.Ping, req)
-
-		assertJSONResponse(t, recorder, http.StatusInternalServerError, ErrorResponse{Msg: "unhealthy database"})
-	})
+			assertJSONResponse(t, recorder, tt.status, tt.expected)
+		})
+	}
 }

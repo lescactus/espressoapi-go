@@ -14,84 +14,95 @@ import (
 
 func TestBeanHandlersHappyPaths(t *testing.T) {
 	expectedRoastDate := time.Date(2026, time.February, 18, 0, 0, 0, 0, time.UTC)
+	created := testBean(1, "espresso blend")
+	found := testBean(7, "found beans")
+	first := testBean(1, "first")
+	second := testBean(2, "second")
+	updated := testBean(9, "updated beans")
+	tests := []struct {
+		name      string
+		method    string
+		target    string
+		body      string
+		id        string
+		status    int
+		expected  any
+		configure func(*testing.T, *fakeBeanService)
+		handler   controllerHandler
+	}{
+		{
+			name: "create", method: http.MethodPost, target: "/rest/v1/beans", body: `{"name":"espresso blend","roaster_id":6,"roast_date":"2026-02-18","roast_level":2}`,
+			status: http.StatusCreated, expected: BeansResponse{*created}, handler: (*Handler).CreateBeans,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.createBean = func(_ context.Context, value *bean.Bean) (*bean.Bean, error) {
+					assertBeanRequest(t, value, 0, "espresso blend", 6, expectedRoastDate, modelsql.RoastLevelMedium)
+					return created, nil
+				}
+			},
+		},
+		{
+			name: "get by id", method: http.MethodGet, target: "/rest/v1/beans/7", id: "7",
+			status: http.StatusOK, expected: BeansResponse{*found}, handler: (*Handler).GetBeansById,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.getBeanByID = func(_ context.Context, id int) (*bean.Bean, error) {
+					if id != found.Id {
+						t.Errorf("id = %d, want %d", id, found.Id)
+					}
+					return found, nil
+				}
+			},
+		},
+		{
+			name: "get all", method: http.MethodGet, target: "/rest/v1/beans",
+			status: http.StatusOK, expected: []BeansResponse{{*first}, {*second}}, handler: (*Handler).GetAllBeans,
+			configure: func(_ *testing.T, service *fakeBeanService) {
+				service.getAllBeans = func(context.Context) ([]bean.Bean, error) {
+					return []bean.Bean{*first, *second}, nil
+				}
+			},
+		},
+		{
+			name: "update", method: http.MethodPut, target: "/rest/v1/beans/9", body: `{"name":"updated beans","roaster_id":6,"roast_date":"2026-02-18","roast_level":2}`, id: "9",
+			status: http.StatusOK, expected: BeansResponse{*updated}, handler: (*Handler).UpdateBeanById,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.updateBeanByID = func(_ context.Context, id int, value *bean.Bean) (*bean.Bean, error) {
+					if id != 9 {
+						t.Errorf("id = %d, want 9", id)
+					}
+					assertBeanRequest(t, value, 9, "updated beans", 6, expectedRoastDate, modelsql.RoastLevelMedium)
+					return updated, nil
+				}
+			},
+		},
+		{
+			name: "delete", method: http.MethodDelete, target: "/rest/v1/beans/11", id: "11",
+			status: http.StatusOK, expected: ItemDeletedResponse{Id: 11, Msg: "beans 11 deleted successfully"}, handler: (*Handler).DeleteBeansById,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.deleteBeanByID = func(_ context.Context, id int) error {
+					if id != 11 {
+						t.Errorf("id = %d, want 11", id)
+					}
+					return nil
+				}
+			},
+		},
+	}
 
-	t.Run("create", func(t *testing.T) {
-		handler, _, _, service, _ := newTestHandler(t)
-		created := testBean(1, "espresso blend")
-		service.createBean = func(_ context.Context, value *bean.Bean) (*bean.Bean, error) {
-			assertBeanRequest(t, value, 0, "espresso blend", 6, expectedRoastDate, modelsql.RoastLevelMedium)
-			return created, nil
-		}
-		body := `{"name":"espresso blend","roaster_id":6,"roast_date":"2026-02-18","roast_level":2}`
-		req := newControllerRequest(t, http.MethodPost, "/rest/v1/beans", body, ContentTypeApplicationJSON, "")
-
-		recorder := executeHandler(handler.CreateBeans, req)
-
-		assertJSONResponse(t, recorder, http.StatusCreated, BeansResponse{*created})
-	})
-
-	t.Run("get by id", func(t *testing.T) {
-		handler, _, _, service, _ := newTestHandler(t)
-		found := testBean(7, "found beans")
-		service.getBeanByID = func(_ context.Context, id int) (*bean.Bean, error) {
-			if id != found.Id {
-				t.Errorf("id = %d, want %d", id, found.Id)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, _, _, service, _ := newTestHandler(t)
+			tt.configure(t, service)
+			contentType := ""
+			if tt.body != "" {
+				contentType = ContentTypeApplicationJSON
 			}
-			return found, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/beans/7", "", "", "7")
+			req := newControllerRequest(t, tt.method, tt.target, tt.body, contentType, tt.id)
 
-		recorder := executeHandler(handler.GetBeansById, req)
+			recorder := executeControllerHandler(handler, tt.handler, req)
 
-		assertJSONResponse(t, recorder, http.StatusOK, BeansResponse{*found})
-	})
-
-	t.Run("get all", func(t *testing.T) {
-		handler, _, _, service, _ := newTestHandler(t)
-		first := testBean(1, "first")
-		second := testBean(2, "second")
-		service.getAllBeans = func(context.Context) ([]bean.Bean, error) {
-			return []bean.Bean{*first, *second}, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/beans", "", "", "")
-
-		recorder := executeHandler(handler.GetAllBeans, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, []BeansResponse{{*first}, {*second}})
-	})
-
-	t.Run("update", func(t *testing.T) {
-		handler, _, _, service, _ := newTestHandler(t)
-		updated := testBean(9, "updated beans")
-		service.updateBeanByID = func(_ context.Context, id int, value *bean.Bean) (*bean.Bean, error) {
-			if id != 9 {
-				t.Errorf("id = %d, want 9", id)
-			}
-			assertBeanRequest(t, value, 9, "updated beans", 6, expectedRoastDate, modelsql.RoastLevelMedium)
-			return updated, nil
-		}
-		body := `{"name":"updated beans","roaster_id":6,"roast_date":"2026-02-18","roast_level":2}`
-		req := newControllerRequest(t, http.MethodPut, "/rest/v1/beans/9", body, ContentTypeApplicationJSON, "9")
-
-		recorder := executeHandler(handler.UpdateBeanById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, BeansResponse{*updated})
-	})
-
-	t.Run("delete", func(t *testing.T) {
-		handler, _, _, service, _ := newTestHandler(t)
-		service.deleteBeanByID = func(_ context.Context, id int) error {
-			if id != 11 {
-				t.Errorf("id = %d, want 11", id)
-			}
-			return nil
-		}
-		req := newControllerRequest(t, http.MethodDelete, "/rest/v1/beans/11", "", "", "11")
-
-		recorder := executeHandler(handler.DeleteBeansById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, ItemDeletedResponse{Id: 11, Msg: "beans 11 deleted successfully"})
-	})
+			assertJSONResponse(t, recorder, tt.status, tt.expected)
+		})
+	}
 }
 
 func TestBeanHandlersErrorPaths(t *testing.T) {

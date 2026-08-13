@@ -29,81 +29,95 @@ const validShotRequestBody = `{
 }`
 
 func TestShotHandlersHappyPaths(t *testing.T) {
-	t.Run("create", func(t *testing.T) {
-		handler, _, _, _, service := newTestHandler(t)
-		created := testShot(1)
-		service.createShot = func(_ context.Context, value *shot.Shot) (*shot.Shot, error) {
-			assertShotRequest(t, value, 0)
-			return created, nil
-		}
-		req := newControllerRequest(t, http.MethodPost, "/rest/v1/shots", validShotRequestBody, ContentTypeApplicationJSON, "")
+	created := testShot(1)
+	found := testShot(7)
+	first := testShot(1)
+	second := testShot(2)
+	updated := testShot(9)
+	tests := []struct {
+		name      string
+		method    string
+		target    string
+		body      string
+		id        string
+		status    int
+		expected  any
+		configure func(*testing.T, *fakeShotService)
+		handler   controllerHandler
+	}{
+		{
+			name: "create", method: http.MethodPost, target: "/rest/v1/shots", body: validShotRequestBody,
+			status: http.StatusCreated, expected: ShotResponse{*created}, handler: (*Handler).CreateShot,
+			configure: func(t *testing.T, service *fakeShotService) {
+				service.createShot = func(_ context.Context, value *shot.Shot) (*shot.Shot, error) {
+					assertShotRequest(t, value, 0)
+					return created, nil
+				}
+			},
+		},
+		{
+			name: "get by id", method: http.MethodGet, target: "/rest/v1/shots/7", id: "7",
+			status: http.StatusOK, expected: ShotResponse{*found}, handler: (*Handler).GetShotById,
+			configure: func(t *testing.T, service *fakeShotService) {
+				service.getShotByID = func(_ context.Context, id int) (*shot.Shot, error) {
+					if id != found.Id {
+						t.Errorf("id = %d, want %d", id, found.Id)
+					}
+					return found, nil
+				}
+			},
+		},
+		{
+			name: "get all", method: http.MethodGet, target: "/rest/v1/shots",
+			status: http.StatusOK, expected: []ShotResponse{{*first}, {*second}}, handler: (*Handler).GetAllShots,
+			configure: func(_ *testing.T, service *fakeShotService) {
+				service.getAllShots = func(context.Context) ([]shot.Shot, error) {
+					return []shot.Shot{*first, *second}, nil
+				}
+			},
+		},
+		{
+			name: "update", method: http.MethodPut, target: "/rest/v1/shots/9", body: validShotRequestBody, id: "9",
+			status: http.StatusOK, expected: ShotResponse{*updated}, handler: (*Handler).UpdateShotById,
+			configure: func(t *testing.T, service *fakeShotService) {
+				service.updateShotByID = func(_ context.Context, id int, value *shot.Shot) (*shot.Shot, error) {
+					if id != 9 {
+						t.Errorf("id = %d, want 9", id)
+					}
+					assertShotRequest(t, value, 9)
+					return updated, nil
+				}
+			},
+		},
+		{
+			name: "delete", method: http.MethodDelete, target: "/rest/v1/shots/11", id: "11",
+			status: http.StatusOK, expected: ItemDeletedResponse{Id: 11, Msg: "shot 11 deleted successfully"}, handler: (*Handler).DeleteShotById,
+			configure: func(t *testing.T, service *fakeShotService) {
+				service.deleteShotByID = func(_ context.Context, id int) error {
+					if id != 11 {
+						t.Errorf("id = %d, want 11", id)
+					}
+					return nil
+				}
+			},
+		},
+	}
 
-		recorder := executeHandler(handler.CreateShot, req)
-
-		assertJSONResponse(t, recorder, http.StatusCreated, ShotResponse{*created})
-	})
-
-	t.Run("get by id", func(t *testing.T) {
-		handler, _, _, _, service := newTestHandler(t)
-		found := testShot(7)
-		service.getShotByID = func(_ context.Context, id int) (*shot.Shot, error) {
-			if id != found.Id {
-				t.Errorf("id = %d, want %d", id, found.Id)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, _, _, _, service := newTestHandler(t)
+			tt.configure(t, service)
+			contentType := ""
+			if tt.body != "" {
+				contentType = ContentTypeApplicationJSON
 			}
-			return found, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/shots/7", "", "", "7")
+			req := newControllerRequest(t, tt.method, tt.target, tt.body, contentType, tt.id)
 
-		recorder := executeHandler(handler.GetShotById, req)
+			recorder := executeControllerHandler(handler, tt.handler, req)
 
-		assertJSONResponse(t, recorder, http.StatusOK, ShotResponse{*found})
-	})
-
-	t.Run("get all", func(t *testing.T) {
-		handler, _, _, _, service := newTestHandler(t)
-		first := testShot(1)
-		second := testShot(2)
-		service.getAllShots = func(context.Context) ([]shot.Shot, error) {
-			return []shot.Shot{*first, *second}, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/shots", "", "", "")
-
-		recorder := executeHandler(handler.GetAllShots, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, []ShotResponse{{*first}, {*second}})
-	})
-
-	t.Run("update", func(t *testing.T) {
-		handler, _, _, _, service := newTestHandler(t)
-		updated := testShot(9)
-		service.updateShotByID = func(_ context.Context, id int, value *shot.Shot) (*shot.Shot, error) {
-			if id != 9 {
-				t.Errorf("id = %d, want 9", id)
-			}
-			assertShotRequest(t, value, 9)
-			return updated, nil
-		}
-		req := newControllerRequest(t, http.MethodPut, "/rest/v1/shots/9", validShotRequestBody, ContentTypeApplicationJSON, "9")
-
-		recorder := executeHandler(handler.UpdateShotById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, ShotResponse{*updated})
-	})
-
-	t.Run("delete", func(t *testing.T) {
-		handler, _, _, _, service := newTestHandler(t)
-		service.deleteShotByID = func(_ context.Context, id int) error {
-			if id != 11 {
-				t.Errorf("id = %d, want 11", id)
-			}
-			return nil
-		}
-		req := newControllerRequest(t, http.MethodDelete, "/rest/v1/shots/11", "", "", "11")
-
-		recorder := executeHandler(handler.DeleteShotById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, ItemDeletedResponse{Id: 11, Msg: "shot 11 deleted successfully"})
-	})
+			assertJSONResponse(t, recorder, tt.status, tt.expected)
+		})
+	}
 }
 
 func TestShotHandlersErrorPaths(t *testing.T) {

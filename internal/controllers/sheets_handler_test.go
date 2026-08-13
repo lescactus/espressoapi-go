@@ -11,97 +11,108 @@ import (
 )
 
 func TestSheetHandlersHappyPaths(t *testing.T) {
-	t.Run("create", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		created := testSheet(1, "morning shots")
-		service.createSheetByName = func(_ context.Context, name string) (*sheet.Sheet, error) {
-			if name != created.Name {
-				t.Errorf("name = %q, want %q", name, created.Name)
+	created := testSheet(1, "morning shots")
+	found := testSheet(7, "dial in")
+	first := testSheet(1, "first")
+	second := testSheet(2, "second")
+	updated := testSheet(9, "updated")
+	tests := []struct {
+		name      string
+		method    string
+		target    string
+		body      string
+		id        string
+		status    int
+		expected  any
+		configure func(*testing.T, *fakeSheetService)
+		handler   controllerHandler
+	}{
+		{
+			name: "create", method: http.MethodPost, target: "/rest/v1/sheets", body: `{"name":"morning shots"}`,
+			status: http.StatusCreated, expected: SheetResponse{*created}, handler: (*Handler).CreateSheet,
+			configure: func(t *testing.T, service *fakeSheetService) {
+				service.createSheetByName = func(_ context.Context, name string) (*sheet.Sheet, error) {
+					if name != created.Name {
+						t.Errorf("name = %q, want %q", name, created.Name)
+					}
+					return created, nil
+				}
+			},
+		},
+		{
+			name: "get by id", method: http.MethodGet, target: "/rest/v1/sheets/7", id: "7",
+			status: http.StatusOK, expected: SheetResponse{*found}, handler: (*Handler).GetSheetById,
+			configure: func(t *testing.T, service *fakeSheetService) {
+				service.getSheetByID = func(_ context.Context, id int) (*sheet.Sheet, error) {
+					if id != found.Id {
+						t.Errorf("id = %d, want %d", id, found.Id)
+					}
+					return found, nil
+				}
+			},
+		},
+		{
+			name: "get all", method: http.MethodGet, target: "/rest/v1/sheets",
+			status: http.StatusOK, expected: []SheetResponse{{*first}, {*second}}, handler: (*Handler).GetAllSheets,
+			configure: func(_ *testing.T, service *fakeSheetService) {
+				service.getAllSheets = func(context.Context) ([]sheet.Sheet, error) {
+					return []sheet.Sheet{*first, *second}, nil
+				}
+			},
+		},
+		{
+			name: "get all empty", method: http.MethodGet, target: "/rest/v1/sheets",
+			status: http.StatusOK, expected: []SheetResponse{}, handler: (*Handler).GetAllSheets,
+			configure: func(_ *testing.T, service *fakeSheetService) {
+				service.getAllSheets = func(context.Context) ([]sheet.Sheet, error) {
+					return []sheet.Sheet{}, nil
+				}
+			},
+		},
+		{
+			name: "update", method: http.MethodPut, target: "/rest/v1/sheets/9", body: `{"name":"updated"}`, id: "9",
+			status: http.StatusOK, expected: SheetResponse{*updated}, handler: (*Handler).UpdateSheetById,
+			configure: func(t *testing.T, service *fakeSheetService) {
+				service.updateSheetByID = func(_ context.Context, id int, value *sheet.Sheet) (*sheet.Sheet, error) {
+					if id != updated.Id {
+						t.Errorf("id = %d, want %d", id, updated.Id)
+					}
+					if value.Id != updated.Id || value.Name != updated.Name {
+						t.Errorf("sheet = %#v, want id %d and name %q", value, updated.Id, updated.Name)
+					}
+					return updated, nil
+				}
+			},
+		},
+		{
+			name: "delete", method: http.MethodDelete, target: "/rest/v1/sheets/11", id: "11",
+			status: http.StatusOK, expected: ItemDeletedResponse{Id: 11, Msg: "sheet 11 deleted successfully"}, handler: (*Handler).DeleteSheetById,
+			configure: func(t *testing.T, service *fakeSheetService) {
+				service.deleteSheetByID = func(_ context.Context, id int) error {
+					if id != 11 {
+						t.Errorf("id = %d, want 11", id)
+					}
+					return nil
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, service, _, _, _ := newTestHandler(t)
+			tt.configure(t, service)
+			contentType := ""
+			if tt.body != "" {
+				contentType = ContentTypeApplicationJSON
 			}
-			return created, nil
-		}
-		req := newControllerRequest(t, http.MethodPost, "/rest/v1/sheets", `{"name":"morning shots"}`, ContentTypeApplicationJSON, "")
+			req := newControllerRequest(t, tt.method, tt.target, tt.body, contentType, tt.id)
 
-		recorder := executeHandler(handler.CreateSheet, req)
+			recorder := executeControllerHandler(handler, tt.handler, req)
 
-		assertJSONResponse(t, recorder, http.StatusCreated, SheetResponse{*created})
-	})
-
-	t.Run("get by id", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		found := testSheet(7, "dial in")
-		service.getSheetByID = func(_ context.Context, id int) (*sheet.Sheet, error) {
-			if id != found.Id {
-				t.Errorf("id = %d, want %d", id, found.Id)
-			}
-			return found, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/7", "", "", "7")
-
-		recorder := executeHandler(handler.GetSheetById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, SheetResponse{*found})
-	})
-
-	t.Run("get all", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		first := testSheet(1, "first")
-		second := testSheet(2, "second")
-		service.getAllSheets = func(context.Context) ([]sheet.Sheet, error) {
-			return []sheet.Sheet{*first, *second}, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets", "", "", "")
-
-		recorder := executeHandler(handler.GetAllSheets, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, []SheetResponse{{*first}, {*second}})
-	})
-
-	t.Run("get all empty", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		service.getAllSheets = func(context.Context) ([]sheet.Sheet, error) {
-			return []sheet.Sheet{}, nil
-		}
-		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets", "", "", "")
-
-		recorder := executeHandler(handler.GetAllSheets, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, []SheetResponse{})
-	})
-
-	t.Run("update", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		updated := testSheet(9, "updated")
-		service.updateSheetByID = func(_ context.Context, id int, value *sheet.Sheet) (*sheet.Sheet, error) {
-			if id != updated.Id {
-				t.Errorf("id = %d, want %d", id, updated.Id)
-			}
-			if value.Id != updated.Id || value.Name != updated.Name {
-				t.Errorf("sheet = %#v, want id %d and name %q", value, updated.Id, updated.Name)
-			}
-			return updated, nil
-		}
-		req := newControllerRequest(t, http.MethodPut, "/rest/v1/sheets/9", `{"name":"updated"}`, ContentTypeApplicationJSON, "9")
-
-		recorder := executeHandler(handler.UpdateSheetById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, SheetResponse{*updated})
-	})
-
-	t.Run("delete", func(t *testing.T) {
-		handler, service, _, _, _ := newTestHandler(t)
-		service.deleteSheetByID = func(_ context.Context, id int) error {
-			if id != 11 {
-				t.Errorf("id = %d, want 11", id)
-			}
-			return nil
-		}
-		req := newControllerRequest(t, http.MethodDelete, "/rest/v1/sheets/11", "", "", "11")
-
-		recorder := executeHandler(handler.DeleteSheetById, req)
-
-		assertJSONResponse(t, recorder, http.StatusOK, ItemDeletedResponse{Id: 11, Msg: "sheet 11 deleted successfully"})
-	})
+			assertJSONResponse(t, recorder, tt.status, tt.expected)
+		})
+	}
 }
 
 func TestSheetHandlersErrorPaths(t *testing.T) {
