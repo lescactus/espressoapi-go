@@ -4,6 +4,8 @@ docker-compose.yaml
 *.yml
 *.yaml
 *.md
+*.log
+espressoapi-go
 
 .github/
 .git/
