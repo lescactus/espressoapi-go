@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -12,8 +13,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
+
+const missingRoasterForeignKeyError = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
 
 // ref: https://github.com/DATA-DOG/go-sqlmock#matching-arguments-like-timetime
 type AnyTime struct{}
@@ -57,11 +61,13 @@ func TestDBCreateBeans(t *testing.T) {
 		beans *sql.Beans
 	}
 	tests := []struct {
-		name        string
-		args        args
-		mockClosure func(mock sqlmock.Sqlmock)
-		want        int
-		wantErr     bool
+		name          string
+		args          args
+		mockClosure   func(mock sqlmock.Sqlmock)
+		want          int
+		wantErr       bool
+		expectedErr   error
+		unexpectedErr error
 	}{
 		{
 			name: "Beans - no error",
@@ -92,11 +98,25 @@ func TestDBCreateBeans(t *testing.T) {
 				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
 					WithArgs("beans01", 1, now, sql.RoastLevelMediumToDark).
 					WillReturnError(&mysql.MySQLError{
-						Number: 1452, // Error 1452 is "Cannot add or update a child row: a foreign key constraint fails"
+						Number:  1452, // Error 1452 is "Cannot add or update a child row: a foreign key constraint fails"
+						Message: missingRoasterForeignKeyError,
 					})
 			},
-			want:    0,
-			wantErr: true,
+			want:        0,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrRoasterDoesNotExist,
+		},
+		{
+			name: "Beans - duplicate error is not classified as roaster",
+			args: args{ctx: context.TODO(), beans: &sql.Beans{Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
+					WithArgs("beans01", 1, now, sql.RoastLevelMediumToDark).
+					WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:          0,
+			wantErr:       true,
+			unexpectedErr: domainerrors.ErrRoasterAlreadyExists,
 		},
 		{
 			name: "Beans - error",
@@ -130,6 +150,12 @@ func TestDBCreateBeans(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bean.CreateBeans() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Bean.CreateBeans() error = %v, want %v", err, tt.expectedErr)
+			}
+			if tt.unexpectedErr != nil && errors.Is(err, tt.unexpectedErr) {
+				t.Errorf("Bean.CreateBeans() error = %v, must not be %v", err, tt.unexpectedErr)
 			}
 
 			if !reflect.DeepEqual(id, tt.want) {
@@ -350,11 +376,13 @@ func TestBeanUpdateBeansById(t *testing.T) {
 		beans *sql.Beans
 	}
 	tests := []struct {
-		name        string
-		args        args
-		mockClosure func(mock sqlmock.Sqlmock)
-		want        *sql.Beans
-		wantErr     bool
+		name          string
+		args          args
+		mockClosure   func(mock sqlmock.Sqlmock)
+		want          *sql.Beans
+		wantErr       bool
+		expectedErr   error
+		unexpectedErr error
 	}{
 		{
 			name: "Beans.Id matching id - No error",
@@ -389,6 +417,30 @@ func TestBeanUpdateBeansById(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "Missing roaster",
+			args: args{ctx: context.TODO(), id: 1, beans: &sql.Beans{Id: 1, Roaster: &sql.Roaster{Id: 2}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?").
+					WithArgs("beans01", 2, AnyTime{}, sql.RoastLevelMediumToDark, 1).
+					WillReturnError(&mysql.MySQLError{Number: 1452, Message: missingRoasterForeignKeyError})
+			},
+			want:        nil,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrRoasterDoesNotExist,
+		},
+		{
+			name: "Duplicate error is not classified as roaster",
+			args: args{ctx: context.TODO(), id: 1, beans: &sql.Beans{Id: 1, Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?").
+					WithArgs("beans01", 1, AnyTime{}, sql.RoastLevelMediumToDark, 1).
+					WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:          nil,
+			wantErr:       true,
+			unexpectedErr: domainerrors.ErrRoasterAlreadyExists,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -410,6 +462,12 @@ func TestBeanUpdateBeansById(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bean.UpdateBeansById() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Bean.UpdateBeansById() error = %v, want %v", err, tt.expectedErr)
+			}
+			if tt.unexpectedErr != nil && errors.Is(err, tt.unexpectedErr) {
+				t.Errorf("Bean.UpdateBeansById() error = %v, must not be %v", err, tt.unexpectedErr)
 			}
 
 			isEqual := func(a, b *sql.Beans) bool {

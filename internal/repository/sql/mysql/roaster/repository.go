@@ -25,9 +25,9 @@ func New(db *sqlx.DB) *Roaster {
 	}
 }
 
-func (db *Roaster) CreateRoaster(ctx context.Context, sheet *sql.Roaster) error {
+func (db *Roaster) CreateRoaster(ctx context.Context, roaster *sql.Roaster) error {
 	query := `INSERT INTO roasters (name) VALUES (?)`
-	_, err := db.db.ExecContext(ctx, query, sheet.Name)
+	_, err := db.db.ExecContext(ctx, query, roaster.Name)
 	if err != nil {
 		return mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityRoaster, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
