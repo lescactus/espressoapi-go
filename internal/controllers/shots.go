@@ -55,7 +55,7 @@ type ShotResponse struct {
 }
 
 func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
-	hlog.FromRequest(r).Debug().Dict("shot", zerolog.Dict().
+	shotEvent := zerolog.Dict().
 		Int("id", shot.Id).
 		Dict("sheet", zerolog.Dict().
 			Int("id", shot.Sheet.Id).
@@ -67,7 +67,7 @@ func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
 			Dict("roaster", zerolog.Dict().
 				Int("id", shot.Beans.Roaster.Id).
 				Str("name", shot.Beans.Roaster.Name)),
-		)).
+		).
 		Int("grind_setting", shot.GrindSetting).
 		Float64("quantity_in", shot.QuantityIn).
 		Float64("quantity_out", shot.QuantityOut).
@@ -77,9 +77,12 @@ func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
 		Bool("is_too_bitter", shot.IsTooBitter).
 		Bool("is_too_sour", shot.IsTooSour).
 		Uint8("comparaison_with_previous_result", uint8(shot.ComparaisonWithPreviousResult)).
-		Str("additional_notes", shot.AdditionalNotes).
-		Time("created_at", *shot.CreatedAt).
-		Msg(msg)
+		Str("additional_notes", shot.AdditionalNotes)
+	if shot.CreatedAt != nil {
+		shotEvent.Time("created_at", *shot.CreatedAt)
+	}
+
+	hlog.FromRequest(r).Debug().Dict("shot", shotEvent).Msg(msg)
 }
 
 // swagger:route POST /rest/v1/shots shots createShot

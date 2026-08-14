@@ -48,8 +48,11 @@ func logBeansFromRequest(r *http.Request, beans *bean.Bean, msg string) {
 			Int("id", beans.Roaster.Id).
 			Str("name", beans.Roaster.Name),
 		).
-		Uint8("roast_level", uint8(beans.RoastLevel)).
-		Time("created_at", *beans.CreatedAt)
+		Uint8("roast_level", uint8(beans.RoastLevel))
+
+	if beans.CreatedAt != nil {
+		beansLog.Time("created_at", *beans.CreatedAt)
+	}
 
 	if beans.RoastDate != nil {
 		beansLog.Time("roast_date", *beans.RoastDate)
