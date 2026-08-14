@@ -61,6 +61,7 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 	} else {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
+		var maxBytesError *http.MaxBytesError
 		var timeParseError *time.ParseError
 
 		switch {
@@ -145,7 +146,7 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: msg}
 
 		// Catch the error caused by the request body being too large
-		case err.Error() == "http: request body too large":
+		case errors.As(err, &maxBytesError):
 			msg := fmt.Sprintf("request body must not be larger than %d bytes", h.maxRequestSize)
 			errResp = &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: msg}
 
