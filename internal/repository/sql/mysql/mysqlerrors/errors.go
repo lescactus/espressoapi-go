@@ -12,7 +12,7 @@ type Entity string
 
 var (
 	EntitySheet   Entity = "sheets"
-	EntityRoaster Entity = "roaster"
+	EntityRoaster Entity = "roasters"
 	EntityBeans   Entity = "beans"
 	EntityShot    Entity = "shots"
 
@@ -53,7 +53,7 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 			if entity == nil {
 				return fallback
 			}
-			return entityToErrAlreadyExists[*entity]
+			return mappedEntityError(entityToErrAlreadyExists, *entity, fallback)
 		}
 
 		// Checking if the error is due to a foreign key constraint
@@ -65,9 +65,9 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 				if err != nil {
 					return fallback
 				}
-				return entityToErrForeignKeyConstraint[table]
+				return mappedEntityError(entityToErrForeignKeyConstraint, table, fallback)
 			}
-			return entityToErrForeignKeyConstraint[*entity]
+			return mappedEntityError(entityToErrForeignKeyConstraint, *entity, fallback)
 		}
 
 		// Checking if the error is due to a foreign key constraint
@@ -79,10 +79,18 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 				if err != nil {
 					return fallback
 				}
-				return entityToErrDoesNotExist[table]
+				return mappedEntityError(entityToErrDoesNotExist, table, fallback)
 			}
-			return entityToErrDoesNotExist[*entity]
+			return mappedEntityError(entityToErrDoesNotExist, *entity, fallback)
 		}
+	}
+
+	return fallback
+}
+
+func mappedEntityError(entityErrors map[Entity]error, entity Entity, fallback error) error {
+	if err, ok := entityErrors[entity]; ok {
+		return err
 	}
 
 	return fallback

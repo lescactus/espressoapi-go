@@ -2,24 +2,11 @@ package mysqlerrors
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 )
-
-func TestTtt(t *testing.T) {
-	t.Log("Testttt")
-
-	err := mysql.MySQLError{
-		Number:  1451,
-		Message: "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))",
-	}
-
-	table, _ := ExtractTableNameFromError1451(err)
-	fmt.Println(table)
-}
 
 func TestExtractTableNameFromError1451(t *testing.T) {
 	type args struct {
@@ -108,77 +95,79 @@ func TestExtractTableNameFromError1452(t *testing.T) {
 }
 
 func TestParseMySQLError(t *testing.T) {
-	type args struct {
+	fallback := errors.New("fallback error")
+	unknownEntity := Entity("unknown")
+	const (
+		beansForeignKeyError     = "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
+		sheetDoesNotExistError   = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"
+		roasterDoesNotExistError = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
+	)
+
+	tests := []struct {
+		name     string
 		err      error
 		entity   *Entity
 		fallback error
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    error
+		want     error
 	}{
 		{
-			name:    "Error is nil",
-			args:    args{err: nil, entity: nil, fallback: nil},
-			wantErr: false,
+			name: "nil error",
 		},
 		{
-			name:    "Error is not MySQLError",
-			args:    args{err: fmt.Errorf("some error"), entity: nil, fallback: nil},
-			wantErr: false,
+			name: "non-MySQL error returns fallback", err: errors.New("some error"), fallback: fallback, want: fallback,
 		},
 		{
-			name:    "Error is MySQLError 1062 - nil entity",
-			args:    args{err: &mysql.MySQLError{Number: 1062}, entity: nil, fallback: nil},
-			wantErr: false,
+			name: "duplicate with nil entity returns fallback", err: &mysql.MySQLError{Number: 1062}, fallback: fallback, want: fallback,
 		},
 		{
-			name:    "Error is MySQLError 1062 - non nil entity",
-			args:    args{err: &mysql.MySQLError{Number: 1062}, entity: &EntitySheet, fallback: nil},
-			wantErr: true,
-			want:    domainerrors.ErrSheetAlreadyExists,
+			name: "duplicate sheet", err: &mysql.MySQLError{Number: 1062}, entity: &EntitySheet, fallback: fallback, want: domainerrors.ErrSheetAlreadyExists,
 		},
 		{
-			name:    "Error is MySQLError 1451 - nil entity - nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1451, Message: "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"}, entity: nil, fallback: nil},
-			wantErr: true,
+			name: "duplicate roaster", err: &mysql.MySQLError{Number: 1062}, entity: &EntityRoaster, fallback: fallback, want: domainerrors.ErrRoasterAlreadyExists,
 		},
 		{
-			name:    "Error is MySQLError 1451 - nil entity - non nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1451}, entity: nil, fallback: fmt.Errorf("fallback error")},
-			wantErr: true,
+			name: "duplicate unknown entity returns fallback", err: &mysql.MySQLError{Number: 1062}, entity: &unknownEntity, fallback: fallback, want: fallback,
 		},
 		{
-			name:    "Error is MySQLError 1451 - non nil entity - nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1451}, entity: &EntityBeans, fallback: nil},
-			wantErr: true,
+			name: "foreign key constraint inferred from beans table", err: &mysql.MySQLError{Number: 1451, Message: beansForeignKeyError}, fallback: fallback, want: domainerrors.ErrBeansForeignKeyConstraint,
 		},
 		{
-			name:    "Error is MySQLError 1452 - nil entity - nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1452, Message: "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"}, entity: nil, fallback: nil},
-			wantErr: true,
+			name: "foreign key constraint with explicit shot entity", err: &mysql.MySQLError{Number: 1451}, entity: &EntityShot, fallback: fallback, want: domainerrors.ErrShotForeignKeyConstraint,
 		},
 		{
-			name:    "Error is MySQLError 1452 - nil entity - non nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1452}, entity: nil, fallback: fmt.Errorf("fallback error")},
-			wantErr: true,
+			name: "foreign key constraint with malformed message returns fallback", err: &mysql.MySQLError{Number: 1451}, fallback: fallback, want: fallback,
 		},
 		{
-			name:    "Error is MySQLError 1452 - non nil entity - nil fallback",
-			args:    args{err: &mysql.MySQLError{Number: 1452}, entity: &EntityBeans, fallback: nil},
-			wantErr: true,
+			name: "foreign key constraint with unknown entity returns fallback", err: &mysql.MySQLError{Number: 1451}, entity: &unknownEntity, fallback: fallback, want: fallback,
+		},
+		{
+			name: "missing sheet inferred from referenced table", err: &mysql.MySQLError{Number: 1452, Message: sheetDoesNotExistError}, fallback: fallback, want: domainerrors.ErrSheetDoesNotExist,
+		},
+		{
+			name: "missing roaster inferred from referenced table", err: &mysql.MySQLError{Number: 1452, Message: roasterDoesNotExistError}, fallback: fallback, want: domainerrors.ErrRoasterDoesNotExist,
+		},
+		{
+			name: "missing roaster with explicit entity", err: &mysql.MySQLError{Number: 1452}, entity: &EntityRoaster, fallback: fallback, want: domainerrors.ErrRoasterDoesNotExist,
+		},
+		{
+			name: "missing beans with explicit entity", err: &mysql.MySQLError{Number: 1452}, entity: &EntityBeans, fallback: fallback, want: domainerrors.ErrBeansDoesNotExist,
+		},
+		{
+			name: "missing entity with malformed message returns fallback", err: &mysql.MySQLError{Number: 1452}, fallback: fallback, want: fallback,
+		},
+		{
+			name: "missing unknown entity returns fallback", err: &mysql.MySQLError{Number: 1452}, entity: &unknownEntity, fallback: fallback, want: fallback,
+		},
+		{
+			name: "unmapped MySQL error returns fallback", err: &mysql.MySQLError{Number: 9999}, fallback: fallback, want: fallback,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ParseMySQLError(tt.args.err, tt.args.entity, tt.args.fallback)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseMySQLError() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.want != nil && !errors.Is(err, tt.want) {
-				t.Errorf("ParseMySQLError() error = %v, want %v", err, tt.want)
+			got := ParseMySQLError(tt.err, tt.entity, tt.fallback)
+			if !errors.Is(got, tt.want) {
+				t.Errorf("ParseMySQLError() = %v, want %v", got, tt.want)
 			}
 		})
 	}
