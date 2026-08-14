@@ -169,10 +169,16 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
-			name:           "http: request body too large error",
-			args:           args{w: httptest.NewRecorder(), err: errors.New("http: request body too large")},
+			name:           "wrapped http.MaxBytesError",
+			args:           args{w: httptest.NewRecorder(), err: fmt.Errorf("read request: %w", &http.MaxBytesError{Limit: h.maxRequestSize})},
 			want:           &ErrorResponse{status: http.StatusRequestEntityTooLarge, Msg: fmt.Sprintf("request body must not be larger than %d bytes", h.maxRequestSize)},
 			wantStatusCode: http.StatusRequestEntityTooLarge,
+		},
+		{
+			name:           "matching error text without MaxBytesError type",
+			args:           args{w: httptest.NewRecorder(), err: errors.New("http: request body too large")},
+			want:           &ErrorResponse{status: http.StatusInternalServerError, Msg: "internal server error"},
+			wantStatusCode: http.StatusInternalServerError,
 		},
 		{
 			name: "invalid time format",

@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `shots` (
     `rating` DOUBLE NOT NULL CHECK (`rating` >= 0 AND `rating` <= 10.0),
     `is_too_bitter` BOOL NOT NULL,
     `is_too_sour` BOOL NOT NULL,
-    `comparaison_with_previous_result` TINYINT NOT NULL,
+    `comparison_with_previous_result` TINYINT NOT NULL,
     `additional_notes` VARCHAR(511),
     `sheet_id` INT NOT NULL,
     `beans_id` INT NOT NULL,
