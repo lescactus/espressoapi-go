@@ -3,7 +3,6 @@ package roaster
 import (
 	"context"
 	dbsql "database/sql"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"reflect"
@@ -16,15 +15,6 @@ import (
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
-
-// ref: https://github.com/DATA-DOG/go-sqlmock#matching-arguments-like-timetime
-type AnyTime struct{}
-
-// Match satisfies sqlmock.Argument interface
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
-}
 
 func TestNew(t *testing.T) {
 	sqlxdb := &sqlx.DB{}
@@ -370,7 +360,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			name: "Roaster.Id matching id - No error",
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasternewname", AnyTime{}, 1).WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			want:    &sql.Roaster{Id: 1, Name: "roasternewname"},
 			wantErr: false,
@@ -379,7 +369,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			name: "Duplicate roaster name",
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasteralreadyexists"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasteralreadyexists", AnyTime{}, 1).WillReturnError(&mysql.MySQLError{Number: 1062})
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasteralreadyexists", 1).WillReturnError(&mysql.MySQLError{Number: 1062})
 			},
 			want:        nil,
 			wantErr:     true,
@@ -389,7 +379,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			name: "Roaster.Id matching id - Error",
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasternewname", AnyTime{}, 1).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -398,7 +388,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			name: "Roaster.Id not matching id - No error",
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 2, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasternewname", AnyTime{}, 1).WillReturnResult(sqlmock.NewResult(1, 1))
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			want:    &sql.Roaster{Id: 1, Name: "roasternewname"},
 			wantErr: false,
@@ -407,16 +397,29 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			name: "Roaster.Id not matching id - Error",
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 2, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasternewname", AnyTime{}, 1).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		{
+			name: "Unchanged roaster exists",
+			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasternewname"}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectQuery("SELECT * FROM roasters WHERE id = ?").WithArgs(1).WillReturnRows(
+					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "roasternewname"),
+				)
+			},
+			want:    &sql.Roaster{Id: 1, Name: "roasternewname"},
+			wantErr: false,
+		},
+		{
 			name: "Roaster does not exist",
 			args: args{ctx: context.TODO(), id: 2, roaster: &sql.Roaster{Id: 2, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectExec("UPDATE roasters SET name = ?, updated_at = ? WHERE id = ?").WithArgs("roasternewname", AnyTime{}, 2).WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 2).WillReturnResult(sqlmock.NewResult(0, 0))
+				mock.ExpectQuery("SELECT * FROM roasters WHERE id = ?").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,
@@ -447,11 +450,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 				t.Errorf("Roaster.UpdateRoasterById() error = %v, want %v", err, tt.expectedErr)
 			}
 
-			isEqual := func(a, b *sql.Roaster) bool {
-				return a == b || (a != nil && b != nil && a.Id == b.Id && a.Name == b.Name)
-			}
-
-			if !isEqual(got, tt.want) {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Roaster.Roaster() = %v, want %v", got, tt.want)
 			}
 

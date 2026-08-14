@@ -3,7 +3,6 @@ package sheet
 import (
 	"context"
 	"fmt"
-	"time"
 
 	dbsql "database/sql"
 
@@ -76,18 +75,18 @@ func (db *Sheet) GetAllSheets(ctx context.Context) ([]sql.Sheet, error) {
 }
 
 func (db *Sheet) UpdateSheetById(ctx context.Context, id int, sheet *sql.Sheet) (*sql.Sheet, error) {
-	now := time.Now()
 	sheet.Id = id
-	sheet.UpdatedAt = &now
 
 	// CreatedAt should be immutable
-	res, err := db.db.ExecContext(ctx, `UPDATE sheets SET name = ?, updated_at = ? WHERE id = ?`, sheet.Name, sheet.UpdatedAt, sheet.Id)
+	res, err := db.db.ExecContext(ctx, `UPDATE sheets SET name = ? WHERE id = ?`, sheet.Name, sheet.Id)
 	if err != nil {
 		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntitySheet, fmt.Errorf("failed to update record for sheet id=%d: %w", id, err))
 	}
 
-	if row, _ := res.RowsAffected(); row != 1 {
-		return nil, errors.ErrSheetDoesNotExist
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		if _, err := db.GetSheetById(ctx, id); err != nil {
+			return nil, err
+		}
 	}
 
 	return sheet, nil

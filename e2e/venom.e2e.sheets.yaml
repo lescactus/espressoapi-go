@@ -244,7 +244,7 @@ testcases:
     - result.bodyjson.id ShouldEqual "1"
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
-    - result.bodyjson ShouldContainKey "updated_at"
+    - result.bodyjson.updated_at ShouldNotBeBlank
 
 - name: DELETE /rest/v1/sheets/:id - not found
   steps:
