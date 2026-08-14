@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -53,66 +55,65 @@ func TestNewHandler(t *testing.T) {
 }
 
 func TestMaxReqSizeMiddleware(t *testing.T) {
-	// Create a test handler to wrap with the MaxReqSize middleware
-	testHandlerOK := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	testHandlerTooLarge := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusRequestEntityTooLarge)
-	})
-
-	// Create an instance of the Handler with a test SheetService and maxRequestSize
-	handler := NewHandler(nil, nil, nil, nil, 1024)
-
-	// Create a request with a body larger than maxRequestSize
-	requestBody := "a" + strings.Repeat("b", 1024)
-	req, err := http.NewRequest("POST", "/test", strings.NewReader(requestBody))
-	if err != nil {
-		t.Fatal(err)
+	const maxRequestSize = int64(4)
+	tests := []struct {
+		name         string
+		body         string
+		wantStatus   int
+		wantTooLarge bool
+	}{
+		{
+			name: "below limit", body: "abc", wantStatus: http.StatusNoContent,
+		},
+		{
+			name: "at limit", body: "abcd", wantStatus: http.StatusNoContent,
+		},
+		{
+			name: "over limit", body: "abcde", wantStatus: http.StatusRequestEntityTooLarge, wantTooLarge: true,
+		},
 	}
 
-	// Set the "Content-Type" header to "application/json"
-	req.Header.Set("Content-Type", "application/json")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewHandler(nil, nil, nil, nil, maxRequestSize)
+			var body []byte
+			var readErr error
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body, readErr = io.ReadAll(r.Body)
+				if readErr != nil {
+					handler.SetErrorResponse(w, readErr)
+					return
+				}
+				w.WriteHeader(http.StatusNoContent)
+			})
+			req := httptest.NewRequest(http.MethodPost, "/test", strings.NewReader(tt.body))
+			recorder := httptest.NewRecorder()
 
-	// Create a recorder to capture the response
-	rr := httptest.NewRecorder()
+			handler.MaxReqSize()(next).ServeHTTP(recorder, req)
 
-	// Wrap the test handler with the MaxReqSize middleware
-	maxReqSizeMiddleware := handler.MaxReqSize()
-	handlerWithMiddleware := maxReqSizeMiddleware(testHandlerOK)
+			if recorder.Code != tt.wantStatus {
+				t.Errorf("status = %d, want %d", recorder.Code, tt.wantStatus)
+			}
 
-	// Serve the request
-	handlerWithMiddleware.ServeHTTP(rr, req)
+			var maxBytesError *http.MaxBytesError
+			if errors.As(readErr, &maxBytesError) != tt.wantTooLarge {
+				t.Fatalf("read error = %v, MaxBytesError = %t, want %t", readErr, maxBytesError != nil, tt.wantTooLarge)
+			}
+			if maxBytesError != nil {
+				if maxBytesError.Limit != maxRequestSize {
+					t.Errorf("MaxBytesError limit = %d, want %d", maxBytesError.Limit, maxRequestSize)
+				}
+				assertJSONResponse(t, recorder, http.StatusRequestEntityTooLarge, ErrorResponse{Msg: "request body must not be larger than 4 bytes"})
+				return
+			}
 
-	// Check the response status code
-	if rr.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, rr.Code)
-	}
-
-	// Create a request with a body larger than maxRequestSize
-	requestBody = strings.Repeat("a", 2048)
-	req, err = http.NewRequest("POST", "/test", strings.NewReader(requestBody))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Set the "Content-Type" header to "application/json"
-	req.Header.Set("Content-Type", "application/json")
-
-	// Reset the recorder for the second request
-	rr = httptest.NewRecorder()
-
-	// Serve the request
-	// Wrap the test handler with the MaxReqSize middleware
-	handlerWithMiddleware = maxReqSizeMiddleware(testHandlerTooLarge)
-
-	// Serve the request
-	handlerWithMiddleware.ServeHTTP(rr, req)
-
-	// Check the response status code for the second request
-	if rr.Code != http.StatusRequestEntityTooLarge {
-		t.Errorf("Expected status code %d, got %d", http.StatusRequestEntityTooLarge, rr.Code)
+			if readErr != nil {
+				t.Fatalf("read body: %v", readErr)
+			}
+			if string(body) != tt.body {
+				t.Errorf("body = %q, want %q", body, tt.body)
+			}
+		})
 	}
 }
 
