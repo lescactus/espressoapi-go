@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
-func jsonDecodeBody(r *http.Request, dst interface{}) error {
+func jsonDecodeBody(r *http.Request, dst any) error {
 	// Setup the decoder and call the DisallowUnknownFields() method on it.
 	// This will cause Decode() to return a "json: unknown field ..." error
 	// if it encounters any extra unexpected fields in the JSON. Strictly

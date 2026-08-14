@@ -142,7 +142,7 @@ func readConfigFromEnvVars(c App) {
 }
 
 // ref: https://github.com/spf13/viper/issues/188#issuecomment-399884438
-func bindEnvs(iface interface{}, parts ...string) {
+func bindEnvs(iface any, parts ...string) {
 	ifv := reflect.ValueOf(iface)
 	ift := reflect.TypeOf(iface)
 	for i := 0; i < ift.NumField(); i++ {
