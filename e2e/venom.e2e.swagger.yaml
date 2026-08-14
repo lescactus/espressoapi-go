@@ -4,20 +4,28 @@ vars:
   baseuri: http://127.0.0.1:8080
 
 testcases:
-- name: Read swagger.json
+- name: GET /swagger.json matches swagger.json
   steps:
   - type: readfile
     path: ../docs/swagger.json
     assertions:
     - result.err ShouldBeEmpty
     - result.content ShouldNotBeEmpty
+    vars:
+      expectedSwagger:
+        from: result.content
 
-- name: GET /swagger.json
-  steps:
   - type: http
     method: GET
     url: "{{ .baseuri }}/swagger.json"
     assertions:
     - result.statuscode ShouldEqual 200
     - result.headers.content-type ShouldEqual "application/json"
-    # TODO: compare body result with swagger.json
+    vars:
+      actualSwagger:
+        from: result.body
+
+  - type: exec
+    script: test '{{.actualSwagger | b64enc}}' = '{{.expectedSwagger | b64enc}}'
+    assertions:
+    - result.code ShouldEqual 0
