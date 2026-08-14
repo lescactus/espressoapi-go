@@ -251,7 +251,7 @@ testcases:
     - result.statuscode ShouldEqual 201
     - result.bodyjson ShouldContainKey "id"
     - result.bodyjson.name ShouldEqual "beans-no-roast-date"
-    - result.bodyjson.roast_date ShouldBeNil
+    - result.bodyjson.roast_date ShouldBeBlank
 
 - name: DELETE /rest/v1/beans/:id - roast date omitted cleanup
   steps:
