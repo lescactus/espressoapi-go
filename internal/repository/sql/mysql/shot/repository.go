@@ -26,10 +26,10 @@ func New(db *sqlx.DB) *Shot {
 
 func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
 	query := `INSERT INTO 
-	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	res, err := db.db.ExecContext(ctx, query,
-		shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparaisonWithPreviousResult, shot.AdditionalNotes)
+		shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
 	if err != nil {
 		return 0, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
@@ -56,7 +56,7 @@ SELECT
 	shots.rating,
 	shots.is_too_bitter,
 	shots.is_too_sour,
-	shots.comparaison_with_previous_result,
+	shots.comparison_with_previous_result,
 	shots.additional_notes,
 	shots.created_at,
 	shots.updated_at,
@@ -103,7 +103,7 @@ SELECT
 	shots.rating,
 	shots.is_too_bitter,
 	shots.is_too_sour,
-	shots.comparaison_with_previous_result,
+	shots.comparison_with_previous_result,
 	shots.additional_notes,
 	shots.created_at,
 	shots.updated_at,
@@ -144,7 +144,7 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 	rating = ?,
 	is_too_bitter = ?,
 	is_too_sour = ?,
-	comparaison_with_previous_result = ?,
+	comparison_with_previous_result = ?,
 	additional_notes = ?
 	WHERE id = ?`,
 		shot.Sheet.Id,
@@ -157,7 +157,7 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 		shot.Rating,
 		shot.IsTooBitter,
 		shot.IsTooSour,
-		shot.ComparaisonWithPreviousResult,
+		shot.ComparisonWithPreviousResult,
 		shot.AdditionalNotes,
 		id)
 	if err != nil {

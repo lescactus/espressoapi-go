@@ -1039,7 +1039,7 @@
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/bean"
     },
-    "ComparaisonWithPreviousResult": {
+    "ComparisonWithPreviousResult": {
       "type": "integer",
       "format": "uint8",
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
@@ -1101,8 +1101,8 @@
           "format": "int64",
           "x-go-name": "BeansId"
         },
-        "comparaison_with_previous_result": {
-          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        "comparison_with_previous_result": {
+          "$ref": "#/definitions/ComparisonWithPreviousResult"
         },
         "grind_setting": {
           "type": "integer",
@@ -1254,8 +1254,8 @@
         "beans": {
           "$ref": "#/definitions/Bean"
         },
-        "comparaison_with_previous_result": {
-          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        "comparison_with_previous_result": {
+          "$ref": "#/definitions/ComparisonWithPreviousResult"
         },
         "created_at": {
           "type": "string",
@@ -1371,8 +1371,8 @@
           "format": "int64",
           "x-go-name": "BeansId"
         },
-        "comparaison_with_previous_result": {
-          "$ref": "#/definitions/ComparaisonWithPreviousResult"
+        "comparison_with_previous_result": {
+          "$ref": "#/definitions/ComparisonWithPreviousResult"
         },
         "grind_setting": {
           "type": "integer",
@@ -1512,7 +1512,7 @@
           "type": "string"
         },
         "beans": {},
-        "comparaison_with_previous_result": {
+        "comparison_with_previous_result": {
           "type": "integer",
           "format": "uint8"
         },

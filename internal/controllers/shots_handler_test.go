@@ -24,7 +24,7 @@ const validShotRequestBody = `{
 	"rating":8.5,
 	"is_too_bitter":false,
 	"is_too_sour":true,
-	"comparaison_with_previous_result":2,
+	"comparison_with_previous_result":2,
 	"additional_notes":"test notes"
 }`
 
@@ -217,8 +217,8 @@ func assertShotRequest(t *testing.T, value *shot.Shot, id int) {
 	if value.IsTooBitter || !value.IsTooSour {
 		t.Errorf("shot taste flags = bitter:%t sour:%t, want false/true", value.IsTooBitter, value.IsTooSour)
 	}
-	if value.ComparaisonWithPreviousResult != modelsql.Better {
-		t.Errorf("shot comparison = %v, want %v", value.ComparaisonWithPreviousResult, modelsql.Better)
+	if value.ComparisonWithPreviousResult != modelsql.Better {
+		t.Errorf("shot comparison = %v, want %v", value.ComparisonWithPreviousResult, modelsql.Better)
 	}
 	if value.AdditionalNotes != "test notes" {
 		t.Errorf("shot notes = %q, want %q", value.AdditionalNotes, "test notes")

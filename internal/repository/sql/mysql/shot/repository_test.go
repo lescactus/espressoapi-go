@@ -63,10 +63,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - no error",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnResult(sqlmock.NewResult(1, 1))
@@ -77,10 +77,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - LastInsertId error",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("mock error")))
@@ -91,10 +91,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - foreign key constraint error - sheets does not exist",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnError(&mysql.MySQLError{
@@ -108,10 +108,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - foreign key constraint error - beans does not exist",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnError(&mysql.MySQLError{
@@ -125,10 +125,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - error 01",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnError(fmt.Errorf("mock error"))
@@ -139,10 +139,10 @@ func TestShotCreateShot(t *testing.T) {
 		{
 			name: "Shots - error 02",
 			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
-				ComparaisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec(`INSERT INTO 
-				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparaison_with_previous_result, additional_notes)
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnError(&mysql.MySQLError{
@@ -202,7 +202,7 @@ SELECT
 	shots.rating,
 	shots.is_too_bitter,
 	shots.is_too_sour,
-	shots.comparaison_with_previous_result,
+	shots.comparison_with_previous_result,
 	shots.additional_notes,
 	shots.created_at,
 	shots.updated_at,
@@ -242,21 +242,21 @@ WHERE shots.id = ?`
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
 					sqlmock.NewRows(
-						[]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparaison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
+						[]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
 						AddRow(1, 11, 18.0, 36.0, 25*time.Second, 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight))
 			},
 			want: &sql.Shot{
-				Id:                            1,
-				GrindSetting:                  11,
-				QuantityIn:                    18.0,
-				QuantityOut:                   36.0,
-				ShotTime:                      25 * time.Second,
-				WaterTemperature:              90.0,
-				Rating:                        4.5,
-				IsTooBitter:                   false,
-				IsTooSour:                     true,
-				ComparaisonWithPreviousResult: sql.Better,
-				AdditionalNotes:               "This is a test",
+				Id:                           1,
+				GrindSetting:                 11,
+				QuantityIn:                   18.0,
+				QuantityOut:                  36.0,
+				ShotTime:                     25 * time.Second,
+				WaterTemperature:             90.0,
+				Rating:                       4.5,
+				IsTooBitter:                  false,
+				IsTooSour:                    true,
+				ComparisonWithPreviousResult: sql.Better,
+				AdditionalNotes:              "This is a test",
 				Sheet: &sql.Sheet{
 					Id:   1,
 					Name: "sheet01",
@@ -336,7 +336,7 @@ SELECT
 	shots.rating,
 	shots.is_too_bitter,
 	shots.is_too_sour,
-	shots.comparaison_with_previous_result,
+	shots.comparison_with_previous_result,
 	shots.additional_notes,
 	shots.created_at,
 	shots.updated_at,
@@ -373,7 +373,7 @@ INNER JOIN
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WillReturnRows(
-					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparaison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level", "beans.roaster.id", "beans.roaster.name", "beans.roaster.created_at", "beans.roaster.updated_at"}),
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level", "beans.roaster.id", "beans.roaster.name", "beans.roaster.created_at", "beans.roaster.updated_at"}),
 				)
 			},
 			want:    []sql.Shot{},
@@ -384,23 +384,23 @@ INNER JOIN
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WillReturnRows(
-					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparaison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
 						AddRow(1, 11, 18.0, 36.0, 25*time.Second, 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
 				)
 			},
 			want: []sql.Shot{
 				{
-					Id:                            1,
-					GrindSetting:                  11,
-					QuantityIn:                    18.0,
-					QuantityOut:                   36.0,
-					ShotTime:                      25 * time.Second,
-					WaterTemperature:              90.0,
-					Rating:                        4.5,
-					IsTooBitter:                   false,
-					IsTooSour:                     true,
-					ComparaisonWithPreviousResult: sql.Better,
-					AdditionalNotes:               "This is a test",
+					Id:                           1,
+					GrindSetting:                 11,
+					QuantityIn:                   18.0,
+					QuantityOut:                  36.0,
+					ShotTime:                     25 * time.Second,
+					WaterTemperature:             90.0,
+					Rating:                       4.5,
+					IsTooBitter:                  false,
+					IsTooSour:                    true,
+					ComparisonWithPreviousResult: sql.Better,
+					AdditionalNotes:              "This is a test",
 					Sheet: &sql.Sheet{
 						Id:   1,
 						Name: "sheet01",
@@ -470,7 +470,7 @@ func TestShotUpdateShotById(t *testing.T) {
 	rating = ?,
 	is_too_bitter = ?,
 	is_too_sour = ?,
-	comparaison_with_previous_result = ?,
+	comparison_with_previous_result = ?,
 	additional_notes = ?
 	WHERE id = ?`
 

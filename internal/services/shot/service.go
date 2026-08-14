@@ -24,21 +24,21 @@ import (
 //
 // swagger:model
 type Shot struct {
-	Id                            int                                   `json:"id"`
-	Sheet                         *sheet.Sheet                          `json:"sheet"`
-	Beans                         *bean.Bean                            `json:"beans"`
-	GrindSetting                  int                                   `json:"grind_setting"`
-	QuantityIn                    float64                               `json:"quantity_in"`
-	QuantityOut                   float64                               `json:"quantity_out"`
-	ShotTime                      time.Duration                         `json:"shot_time"`
-	WaterTemperature              float64                               `json:"water_temperature"`
-	Rating                        float64                               `json:"rating"`
-	IsTooBitter                   bool                                  `json:"is_too_bitter"`
-	IsTooSour                     bool                                  `json:"is_too_sour"`
-	ComparaisonWithPreviousResult sqlshot.ComparaisonWithPreviousResult `json:"comparaison_with_previous_result"`
-	AdditionalNotes               string                                `json:"additional_notes"`
-	CreatedAt                     *time.Time                            `json:"created_at"`
-	UpdatedAt                     *time.Time                            `json:"updated_at"`
+	Id                           int                                  `json:"id"`
+	Sheet                        *sheet.Sheet                         `json:"sheet"`
+	Beans                        *bean.Bean                           `json:"beans"`
+	GrindSetting                 int                                  `json:"grind_setting"`
+	QuantityIn                   float64                              `json:"quantity_in"`
+	QuantityOut                  float64                              `json:"quantity_out"`
+	ShotTime                     time.Duration                        `json:"shot_time"`
+	WaterTemperature             float64                              `json:"water_temperature"`
+	Rating                       float64                              `json:"rating"`
+	IsTooBitter                  bool                                 `json:"is_too_bitter"`
+	IsTooSour                    bool                                 `json:"is_too_sour"`
+	ComparisonWithPreviousResult sqlshot.ComparisonWithPreviousResult `json:"comparison_with_previous_result"`
+	AdditionalNotes              string                               `json:"additional_notes"`
+	CreatedAt                    *time.Time                           `json:"created_at"`
+	UpdatedAt                    *time.Time                           `json:"updated_at"`
 }
 
 // SQLToShot converts a SQLShot object to a Shot object.
@@ -63,7 +63,7 @@ func SQLToShot(shot *sqlshot.Shot) *Shot {
 	s.Rating = shot.Rating
 	s.IsTooBitter = shot.IsTooBitter
 	s.IsTooSour = shot.IsTooSour
-	s.ComparaisonWithPreviousResult = shot.ComparaisonWithPreviousResult
+	s.ComparisonWithPreviousResult = shot.ComparisonWithPreviousResult
 	s.AdditionalNotes = shot.AdditionalNotes
 	s.CreatedAt = shot.CreatedAt
 	s.UpdatedAt = shot.UpdatedAt
@@ -91,7 +91,7 @@ func ShotToSQL(shot *Shot) *sqlshot.Shot {
 	sqlShot.Rating = shot.Rating
 	sqlShot.IsTooBitter = shot.IsTooBitter
 	sqlShot.IsTooSour = shot.IsTooSour
-	sqlShot.ComparaisonWithPreviousResult = shot.ComparaisonWithPreviousResult
+	sqlShot.ComparisonWithPreviousResult = shot.ComparisonWithPreviousResult
 	sqlShot.AdditionalNotes = shot.AdditionalNotes
 	sqlShot.CreatedAt = shot.CreatedAt
 	sqlShot.UpdatedAt = shot.UpdatedAt

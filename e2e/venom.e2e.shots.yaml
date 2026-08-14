@@ -203,7 +203,7 @@ testcases:
     - result.bodyjson.rating ShouldEqual "8"
     - result.bodyjson.is_too_bitter ShouldEqual "false"
     - result.bodyjson.is_too_sour ShouldEqual "false"
-    - result.bodyjson.comparaison_with_previous_result ShouldEqual "0"
+    - result.bodyjson.comparison_with_previous_result ShouldEqual "0"
     - result.bodyjson.additional_notes ShouldEqual "this is a test"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldBeBlank
@@ -232,7 +232,7 @@ testcases:
     - result.bodyjson.rating ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.rating }}"
     - result.bodyjson.is_too_bitter ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_bitter }}"
     - result.bodyjson.is_too_sour ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_sour }}"
-    - result.bodyjson.comparaison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparaison_with_previous_result }}"
+    - result.bodyjson.comparison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparison_with_previous_result }}"
     - result.bodyjson.additional_notes ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.additional_notes }}"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldBeBlank
@@ -255,7 +255,7 @@ testcases:
     - result.bodyjson.bodyjson0.rating ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.rating }}"
     - result.bodyjson.bodyjson0.is_too_bitter ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_bitter }}"
     - result.bodyjson.bodyjson0.is_too_sour ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.is_too_sour }}"
-    - result.bodyjson.bodyjson0.comparaison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparaison_with_previous_result }}"
+    - result.bodyjson.bodyjson0.comparison_with_previous_result ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.comparison_with_previous_result }}"
     - result.bodyjson.bodyjson0.additional_notes ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.additional_notes }}"
     - result.bodyjson.bodyjson0.created_at ShouldNotBeBlank
     - result.bodyjson.bodyjson0.updated_at ShouldBeBlank
@@ -337,7 +337,7 @@ testcases:
     - result.bodyjson.rating ShouldEqual "8"
     - result.bodyjson.is_too_bitter ShouldEqual "false"
     - result.bodyjson.is_too_sour ShouldEqual "false"
-    - result.bodyjson.comparaison_with_previous_result ShouldEqual "0"
+    - result.bodyjson.comparison_with_previous_result ShouldEqual "0"
     - result.bodyjson.additional_notes ShouldEqual "this is a test - updated"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldNotBeBlank

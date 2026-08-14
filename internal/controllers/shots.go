@@ -25,18 +25,18 @@ type CreateShotParams struct {
 // CreateShotRequest represents the request body for creating a shot
 // swagger:model
 type CreateShotRequest struct {
-	SheetId                       int                               `json:"sheet_id"`
-	BeansId                       int                               `json:"beans_id"`
-	GrindSetting                  int                               `json:"grind_setting"`
-	QuantityIn                    float64                           `json:"quantity_in"`
-	QuantityOut                   float64                           `json:"quantity_out"`
-	ShotTime                      time.Duration                     `json:"shot_time"`
-	WaterTemperature              float64                           `json:"water_temperature"`
-	Rating                        float64                           `json:"rating"`
-	IsTooBitter                   bool                              `json:"is_too_bitter"`
-	IsTooSour                     bool                              `json:"is_too_sour"`
-	ComparaisonWithPreviousResult sql.ComparaisonWithPreviousResult `json:"comparaison_with_previous_result"`
-	AdditionalNotes               string                            `json:"additional_notes"`
+	SheetId                      int                              `json:"sheet_id"`
+	BeansId                      int                              `json:"beans_id"`
+	GrindSetting                 int                              `json:"grind_setting"`
+	QuantityIn                   float64                          `json:"quantity_in"`
+	QuantityOut                  float64                          `json:"quantity_out"`
+	ShotTime                     time.Duration                    `json:"shot_time"`
+	WaterTemperature             float64                          `json:"water_temperature"`
+	Rating                       float64                          `json:"rating"`
+	IsTooBitter                  bool                             `json:"is_too_bitter"`
+	IsTooSour                    bool                             `json:"is_too_sour"`
+	ComparisonWithPreviousResult sql.ComparisonWithPreviousResult `json:"comparison_with_previous_result"`
+	AdditionalNotes              string                           `json:"additional_notes"`
 }
 
 // ShotResponse represents an espresso shot for this application
@@ -76,7 +76,7 @@ func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
 		Float64("rating", shot.Rating).
 		Bool("is_too_bitter", shot.IsTooBitter).
 		Bool("is_too_sour", shot.IsTooSour).
-		Uint8("comparaison_with_previous_result", uint8(shot.ComparaisonWithPreviousResult)).
+		Uint8("comparison_with_previous_result", uint8(shot.ComparisonWithPreviousResult)).
 		Str("additional_notes", shot.AdditionalNotes)
 	if shot.CreatedAt != nil {
 		shotEvent.Time("created_at", *shot.CreatedAt)
@@ -124,18 +124,18 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	shot := &shot.Shot{
-		Sheet:                         &sheet.Sheet{Id: shotReq.SheetId},
-		Beans:                         &bean.Bean{Id: shotReq.BeansId},
-		GrindSetting:                  shotReq.GrindSetting,
-		QuantityIn:                    shotReq.QuantityIn,
-		QuantityOut:                   shotReq.QuantityOut,
-		ShotTime:                      shotReq.ShotTime,
-		WaterTemperature:              shotReq.WaterTemperature,
-		Rating:                        shotReq.Rating,
-		IsTooBitter:                   shotReq.IsTooBitter,
-		IsTooSour:                     shotReq.IsTooSour,
-		ComparaisonWithPreviousResult: shotReq.ComparaisonWithPreviousResult,
-		AdditionalNotes:               shotReq.AdditionalNotes,
+		Sheet:                        &sheet.Sheet{Id: shotReq.SheetId},
+		Beans:                        &bean.Bean{Id: shotReq.BeansId},
+		GrindSetting:                 shotReq.GrindSetting,
+		QuantityIn:                   shotReq.QuantityIn,
+		QuantityOut:                  shotReq.QuantityOut,
+		ShotTime:                     shotReq.ShotTime,
+		WaterTemperature:             shotReq.WaterTemperature,
+		Rating:                       shotReq.Rating,
+		IsTooBitter:                  shotReq.IsTooBitter,
+		IsTooSour:                    shotReq.IsTooSour,
+		ComparisonWithPreviousResult: shotReq.ComparisonWithPreviousResult,
+		AdditionalNotes:              shotReq.AdditionalNotes,
 	}
 
 	shot, err := h.ShotService.CreateShot(r.Context(), shot)
@@ -273,18 +273,18 @@ type UpdateShotByIdRequestParams struct {
 // with the given id
 // swagger:model
 type UpdateShotByIdRequest struct {
-	SheetId                       int                               `json:"sheet_id"`
-	BeansId                       int                               `json:"beans_id"`
-	GrindSetting                  int                               `json:"grind_setting"`
-	QuantityIn                    float64                           `json:"quantity_in"`
-	QuantityOut                   float64                           `json:"quantity_out"`
-	ShotTime                      time.Duration                     `json:"shot_time"`
-	WaterTemperature              float64                           `json:"water_temperature"`
-	Rating                        float64                           `json:"rating"`
-	IsTooBitter                   bool                              `json:"is_too_bitter"`
-	IsTooSour                     bool                              `json:"is_too_sour"`
-	ComparaisonWithPreviousResult sql.ComparaisonWithPreviousResult `json:"comparaison_with_previous_result"`
-	AdditionalNotes               string                            `json:"additional_notes"`
+	SheetId                      int                              `json:"sheet_id"`
+	BeansId                      int                              `json:"beans_id"`
+	GrindSetting                 int                              `json:"grind_setting"`
+	QuantityIn                   float64                          `json:"quantity_in"`
+	QuantityOut                  float64                          `json:"quantity_out"`
+	ShotTime                     time.Duration                    `json:"shot_time"`
+	WaterTemperature             float64                          `json:"water_temperature"`
+	Rating                       float64                          `json:"rating"`
+	IsTooBitter                  bool                             `json:"is_too_bitter"`
+	IsTooSour                    bool                             `json:"is_too_sour"`
+	ComparisonWithPreviousResult sql.ComparisonWithPreviousResult `json:"comparison_with_previous_result"`
+	AdditionalNotes              string                           `json:"additional_notes"`
 }
 
 // swagger:route PUT /rest/v1/shots/{id} shots updateShotById
@@ -340,19 +340,19 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	shot := &shot.Shot{
-		Id:                            id,
-		Sheet:                         &sheet.Sheet{Id: shotReq.SheetId},
-		Beans:                         &bean.Bean{Id: shotReq.BeansId},
-		GrindSetting:                  shotReq.GrindSetting,
-		QuantityIn:                    shotReq.QuantityIn,
-		QuantityOut:                   shotReq.QuantityOut,
-		ShotTime:                      shotReq.ShotTime,
-		WaterTemperature:              shotReq.WaterTemperature,
-		Rating:                        shotReq.Rating,
-		IsTooBitter:                   shotReq.IsTooBitter,
-		IsTooSour:                     shotReq.IsTooSour,
-		ComparaisonWithPreviousResult: shotReq.ComparaisonWithPreviousResult,
-		AdditionalNotes:               shotReq.AdditionalNotes,
+		Id:                           id,
+		Sheet:                        &sheet.Sheet{Id: shotReq.SheetId},
+		Beans:                        &bean.Bean{Id: shotReq.BeansId},
+		GrindSetting:                 shotReq.GrindSetting,
+		QuantityIn:                   shotReq.QuantityIn,
+		QuantityOut:                  shotReq.QuantityOut,
+		ShotTime:                     shotReq.ShotTime,
+		WaterTemperature:             shotReq.WaterTemperature,
+		Rating:                       shotReq.Rating,
+		IsTooBitter:                  shotReq.IsTooBitter,
+		IsTooSour:                    shotReq.IsTooSour,
+		ComparisonWithPreviousResult: shotReq.ComparisonWithPreviousResult,
+		AdditionalNotes:              shotReq.AdditionalNotes,
 	}
 
 	shot, err = h.ShotService.UpdateShotById(r.Context(), id, shot)
