@@ -15,6 +15,8 @@ import (
 func TestBeanHandlersHappyPaths(t *testing.T) {
 	expectedRoastDate := time.Date(2026, time.February, 18, 0, 0, 0, 0, time.UTC)
 	created := testBean(1, "espresso blend")
+	createdWithoutRoastDate := testBean(2, "espresso blend without roast date")
+	createdWithoutRoastDate.RoastDate = nil
 	found := testBean(7, "found beans")
 	first := testBean(1, "first")
 	second := testBean(2, "second")
@@ -35,8 +37,28 @@ func TestBeanHandlersHappyPaths(t *testing.T) {
 			status: http.StatusCreated, expected: BeansResponse{*created}, handler: (*Handler).CreateBeans,
 			configure: func(t *testing.T, service *fakeBeanService) {
 				service.createBean = func(_ context.Context, value *bean.Bean) (*bean.Bean, error) {
-					assertBeanRequest(t, value, 0, "espresso blend", 6, expectedRoastDate, modelsql.RoastLevelMedium)
+					assertBeanRequest(t, value, 0, "espresso blend", 6, &expectedRoastDate, modelsql.RoastLevelMedium)
 					return created, nil
+				}
+			},
+		},
+		{
+			name: "create without roast date", method: http.MethodPost, target: "/rest/v1/beans", body: `{"name":"espresso blend without roast date","roaster_id":6,"roast_level":2}`,
+			status: http.StatusCreated, expected: BeansResponse{*createdWithoutRoastDate}, handler: (*Handler).CreateBeans,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.createBean = func(_ context.Context, value *bean.Bean) (*bean.Bean, error) {
+					assertBeanRequest(t, value, 0, "espresso blend without roast date", 6, nil, modelsql.RoastLevelMedium)
+					return createdWithoutRoastDate, nil
+				}
+			},
+		},
+		{
+			name: "create with null roast date", method: http.MethodPost, target: "/rest/v1/beans", body: `{"name":"espresso blend without roast date","roaster_id":6,"roast_date":null,"roast_level":2}`,
+			status: http.StatusCreated, expected: BeansResponse{*createdWithoutRoastDate}, handler: (*Handler).CreateBeans,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.createBean = func(_ context.Context, value *bean.Bean) (*bean.Bean, error) {
+					assertBeanRequest(t, value, 0, "espresso blend without roast date", 6, nil, modelsql.RoastLevelMedium)
+					return createdWithoutRoastDate, nil
 				}
 			},
 		},
@@ -69,7 +91,7 @@ func TestBeanHandlersHappyPaths(t *testing.T) {
 					if id != 9 {
 						t.Errorf("id = %d, want 9", id)
 					}
-					assertBeanRequest(t, value, 9, "updated beans", 6, expectedRoastDate, modelsql.RoastLevelMedium)
+					assertBeanRequest(t, value, 9, "updated beans", 6, &expectedRoastDate, modelsql.RoastLevelMedium)
 					return updated, nil
 				}
 			},
@@ -181,7 +203,7 @@ func TestBeanHandlersErrorPaths(t *testing.T) {
 	}
 }
 
-func assertBeanRequest(t *testing.T, value *bean.Bean, id int, name string, roasterID int, roastDate time.Time, roastLevel modelsql.RoastLevel) {
+func assertBeanRequest(t *testing.T, value *bean.Bean, id int, name string, roasterID int, roastDate *time.Time, roastLevel modelsql.RoastLevel) {
 	t.Helper()
 	if value.Id != id {
 		t.Errorf("bean id = %d, want %d", value.Id, id)
@@ -192,7 +214,7 @@ func assertBeanRequest(t *testing.T, value *bean.Bean, id int, name string, roas
 	if value.Roaster == nil || value.Roaster.Id != roasterID {
 		t.Errorf("bean roaster = %#v, want id %d", value.Roaster, roasterID)
 	}
-	if value.RoastDate == nil || !value.RoastDate.Equal(roastDate) {
+	if (value.RoastDate == nil) != (roastDate == nil) || value.RoastDate != nil && !value.RoastDate.Equal(*roastDate) {
 		t.Errorf("bean roast date = %v, want %v", value.RoastDate, roastDate)
 	}
 	if value.RoastLevel != roastLevel {
