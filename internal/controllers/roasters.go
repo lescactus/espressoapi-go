@@ -85,15 +85,7 @@ func (h *Handler) CreateRoaster(w http.ResponseWriter, r *http.Request) {
 		Time("created_at", *roaster.CreatedAt)).
 		Msg("roaster successfully created")
 
-	resp, em := json.Marshal(&roasterResp)
-	if em != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusCreated, &roasterResp)
 }
 
 // swagger:route GET /rest/v1/roasters/{id} roasters getRoaster
