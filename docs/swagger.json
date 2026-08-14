@@ -1172,7 +1172,7 @@
     },
     "RoastDate": {
       "type": "string",
-      "format": "date",
+      "format": "date-time",
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
     },
     "RoastLevel": {
