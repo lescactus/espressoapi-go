@@ -61,7 +61,7 @@ type SheetResponse struct {
 //	  409: ErrorResponse
 //	  413: ErrorResponse
 func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
-	var sheetReq CreateRoasterRequest
+	var sheetReq CreateSheetRequest
 
 	if err := h.parseContentType(r); err != nil {
 		h.SetErrorResponse(w, err)
@@ -86,15 +86,7 @@ func (h *Handler) CreateSheet(w http.ResponseWriter, r *http.Request) {
 		Time("created_at", *sheet.CreatedAt)).
 		Msg("sheet successfully created")
 
-	resp, em := json.Marshal(&sheetResp)
-	if em != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusCreated, &sheetResp)
 }
 
 // swagger:route GET /rest/v1/sheets/{id} sheets getSheet

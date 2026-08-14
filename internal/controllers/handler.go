@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,6 +41,18 @@ func NewHandler(
 		ShotService:    ShotService,
 		maxRequestSize: serverMaxRequestSize,
 	}
+}
+
+func (h *Handler) writeJSONResponse(w http.ResponseWriter, status int, value any) {
+	response, err := json.Marshal(value)
+	if err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentTypeApplicationJSON)
+	w.WriteHeader(status)
+	_, _ = w.Write(response)
 }
 
 // MaxReqSize is a HTTP middleware limiting the size of the request
