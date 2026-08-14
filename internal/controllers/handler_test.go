@@ -1,8 +1,9 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
-	"io"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -10,12 +11,12 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
 	"github.com/lescactus/espressoapi-go/internal/services/shot"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 )
 
 func TestNewHandler(t *testing.T) {
@@ -172,59 +173,80 @@ func TestHandlerParseContentType(t *testing.T) {
 }
 
 func TestHandlerIdParameterLoggerHandler(t *testing.T) {
-	handler := NewHandler(nil, nil, nil, nil, 1024)
-
-	// Create a chain with the IdParameterLoggerHandler
-	c := alice.New().Append(handler.IdParameterLoggerHandler("id"))
-
-	// Create a test server with the handler chain
-	ts := httptest.NewServer(c.ThenFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	}))
-
-	defer ts.Close()
-
-	// Make a request to the test server with a sample ID
-	req, err := http.NewRequest("GET", ts.URL+"/rest/v1/sheets/123", nil)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name         string
+		fieldKey     string
+		idParam      string
+		wantID       int
+		wantIDInLogs bool
+	}{
+		{
+			name: "valid id", fieldKey: "id", idParam: "123",
+			wantID: 123, wantIDInLogs: true,
+		},
+		{
+			name: "custom field key", fieldKey: "sheet_id", idParam: "456",
+			wantID: 456, wantIDInLogs: true,
+		},
+		{
+			name: "non-integer id", fieldKey: "id", idParam: "invalid",
+		},
+		{
+			name: "missing id", fieldKey: "id",
+		},
 	}
 
-	// Create a test context with httprouter parameters
-	params := httprouter.Params{httprouter.Param{Key: "id", Value: "123"}}
-	ctx := context.WithValue(req.Context(), httprouter.ParamsKey, params)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var logOutput bytes.Buffer
+			logger := zerolog.New(&logOutput)
+			handler := NewHandler(nil, nil, nil, nil, 1024)
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hlog.FromRequest(r).Info().Msg("handled")
+				w.WriteHeader(http.StatusNoContent)
+			})
+			middleware := hlog.NewHandler(logger)(handler.IdParameterLoggerHandler(tt.fieldKey)(next))
 
-	// Set the context with parameters to the request
-	req = req.WithContext(ctx)
+			req := httptest.NewRequest(http.MethodGet, "/rest/v1/sheets/"+tt.idParam, nil)
+			if tt.idParam != "" {
+				params := httprouter.Params{{Key: "id", Value: tt.idParam}}
+				ctx := context.WithValue(req.Context(), httprouter.ParamsKey, params)
+				req = req.WithContext(ctx)
+			}
+			recorder := httptest.NewRecorder()
 
-	// Perform the request
-	http.DefaultClient.Do(req)
-}
+			middleware.ServeHTTP(recorder, req)
 
-func TestHandlerIDParameterLoggerHTTPHandler(t *testing.T) {
-	// Create a mock handler
-	mockHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = zerolog.Ctx(r.Context())
-	})
+			if recorder.Code != http.StatusNoContent {
+				t.Errorf("status = %d, want %d", recorder.Code, http.StatusNoContent)
+			}
 
-	// Create a mock request with a context containing the ID parameter
-	req := httptest.NewRequest(http.MethodGet, "/test/123", nil)
-	params := httprouter.Params{httprouter.Param{Key: "id", Value: "123"}}
+			var logEvent map[string]json.RawMessage
+			if err := json.Unmarshal(logOutput.Bytes(), &logEvent); err != nil {
+				t.Fatalf("decode log event: %v", err)
+			}
 
-	logger := zerolog.New(io.Discard)
-	ctx := context.WithValue(req.Context(), httprouter.ParamsKey, params)
-	ctx = logger.WithContext(ctx)
-	req = req.WithContext(ctx)
+			var message string
+			if err := json.Unmarshal(logEvent[zerolog.MessageFieldName], &message); err != nil {
+				t.Fatalf("decode log message: %v", err)
+			}
+			if message != "handled" {
+				t.Errorf("message = %q, want %q", message, "handled")
+			}
 
-	// Create a mock response recorder
-	rr := httptest.NewRecorder()
-
-	// Create a mock Handler instance
-	handler := NewHandler(nil, nil, nil, nil, 1024)
-
-	// Call the idParameterLoggerHttpHandler function
-	idParamLoggerHandler := handler.idParameterLoggerHttpHandler(mockHandler, "id")
-
-	// Serve the request using the idParameterLoggerHttpHandler
-	idParamLoggerHandler.ServeHTTP(rr, req)
+			idValue, idInLogs := logEvent[tt.fieldKey]
+			if idInLogs != tt.wantIDInLogs {
+				t.Fatalf("log field %q present = %t, want %t", tt.fieldKey, idInLogs, tt.wantIDInLogs)
+			}
+			if idInLogs {
+				var id int
+				if err := json.Unmarshal(idValue, &id); err != nil {
+					t.Fatalf("decode log field %q: %v", tt.fieldKey, err)
+				}
+				if id != tt.wantID {
+					t.Errorf("log field %q = %d, want %d", tt.fieldKey, id, tt.wantID)
+				}
+			}
+		})
+	}
 }
