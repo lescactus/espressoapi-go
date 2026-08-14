@@ -102,6 +102,20 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "request body contains unknown field "unknownfield""
 
+- name: POST /rest/v1/beans - with body - with correct Content-Type header - malformed roast date
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "not-a-date", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - >
+      result.bodyjson.msg ShouldEqual "invalid time format: parsing time "not-a-date" as "2006-01-02": cannot parse "not-a-date" as "2006""
+
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster does not exist
   steps:
   - type: http
@@ -164,6 +178,22 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 405
 
+- name: PUT /rest/v1/beans - no id
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: DELETE /rest/v1/beans - no id
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/beans"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
 - name: GET /rest/v1/beans/:id
   steps:
   - type: http
@@ -175,6 +205,24 @@ testcases:
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
+
+- name: GET /rest/v1/beans/:id - not found
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/beans/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no beans found for given id"
+
+- name: GET /rest/v1/beans/:id - non integer id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/beans/notanumber"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "id must be an integer"
 
 - name: GET /rest/v1/beans
   steps:
@@ -189,6 +237,29 @@ testcases:
     - result.bodyjson.bodyjson0 ShouldContainKey "name"
     - result.bodyjson.bodyjson0 ShouldContainKey "created_at"
     - result.bodyjson.bodyjson0 ShouldContainKey "updated_at"
+
+- name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roast date omitted
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-no-roast-date", "roaster_id": 1, "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.name ShouldEqual "beans-no-roast-date"
+    - result.bodyjson.roast_date ShouldBeNil
+
+- name: DELETE /rest/v1/beans/:id - roast date omitted cleanup
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roast-date-omitted.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
 
 - name: PUT /rest/v1/beans/:id - not found
   steps:

@@ -165,6 +165,22 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 405
 
+- name: PUT /rest/v1/sheets - no id
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: DELETE /rest/v1/sheets - no id
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
 - name: GET /rest/v1/sheets/:id
   steps:
   - type: http
@@ -176,6 +192,24 @@ testcases:
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
+
+- name: GET /rest/v1/sheets/:id - not found
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: GET /rest/v1/sheets/:id - non integer id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/notanumber"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "id must be an integer"
 
 - name: GET /rest/v1/sheets
   steps:

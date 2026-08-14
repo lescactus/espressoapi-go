@@ -177,6 +177,63 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "shot rating is out of range. Must be between 0.0 and 10.0"
 
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - rating is too low
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": -1}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot rating is out of range. Must be between 0.0 and 10.0"
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - rating at lower boundary
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 0}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.rating ShouldEqual "0"
+
+- name: DELETE /rest/v1/shots/:id - rating at lower boundary cleanup
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-rating-at-lower-boundary.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: POST /rest/v1/shots - with body - with correct Content-Type header - rating at upper boundary
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 10}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.rating ShouldEqual "10"
+
+- name: DELETE /rest/v1/shots/:id - rating at upper boundary cleanup
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-rating-at-upper-boundary.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
 - name: POST /rest/v1/shots - with body - with correct Content-Type header - correct json - sheet and beans exists
   steps:
   - type: http
@@ -216,6 +273,22 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 405
 
+- name: PUT /rest/v1/shots - no id
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
+- name: DELETE /rest/v1/shots - no id
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/shots"
+    assertions:
+    - result.statuscode ShouldEqual 405
+
 - name: GET /rest/v1/shots/:id
   steps:
   - type: http
@@ -236,6 +309,24 @@ testcases:
     - result.bodyjson.additional_notes ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.additional_notes }}"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldBeBlank
+
+- name: GET /rest/v1/shots/:id - not found
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/shots/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no shot found for given id"
+
+- name: GET /rest/v1/shots/:id - non integer id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/shots/notanumber"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "id must be an integer"
 
 - name: GET /rest/v1/shots
   steps:
