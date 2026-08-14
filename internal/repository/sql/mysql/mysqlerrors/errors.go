@@ -11,10 +11,12 @@ import (
 type Entity string
 
 var (
-	EntitySheet   Entity = "sheets"
-	EntityRoaster Entity = "roasters"
-	EntityBeans   Entity = "beans"
-	EntityShot    Entity = "shots"
+	EntitySheet           Entity = "sheets"
+	EntityRoaster         Entity = "roasters"
+	EntityBeans           Entity = "beans"
+	EntityShot            Entity = "shots"
+	error1451TablePattern        = regexp.MustCompile(`\x60([^\x60]+)\x60\.\x60([^\x60]+)\x60`)
+	error1452TablePattern        = regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
 
 	entityToErrAlreadyExists = map[Entity]error{
 		EntitySheet:   errors.ErrSheetAlreadyExists,
@@ -107,12 +109,8 @@ func ExtractTableNameFromError1451(err mysql.MySQLError) (Entity, error) {
 		return "", fmt.Errorf("error is not mysql error 1451")
 	}
 
-	// Define the regular expression
-	// x60 is the backtick character (`)
-	re := regexp.MustCompile(`\x60([^\x60]+)\x60\.\x60([^\x60]+)\x60`)
-
 	// Use the regular expression to find the table name in the error message
-	matches := re.FindStringSubmatch(err.Error())
+	matches := error1451TablePattern.FindStringSubmatch(err.Error())
 
 	// Check if a match was found
 	if len(matches) > 0 {
@@ -134,12 +132,8 @@ func ExtractTableNameFromError1452(err mysql.MySQLError) (Entity, error) {
 		return "", fmt.Errorf("error is not mysql error 1452")
 	}
 
-	// Define the regular expression
-	// x60 is the backtick character (`)
-	re := regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
-
 	// Use the regular expression to find the table name in the error message
-	matches := re.FindStringSubmatch(err.Error())
+	matches := error1452TablePattern.FindStringSubmatch(err.Error())
 
 	// Check if a match was found
 	if len(matches) > 0 {
