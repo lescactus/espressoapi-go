@@ -3,10 +3,11 @@ package shot
 import (
 	"context"
 	dbsql "database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
@@ -81,8 +82,8 @@ WHERE shots.id = ?`
 
 	if err := db.db.QueryRowxContext(ctx, get, id).StructScan(&s); err != nil {
 		// No row found, return nil
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrShotDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrShotDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for shot id=%d from the database: %w", id, err)
 	}
@@ -174,7 +175,7 @@ func (db *Shot) DeleteShotById(ctx context.Context, id int) error {
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {
-		return errors.ErrShotDoesNotExist
+		return domainerrors.ErrShotDoesNotExist
 	}
 
 	return nil

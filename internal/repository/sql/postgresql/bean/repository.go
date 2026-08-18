@@ -3,10 +3,11 @@ package bean
 import (
 	"context"
 	dbsql "database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/postgresql/postgreserrors"
@@ -54,8 +55,8 @@ WHERE
 	beans.id = $1`
 
 	if err := db.db.QueryRowxContext(ctx, query, id).StructScan(&beans); err != nil {
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrBeansDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrBeansDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for beans id=%d from the database: %w", id, err)
 	}
@@ -105,7 +106,7 @@ func (db *Bean) DeleteBeansById(ctx context.Context, id int) error {
 	}
 
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected != 1 {
-		return errors.ErrBeansDoesNotExist
+		return domainerrors.ErrBeansDoesNotExist
 	}
 
 	return nil
