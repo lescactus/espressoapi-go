@@ -101,6 +101,12 @@ func (b *BeanService) CreateBean(ctx context.Context, bean *Bean) (*Bean, error)
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
+	if !bean.RoastLevel.IsValid() {
+		err := errors.ErrBeansRoastLevelOutOfRange
+		msg := "could not create beans"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
 
 	id, err := b.repository.CreateBeans(ctx, BeanToSQL(bean))
 	if err != nil {
@@ -156,6 +162,12 @@ func (b *BeanService) UpdateBeanById(ctx context.Context, id int, bean *Bean) (*
 
 	if bean.Name == "" {
 		err := errors.ErrBeansNameIsEmpty
+		msg := "could not update beans by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+	if !bean.RoastLevel.IsValid() {
+		err := errors.ErrBeansRoastLevelOutOfRange
 		msg := "could not update beans by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)

@@ -98,9 +98,11 @@ func TestParseMySQLError(t *testing.T) {
 	fallback := errors.New("fallback error")
 	unknownEntity := Entity("unknown")
 	const (
-		beansForeignKeyError     = "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
-		sheetDoesNotExistError   = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"
-		roasterDoesNotExistError = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
+		beansForeignKeyError      = "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
+		sheetDoesNotExistError    = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`shots`, CONSTRAINT `shots_ibfk_1` FOREIGN KEY (`sheet_id`) REFERENCES `sheets` (`id`))"
+		roasterDoesNotExistError  = "Cannot add or update a child row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_ibfk_1` FOREIGN KEY (`roaster_id`) REFERENCES `roasters` (`id`))"
+		shotComparisonCheckError  = "Check constraint 'chk_shots_comparison_with_previous_result' is violated."
+		beansRoastLevelCheckError = "Check constraint 'chk_beans_roast_level' is violated."
 	)
 
 	tests := []struct {
@@ -166,6 +168,15 @@ func TestParseMySQLError(t *testing.T) {
 		},
 		{
 			name: "missing unknown entity returns fallback", err: &mysql.MySQLError{Number: 1452}, entity: &unknownEntity, fallback: fallback, want: fallback,
+		},
+		{
+			name: "shot comparison check constraint", err: &mysql.MySQLError{Number: 3819, Message: shotComparisonCheckError}, fallback: fallback, want: domainerrors.ErrShotComparisonWithPreviousResultOutOfRange,
+		},
+		{
+			name: "beans roast level check constraint", err: &mysql.MySQLError{Number: 3819, Message: beansRoastLevelCheckError}, fallback: fallback, want: domainerrors.ErrBeansRoastLevelOutOfRange,
+		},
+		{
+			name: "unknown check constraint returns fallback", err: &mysql.MySQLError{Number: 3819, Message: "Check constraint 'other_constraint' is violated."}, fallback: fallback, want: fallback,
 		},
 		{
 			name: "unmapped MySQL error returns fallback", err: &mysql.MySQLError{Number: 9999}, fallback: fallback, want: fallback,

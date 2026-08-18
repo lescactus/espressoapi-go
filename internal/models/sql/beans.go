@@ -12,6 +12,11 @@ const (
 	RoastLevelDark
 )
 
+// IsValid reports whether r is a supported roast level.
+func (r RoastLevel) IsValid() bool {
+	return r >= RoastLevelLight && r <= RoastLevelDark
+}
+
 type Beans struct {
 	Id         int        `db:"id"`
 	Roaster    *Roaster   `db:"roaster"`

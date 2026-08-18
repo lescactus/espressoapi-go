@@ -124,7 +124,7 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+      {"name": "beans01", "roaster_id": 100000000, "roast_date": "2021-02-18", "roast_level": 2}
     assertions:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no roaster found for given id"
@@ -153,6 +153,19 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "beans name must not be empty"
+
+- name: POST /rest/v1/beans - roast level is too high
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-invalid-roast-level", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 5}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans roast level is out of range. Must be between 0 and 4"
 
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists - non empty name
   steps:
@@ -308,13 +321,36 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"name": "beans01-updated", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+      {"name": "beans01-updated", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 4}
     assertions:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    - result.bodyjson.roast_level ShouldEqual "4"
     - result.bodyjson ShouldContainKey "name"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
+
+- name: PUT /rest/v1/beans/:id - roast level is too high
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01-updated", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 5}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans roast level is out of range. Must be between 0 and 4"
+
+- name: GET /rest/v1/beans/:id - invalid roast level update does not persist
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.roast_level ShouldEqual "4"
 
 - name: PUT /rest/v1/beans/:id - roast date omitted
   steps:

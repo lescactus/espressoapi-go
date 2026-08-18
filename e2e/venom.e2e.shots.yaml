@@ -265,6 +265,19 @@ testcases:
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldBeBlank
 
+- name: POST /rest/v1/shots - comparison with previous result is too high
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 8.0, "comparison_with_previous_result": 4}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot comparison with previous result is out of range. Must be between 0 and 3"
+
 - name: POST /rest/v1/shots/:id
   steps:
   - type: http
@@ -411,7 +424,7 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "additional_notes":"this is a test - updated"}
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "comparison_with_previous_result":3, "additional_notes":"this is a test - updated"}
     assertions:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
@@ -428,10 +441,32 @@ testcases:
     - result.bodyjson.rating ShouldEqual "8"
     - result.bodyjson.is_too_bitter ShouldEqual "false"
     - result.bodyjson.is_too_sour ShouldEqual "false"
-    - result.bodyjson.comparison_with_previous_result ShouldEqual "0"
+    - result.bodyjson.comparison_with_previous_result ShouldEqual "3"
     - result.bodyjson.additional_notes ShouldEqual "this is a test - updated"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldNotBeBlank
+
+- name: PUT /rest/v1/shots/:id - comparison with previous result is too high
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "rating": 8.0, "comparison_with_previous_result": 4}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot comparison with previous result is out of range. Must be between 0 and 3"
+
+- name: GET /rest/v1/shots/:id - invalid comparison update does not persist
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/shots/{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.comparison_with_previous_result ShouldEqual "3"
 
 - name: DELETE /rest/v1/shots/:id - not found
   steps:
