@@ -9,7 +9,7 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
-	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
+	"github.com/lescactus/espressoapi-go/internal/repository/sql/postgresql/postgreserrors"
 )
 
 var _ repository.ShotRepository = (*Shot)(nil)
@@ -19,33 +19,34 @@ type Shot struct {
 }
 
 func New(db *sqlx.DB) *Shot {
-	return &Shot{
-		db: db,
-	}
+	return &Shot{db: db}
 }
 
 func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
-	query := `INSERT INTO 
-	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	res, err := db.db.ExecContext(ctx, query,
-		shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
+	var id int
+	err := db.db.QueryRowxContext(ctx, "INSERT INTO shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
+		shot.Sheet.Id,
+		shot.Beans.Id,
+		shot.GrindSetting,
+		shot.QuantityIn,
+		shot.QuantityOut,
+		shot.ShotTime,
+		shot.WaterTemperature,
+		shot.Rating,
+		shot.IsTooBitter,
+		shot.IsTooSour,
+		shot.ComparisonWithPreviousResult,
+		shot.AdditionalNotes).Scan(&id)
 	if err != nil {
-		return 0, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityShot, fmt.Errorf("failed to insert record to the database: %w", err))
+		return 0, postgreserrors.ParsePostgresError(err, &postgreserrors.EntityShot, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to retrieve last inserted id: %w", err)
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func (db *Shot) GetShotById(ctx context.Context, id int) (*sql.Shot, error) {
-	var s sql.Shot
-
-	get := `
+	var shot sql.Shot
+	query := `
 SELECT
 	shots.id,
 	shots.grind_setting,
@@ -77,22 +78,21 @@ INNER JOIN
 	beans beans ON shots.beans_id = beans.id
 INNER JOIN
 	roasters roaster ON beans.roaster_id = roaster.id
-WHERE shots.id = ?`
+WHERE shots.id = $1`
 
-	if err := db.db.QueryRowxContext(ctx, get, id).StructScan(&s); err != nil {
-		// No row found, return nil
+	if err := db.db.QueryRowxContext(ctx, query, id).StructScan(&shot); err != nil {
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrShotDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for shot id=%d from the database: %w", id, err)
 	}
 
-	return &s, nil
+	return &shot, nil
 }
 
 func (db *Shot) GetAllShots(ctx context.Context) ([]sql.Shot, error) {
-	var shots = make([]sql.Shot, 0)
-	get := `
+	shots := make([]sql.Shot, 0)
+	query := `
 SELECT
 	shots.id,
 	shots.grind_setting,
@@ -125,7 +125,7 @@ INNER JOIN
 INNER JOIN
 	roasters roaster ON beans.roaster_id = roaster.id`
 
-	if err := db.db.SelectContext(ctx, &shots, get); err != nil {
+	if err := db.db.SelectContext(ctx, &shots, query); err != nil {
 		return shots, fmt.Errorf("failed to read records for shots: %w", err)
 	}
 
@@ -134,19 +134,19 @@ INNER JOIN
 
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
 	_, err := db.db.ExecContext(ctx, `UPDATE shots SET
-	sheet_id = ?,
-	beans_id = ?,
-	grind_setting = ?,
-	quantity_in = ?,
-	quantity_out = ?,
-	shot_time = ?,
-	water_temperature = ?,
-	rating = ?,
-	is_too_bitter = ?,
-	is_too_sour = ?,
-	comparison_with_previous_result = ?,
-	additional_notes = ?
-	WHERE id = ?`,
+	sheet_id = $1,
+	beans_id = $2,
+	grind_setting = $3,
+	quantity_in = $4,
+	quantity_out = $5,
+	shot_time = $6,
+	water_temperature = $7,
+	rating = $8,
+	is_too_bitter = $9,
+	is_too_sour = $10,
+	comparison_with_previous_result = $11,
+	additional_notes = $12
+	WHERE id = $13`,
 		shot.Sheet.Id,
 		shot.Beans.Id,
 		shot.GrindSetting,
@@ -161,19 +161,19 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 		shot.AdditionalNotes,
 		id)
 	if err != nil {
-		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityShot, fmt.Errorf("failed to update record in the database: %w", err))
+		return nil, postgreserrors.ParsePostgresError(err, &postgreserrors.EntityShot, fmt.Errorf("failed to update record in the database: %w", err))
 	}
 
 	return shot, nil
 }
 
 func (db *Shot) DeleteShotById(ctx context.Context, id int) error {
-	res, err := db.db.ExecContext(ctx, `DELETE FROM shots WHERE id = ?`, id)
+	result, err := db.db.ExecContext(ctx, "DELETE FROM shots WHERE id = $1", id)
 	if err != nil {
-		return mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to delete record for shots id=%d: %w", id, err))
+		return postgreserrors.ParsePostgresError(err, nil, fmt.Errorf("failed to delete record for shots id=%d: %w", id, err))
 	}
 
-	if row, _ := res.RowsAffected(); row != 1 {
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected != 1 {
 		return errors.ErrShotDoesNotExist
 	}
 

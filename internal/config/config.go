@@ -133,6 +133,16 @@ func New() (*App, error) {
 // validateConfig will make sure the provided configuration is valid
 // by looking if the values are present when they are expected to be present
 func (app *App) validateConfig() error {
+	switch app.DatabaseType {
+	case DatabaseTypeMySQL, DatabaseTypePostgres:
+	default:
+		return fmt.Errorf("unsupported database type %q", app.DatabaseType)
+	}
+
+	if strings.TrimSpace(app.DatabaseDatasourceName) == "" {
+		return fmt.Errorf("database datasource name cannot be empty")
+	}
+
 	return nil
 }
 

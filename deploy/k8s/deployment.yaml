@@ -17,6 +17,9 @@ spec:
       - name: migrate-up
         image: espresso-api-go
         command: ["/main", "migrate", "up"]
+        # MySQL is the default. To use PostgreSQL, update DATABASE_TYPE and
+        # DATABASE_DATASOURCE_NAME here and in the API container below to the
+        # same PostgreSQL values.
         env:
         - name: DATABASE_TYPE
           value: "mysql"

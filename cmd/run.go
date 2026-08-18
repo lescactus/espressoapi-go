@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,11 +18,6 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/controllers"
 	"github.com/rs/zerolog/hlog"
 	"github.com/spf13/cobra"
-
-	mysqlbean "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/bean"
-	mysqlroaster "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/roaster"
-	mysqlsheet "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/sheet"
-	mysqlshot "github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/shot"
 
 	svcbean "github.com/lescactus/espressoapi-go/internal/services/bean"
 	svcroaster "github.com/lescactus/espressoapi-go/internal/services/roaster"
@@ -47,15 +43,15 @@ Refer to the documentation for more information about configuration files and en
 }
 
 func runCmdMain(cmd *cobra.Command, args []string) {
-	dbSheet := mysqlsheet.New(app.App.Db)
-	dbRoaster := mysqlroaster.New(app.App.Db)
-	dbBean := mysqlbean.New(app.App.Db)
-	dbShot := mysqlshot.New(app.App.Db)
+	repositories, err := newRepositorySet(app.App.Cfg.DatabaseType, app.App.Db)
+	if err != nil {
+		log.Fatalf("unable to create repositories: %s", err)
+	}
 
-	svcSheet := svcsheet.New(dbSheet)
-	svcRoaster := svcroaster.New(dbRoaster)
-	svcBean := svcbean.New(dbBean)
-	svcShot := svcshot.New(dbShot)
+	svcSheet := svcsheet.New(repositories.sheet)
+	svcRoaster := svcroaster.New(repositories.roaster)
+	svcBean := svcbean.New(repositories.beans)
+	svcShot := svcshot.New(repositories.shot)
 
 	// Create http router, server and handler controller
 	r := httprouter.New()

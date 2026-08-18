@@ -174,22 +174,53 @@ func TestNewWithEnvVars(t *testing.T) {
 }
 
 func TestAppValidateConfig(t *testing.T) {
-	type fields struct{}
 	tests := []struct {
 		name    string
-		fields  fields
+		app     App
 		wantErr bool
 	}{
 		{
-			name:    "not implemented",
-			fields:  fields{},
+			name: "valid mysql configuration",
+			app: App{
+				DatabaseType:           DatabaseTypeMySQL,
+				DatabaseDatasourceName: defaultDatabaseDatasourceName,
+			},
 			wantErr: false,
+		},
+		{
+			name: "valid postgres configuration",
+			app: App{
+				DatabaseType:           DatabaseTypePostgres,
+				DatabaseDatasourceName: "postgres://root:root@localhost:5432/espresso-api?sslmode=disable",
+			},
+			wantErr: false,
+		},
+		{
+			name: "unsupported database type",
+			app: App{
+				DatabaseType:           "sqlite",
+				DatabaseDatasourceName: "file:espresso-api.db",
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty datasource name",
+			app: App{
+				DatabaseType: DatabaseTypeMySQL,
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty database type",
+			app: App{
+				DatabaseDatasourceName: defaultDatabaseDatasourceName,
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := &App{}
-			if err := app.validateConfig(); (err != nil) != tt.wantErr {
+			if err := tt.app.validateConfig(); (err != nil) != tt.wantErr {
 				t.Errorf("App.validateConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
