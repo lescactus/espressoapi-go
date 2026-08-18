@@ -23,7 +23,7 @@ func (h *Handler) Swagger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
+	w.Header().Set("Content-Type", ContentTypeApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(b.Bytes())
 }
