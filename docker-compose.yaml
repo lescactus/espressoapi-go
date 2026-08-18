@@ -28,8 +28,8 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: espresso-api
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      start_period: 5s
+      test: ["CMD", "mysql", "-uroot", "-proot", "-D", "espresso-api", "-e", "SELECT 1"]
+      start_period: 20s
       interval: 5s
       timeout: 5s
       retries: 10
