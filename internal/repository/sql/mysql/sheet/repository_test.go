@@ -123,7 +123,7 @@ func TestSheetGetSheetById(t *testing.T) {
 			name: "Sheet exists",
 			args: args{ctx: context.TODO(), id: 1},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE id = \\?$").WithArgs(1).WillReturnRows(
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE id = \\?$").WithArgs(1).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "sheet01"),
 				)
 			},
@@ -134,7 +134,7 @@ func TestSheetGetSheetById(t *testing.T) {
 			name: "Sheet does not exists",
 			args: args{ctx: context.TODO(), id: 2},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE id = \\?$").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE id = \\?$").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,
@@ -143,7 +143,7 @@ func TestSheetGetSheetById(t *testing.T) {
 			name: "Error",
 			args: args{ctx: context.TODO(), id: 3},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE id = \\?$").WithArgs(3).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE id = \\?$").WithArgs(3).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -198,7 +198,7 @@ func TestSheetGetSheetByName(t *testing.T) {
 			name: "Sheet exists",
 			args: args{ctx: context.TODO(), name: "sheet01"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE name = \\?$").WithArgs("sheet01").WillReturnRows(
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE name = \\?$").WithArgs("sheet01").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "sheet01"),
 				)
 			},
@@ -209,7 +209,7 @@ func TestSheetGetSheetByName(t *testing.T) {
 			name: "Sheet does not exists",
 			args: args{ctx: context.TODO(), name: "sheet02"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE name = \\?$").WithArgs("sheet02").WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE name = \\?$").WithArgs("sheet02").WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,
@@ -218,7 +218,7 @@ func TestSheetGetSheetByName(t *testing.T) {
 			name: "Error",
 			args: args{ctx: context.TODO(), name: "sheet03"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM sheets WHERE name = \\?$").WithArgs("sheet03").WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM sheets WHERE name = \\?$").WithArgs("sheet03").WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -274,7 +274,7 @@ func TestSheetGetAllSheets(t *testing.T) {
 			name: "Empty result",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM sheets").WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}),
 				)
 			},
@@ -285,7 +285,7 @@ func TestSheetGetAllSheets(t *testing.T) {
 			name: "Non empty result",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM sheets").WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
 						AddRow(1, "sheet01", now, nil).
 						AddRow(2, "sheet02", now, now).
@@ -303,7 +303,7 @@ func TestSheetGetAllSheets(t *testing.T) {
 			name: "Error",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM sheets").WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets").WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    []sql.Sheet{},
 			wantErr: true,
@@ -407,7 +407,7 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			args: args{ctx: context.TODO(), id: 1, sheet: &sql.Sheet{Id: 1, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 1).WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectQuery("SELECT * FROM sheets WHERE id = ?").WithArgs(1).WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets WHERE id = ?").WithArgs(1).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "sheetnewname"),
 				)
 			},
@@ -419,7 +419,7 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			args: args{ctx: context.TODO(), id: 2, sheet: &sql.Sheet{Id: 2, Name: "sheetnewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE sheets SET name = ? WHERE id = ?").WithArgs("sheetnewname", 2).WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectQuery("SELECT * FROM sheets WHERE id = ?").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets WHERE id = ?").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,

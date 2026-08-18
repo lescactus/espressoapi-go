@@ -33,7 +33,7 @@ func (db *Roaster) CreateRoaster(ctx context.Context, roaster *sql.Roaster) erro
 
 func (db *Roaster) GetRoasterById(ctx context.Context, id int) (*sql.Roaster, error) {
 	var roaster sql.Roaster
-	if err := db.db.QueryRowxContext(ctx, "SELECT * FROM roasters WHERE id = $1", id).StructScan(&roaster); err != nil {
+	if err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM roasters WHERE id = $1", id).StructScan(&roaster); err != nil {
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrRoasterDoesNotExist
 		}
@@ -45,7 +45,7 @@ func (db *Roaster) GetRoasterById(ctx context.Context, id int) (*sql.Roaster, er
 
 func (db *Roaster) GetRoasterByName(ctx context.Context, name string) (*sql.Roaster, error) {
 	var roaster sql.Roaster
-	if err := db.db.QueryRowxContext(ctx, "SELECT * FROM roasters WHERE name = $1", name).StructScan(&roaster); err != nil {
+	if err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM roasters WHERE name = $1", name).StructScan(&roaster); err != nil {
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrRoasterDoesNotExist
 		}
@@ -57,7 +57,7 @@ func (db *Roaster) GetRoasterByName(ctx context.Context, name string) (*sql.Roas
 
 func (db *Roaster) GetAllRoasters(ctx context.Context) ([]sql.Roaster, error) {
 	roasters := make([]sql.Roaster, 0)
-	if err := db.db.SelectContext(ctx, &roasters, "SELECT * FROM roasters"); err != nil {
+	if err := db.db.SelectContext(ctx, &roasters, "SELECT id, name, created_at, updated_at FROM roasters"); err != nil {
 		return roasters, fmt.Errorf("failed to read records for roasters: %w", err)
 	}
 

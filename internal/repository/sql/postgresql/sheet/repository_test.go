@@ -33,7 +33,7 @@ func TestSheetRepositoryPostgresBehavior(t *testing.T) {
 		{
 			name: "get missing sheet returns domain error",
 			run: func(t *testing.T, repository *Sheet, mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM sheets WHERE id = $1").
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM sheets WHERE id = $1").
 					WithArgs(42).
 					WillReturnError(dbsql.ErrNoRows)
 
