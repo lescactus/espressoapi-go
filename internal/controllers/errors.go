@@ -109,6 +109,14 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrShotRatingOutOfRange):
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"}
 
+		// Catch if the shot comparison with previous result is out of range
+		case errors.Is(err, domainerrors.ErrShotComparisonWithPreviousResultOutOfRange):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "shot comparison with previous result is out of range. Must be between 0 and 3"}
+
+		// Catch if the beans roast level is out of range
+		case errors.Is(err, domainerrors.ErrBeansRoastLevelOutOfRange):
+			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"}
+
 		// Catch if the beans foreign key constraint failed
 		case errors.Is(err, domainerrors.ErrBeansForeignKeyConstraint):
 			errResp = &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domainerrors.ErrBeansForeignKeyConstraint)}

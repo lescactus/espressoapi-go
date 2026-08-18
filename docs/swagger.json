@@ -1040,8 +1040,15 @@
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/bean"
     },
     "ComparisonWithPreviousResult": {
+      "description": "0 = worst, 1 = same, 2 = better, 3 = unknown.",
       "type": "integer",
       "format": "uint8",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "CreateBeansRequest": {
@@ -1176,8 +1183,16 @@
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
     },
     "RoastLevel": {
+      "description": "0 = light, 1 = light to medium, 2 = medium, 3 = medium to dark, 4 = dark.",
       "type": "integer",
       "format": "uint8",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "Roaster": {

@@ -3,6 +3,7 @@ package mysqlerrors
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/lescactus/espressoapi-go/internal/errors"
@@ -17,6 +18,10 @@ var (
 	EntityShot            Entity = "shots"
 	error1451TablePattern        = regexp.MustCompile(`\x60([^\x60]+)\x60\.\x60([^\x60]+)\x60`)
 	error1452TablePattern        = regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
+	checkConstraintErrors        = map[string]error{
+		"chk_beans_roast_level":                     errors.ErrBeansRoastLevelOutOfRange,
+		"chk_shots_comparison_with_previous_result": errors.ErrShotComparisonWithPreviousResultOutOfRange,
+	}
 
 	entityToErrAlreadyExists = map[Entity]error{
 		EntitySheet:   errors.ErrSheetAlreadyExists,
@@ -53,6 +58,16 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 	// Checking if the entry inserted is a duplicate:
 	// ERROR 1062 (23000): Duplicate entry 'xxxxx' for key 'yyyy'
 	if me, ok := err.(*mysql.MySQLError); ok {
+		// ERROR 3819 (HY000): Check constraint 'constraint_name' is violated.
+		if me.Number == 3819 {
+			for constraint, mappedErr := range checkConstraintErrors {
+				if strings.Contains(me.Message, constraint) {
+					return mappedErr
+				}
+			}
+			return fallback
+		}
+
 		if me.Number == 1062 {
 			if entity == nil {
 				return fallback

@@ -50,6 +50,10 @@ jobs:
     - name: Run sql migrations
       run: go run main.go migrate up
 
+    - name: Verify MySQL enum constraints
+      if: matrix.testsuites == 'venom.e2e.beans.yaml'
+      run: go test -tags=integration ./e2e
+
     - name: Run e2e tests with venom
       run: |
         export IS_TTY=true

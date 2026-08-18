@@ -11,6 +11,11 @@ const (
 	Unknown
 )
 
+// IsValid reports whether r is a supported comparison result.
+func (r ComparisonWithPreviousResult) IsValid() bool {
+	return r >= Worst && r <= Unknown
+}
+
 type Shot struct {
 	Id                           int                          `db:"id"`
 	Sheet                        *Sheet                       `db:"sheet"`

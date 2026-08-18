@@ -133,6 +133,18 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:           "errors.ErrShotComparisonWithPreviousResultOutOfRange error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotComparisonWithPreviousResultOutOfRange},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "shot comparison with previous result is out of range. Must be between 0 and 3"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:           "errors.ErrBeansRoastLevelOutOfRange error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansRoastLevelOutOfRange},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "errors.ErrBeansForeignKeyConstraint error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansForeignKeyConstraint},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domerrors.ErrBeansForeignKeyConstraint)},

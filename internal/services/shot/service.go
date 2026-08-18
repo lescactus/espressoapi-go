@@ -126,6 +126,9 @@ func (s *ShotService) CreateShot(ctx context.Context, shot *Shot) (*Shot, error)
 	if !(shot.Rating >= 0.0 && shot.Rating <= 10.0) {
 		return nil, errors.ErrShotRatingOutOfRange
 	}
+	if !shot.ComparisonWithPreviousResult.IsValid() {
+		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
+	}
 
 	id, err := s.repository.CreateShot(ctx, ShotToSQL(shot))
 	if err != nil {
@@ -180,6 +183,9 @@ func (s *ShotService) UpdateShotById(ctx context.Context, id int, shot *Shot) (*
 
 	if !(shot.Rating >= 0.0 && shot.Rating <= 10.0) {
 		return nil, errors.ErrShotRatingOutOfRange
+	}
+	if !shot.ComparisonWithPreviousResult.IsValid() {
+		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
 	}
 
 	sqlShot := ShotToSQL(shot)
