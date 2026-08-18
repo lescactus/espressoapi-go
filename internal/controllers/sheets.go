@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -141,15 +140,7 @@ func (h *Handler) GetSheetById(w http.ResponseWriter, r *http.Request) {
 		Time("created_at", *sheet.CreatedAt)).
 		Msg("sheet found by id")
 
-	resp, err := json.Marshal(sheetResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, sheetResp)
 }
 
 // swagger:route GET /rest/v1/sheets sheets getAllSheets
@@ -187,15 +178,7 @@ func (h *Handler) GetAllSheets(w http.ResponseWriter, r *http.Request) {
 		sheetsResp[k] = SheetResponse{v}
 	}
 
-	resp, err := json.Marshal(&sheetsResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, &sheetsResp)
 }
 
 // swagger:parameters updateSheetById
@@ -283,15 +266,7 @@ func (h *Handler) UpdateSheetById(w http.ResponseWriter, r *http.Request) {
 		Str("name", sheet.Name)).
 		Msg("sheet successfully updated")
 
-	resp, err := json.Marshal(sheetResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, sheetResp)
 }
 
 // swagger:route DELETE /rest/v1/sheets/{id} sheets deleteSheet
@@ -345,13 +320,5 @@ func (h *Handler) DeleteSheetById(w http.ResponseWriter, r *http.Request) {
 		Msg: fmt.Sprintf("sheet %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, i)
 }

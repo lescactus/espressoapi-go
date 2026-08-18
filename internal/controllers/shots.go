@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -146,15 +145,7 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot successfully created")
 
-	resp, err := json.Marshal(shotResp)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusCreated, shotResp)
 }
 
 // swagger:route GET /rest/v1/shots/{id} shots getShot
@@ -204,15 +195,7 @@ func (h *Handler) GetShotById(w http.ResponseWriter, r *http.Request) {
 	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot found by id")
 
-	resp, err := json.Marshal(shotResp)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, shotResp)
 }
 
 // swagger:route GET /rest/v1/shots shots getAllShots
@@ -250,15 +233,7 @@ func (h *Handler) GetAllShots(w http.ResponseWriter, r *http.Request) {
 		shotsResp[k] = ShotResponse{v}
 	}
 
-	resp, err := json.Marshal(&shotsResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, &shotsResp)
 }
 
 // swagger:parameters updateShotById
@@ -363,15 +338,7 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 	shotResp := ShotResponse{*shot}
 	logShotFromRequest(r, shot, "shot successfully updated")
 
-	resp, err := json.Marshal(shotResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, shotResp)
 }
 
 // swagger:route DELETE /rest/v1/shots/{id} shots deleteShot
@@ -425,13 +392,5 @@ func (h *Handler) DeleteShotById(w http.ResponseWriter, r *http.Request) {
 		Msg: fmt.Sprintf("shot %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, i)
 }

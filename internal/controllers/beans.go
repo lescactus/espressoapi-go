@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -117,15 +116,7 @@ func (h *Handler) CreateBeans(w http.ResponseWriter, r *http.Request) {
 	beansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans successfully created")
 
-	resp, err := json.Marshal(beansResp)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusCreated, beansResp)
 }
 
 // swagger:route GET /rest/v1/beans/{id} beans getBeans
@@ -175,15 +166,7 @@ func (h *Handler) GetBeansById(w http.ResponseWriter, r *http.Request) {
 	BeansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans found by id")
 
-	resp, err := json.Marshal(BeansResp)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, BeansResp)
 }
 
 // swagger:route GET /rest/v1/beans beans getAllBeans
@@ -222,15 +205,7 @@ func (h *Handler) GetAllBeans(w http.ResponseWriter, r *http.Request) {
 		beansResp[k] = BeansResponse{v}
 	}
 
-	resp, err := json.Marshal(&beansResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, &beansResp)
 }
 
 // swagger:parameters updateBeansById
@@ -321,15 +296,7 @@ func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 	beansResp := BeansResponse{*beans}
 	logBeansFromRequest(r, beans, "beans successfully updated")
 
-	resp, err := json.Marshal(beansResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, beansResp)
 }
 
 // swagger:route DELETE /rest/v1/beans/{id} beans deleteBeans
@@ -383,13 +350,5 @@ func (h *Handler) DeleteBeansById(w http.ResponseWriter, r *http.Request) {
 		Msg: fmt.Sprintf("beans %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, i)
 }

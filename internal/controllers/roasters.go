@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -140,15 +139,7 @@ func (h *Handler) GetRoasterById(w http.ResponseWriter, r *http.Request) {
 		Time("created_at", *roaster.CreatedAt)).
 		Msg("roaster found by id")
 
-	resp, err := json.Marshal(roasterResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, roasterResp)
 }
 
 // swagger:route GET /rest/v1/roasters roasters getAllRoasters
@@ -186,15 +177,7 @@ func (h *Handler) GetAllRoasters(w http.ResponseWriter, r *http.Request) {
 		roastersResp[k] = RoasterResponse{v}
 	}
 
-	resp, err := json.Marshal(&roastersResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, &roastersResp)
 }
 
 // swagger:parameters updateRoasterById
@@ -282,15 +265,7 @@ func (h *Handler) UpdateRoasterById(w http.ResponseWriter, r *http.Request) {
 		Str("name", roaster.Name)).
 		Msg("roaster successfully updated")
 
-	resp, err := json.Marshal(roasterResp)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, roasterResp)
 }
 
 // swagger:route DELETE /rest/v1/roasters/{id} roasters deleteRoaster
@@ -344,13 +319,5 @@ func (h *Handler) DeleteRoasterById(w http.ResponseWriter, r *http.Request) {
 		Msg: fmt.Sprintf("roaster %d deleted successfully", id),
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		h.SetErrorResponse(w, err)
-		return
-	}
-
-	w.Header().Add("Content-Type", ContentTypeApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	h.writeJSONResponse(w, http.StatusOK, i)
 }
