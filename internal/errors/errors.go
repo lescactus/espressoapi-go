@@ -11,11 +11,13 @@ var (
 	ErrRoasterDoesNotExist  = errors.New("roaster does not exists")
 	ErrRoasterNameIsEmpty   = errors.New("roaster name is empty")
 
+	ErrBeansAlreadyExists        = errors.New("beans already exist")
 	ErrBeansDoesNotExist         = errors.New("beans does not exists")
 	ErrBeansForeignKeyConstraint = errors.New("beans foreign key constraint failed")
 	ErrBeansIsNil                = errors.New("beans is nil")
 	ErrBeansNameIsEmpty          = errors.New("beans name is empty")
 
+	ErrShotAlreadyExists        = errors.New("shot already exists")
 	ErrShotDoesNotExist         = errors.New("shot does not exists")
 	ErrShotRatingOutOfRange     = errors.New("shot rating is out of range. Must be between 0.0 and 10.0")
 	ErrShotForeignKeyConstraint = errors.New("shot foreign key constraint failed")

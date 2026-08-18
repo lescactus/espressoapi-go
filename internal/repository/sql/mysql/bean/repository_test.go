@@ -107,16 +107,16 @@ func TestDBCreateBeans(t *testing.T) {
 			expectedErr: domainerrors.ErrRoasterDoesNotExist,
 		},
 		{
-			name: "Beans - duplicate error is not classified as roaster",
+			name: "Beans - duplicate error",
 			args: args{ctx: context.TODO(), beans: &sql.Beans{Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?)").
 					WithArgs("beans01", 1, now, sql.RoastLevelMediumToDark).
 					WillReturnError(&mysql.MySQLError{Number: 1062})
 			},
-			want:          0,
-			wantErr:       true,
-			unexpectedErr: domainerrors.ErrRoasterAlreadyExists,
+			want:        0,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrBeansAlreadyExists,
 		},
 		{
 			name: "Beans - error",
@@ -430,16 +430,16 @@ func TestBeanUpdateBeansById(t *testing.T) {
 			expectedErr: domainerrors.ErrRoasterDoesNotExist,
 		},
 		{
-			name: "Duplicate error is not classified as roaster",
+			name: "Duplicate beans",
 			args: args{ctx: context.TODO(), id: 1, beans: &sql.Beans{Id: 1, Roaster: &sql.Roaster{Id: 1}, Name: "beans01", RoastDate: &now, RoastLevel: sql.RoastLevelMediumToDark}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?").
 					WithArgs("beans01", 1, AnyTime{}, sql.RoastLevelMediumToDark, 1).
 					WillReturnError(&mysql.MySQLError{Number: 1062})
 			},
-			want:          nil,
-			wantErr:       true,
-			unexpectedErr: domainerrors.ErrRoasterAlreadyExists,
+			want:        nil,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrBeansAlreadyExists,
 		},
 	}
 	for _, tt := range tests {

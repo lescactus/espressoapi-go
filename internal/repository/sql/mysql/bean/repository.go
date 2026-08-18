@@ -29,7 +29,7 @@ func (db *Bean) CreateBeans(ctx context.Context, beans *sql.Beans) (int, error) 
 	res, err := db.db.ExecContext(ctx, query,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel)
 	if err != nil {
-		return 0, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to insert record to the database: %w", err))
+		return 0, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityBeans, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
 	id, err := res.LastInsertId()
@@ -102,7 +102,7 @@ func (db *Bean) UpdateBeansById(ctx context.Context, id int, beans *sql.Beans) (
 	_, err := db.db.ExecContext(ctx, `UPDATE beans SET name = ?, roaster_id = ?, roast_date = ?, roast_level = ? WHERE id = ?`,
 		beans.Name, beans.Roaster.Id, beans.RoastDate, beans.RoastLevel, id)
 	if err != nil {
-		return nil, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to update record for beans id=%d: %w", id, err))
+		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityBeans, fmt.Errorf("failed to update record for beans id=%d: %w", id, err))
 	}
 
 	return beans, nil

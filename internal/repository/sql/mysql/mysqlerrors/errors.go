@@ -21,6 +21,8 @@ var (
 	entityToErrAlreadyExists = map[Entity]error{
 		EntitySheet:   errors.ErrSheetAlreadyExists,
 		EntityRoaster: errors.ErrRoasterAlreadyExists,
+		EntityBeans:   errors.ErrBeansAlreadyExists,
+		EntityShot:    errors.ErrShotAlreadyExists,
 	}
 
 	entityToErrForeignKeyConstraint = map[Entity]error{
@@ -76,12 +78,12 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 		// which will indicate the entity does not exists:
 		// ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails
 		if me.Number == 1452 {
-			if entity == nil {
-				table, err := ExtractTableNameFromError1452(*me)
-				if err != nil {
-					return fallback
-				}
+			table, err := ExtractTableNameFromError1452(*me)
+			if err == nil {
 				return mappedEntityError(entityToErrDoesNotExist, table, fallback)
+			}
+			if entity == nil {
+				return fallback
 			}
 			return mappedEntityError(entityToErrDoesNotExist, *entity, fallback)
 		}
