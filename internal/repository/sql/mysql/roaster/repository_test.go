@@ -16,29 +16,6 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
-func TestNew(t *testing.T) {
-	sqlxdb := &sqlx.DB{}
-	type args struct {
-		db *sqlx.DB
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Roaster
-	}{
-		{"Nil args", args{nil}, &Roaster{nil}},
-		{"Non nil args", args{sqlxdb}, &Roaster{sqlxdb}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.db)
-			if got.db != tt.want.db {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestDBCreateRoaster(t *testing.T) {
 	type args struct {
 		ctx     context.Context
@@ -86,9 +63,7 @@ func TestDBCreateRoaster(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -158,9 +133,7 @@ func TestRoasterGetRoasterById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -233,9 +206,7 @@ func TestRoasterGetRoasterByName(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -318,9 +289,7 @@ func TestRoasterGetAllRoasters(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -434,9 +403,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -515,9 +482,7 @@ func TestRoasterDeleteRoasterById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -564,9 +529,7 @@ func TestRoasterPing(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Roaster{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)

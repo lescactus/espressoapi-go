@@ -28,31 +28,6 @@ func (a AnyTime) Match(v driver.Value) bool {
 	return ok
 }
 
-func TestNew(t *testing.T) {
-	type args struct {
-		db *sqlx.DB
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Bean
-	}{
-		{
-			name: "nil db",
-			args: args{db: nil},
-			want: &Bean{db: nil},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.db)
-			if got.db != tt.want.db {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestDBCreateBeans(t *testing.T) {
 	now := time.Now()
 
@@ -66,6 +41,7 @@ func TestDBCreateBeans(t *testing.T) {
 		mockClosure   func(mock sqlmock.Sqlmock)
 		want          int
 		wantErr       bool
+		wantErrMsg    string
 		expectedErr   error
 		unexpectedErr error
 	}{
@@ -88,8 +64,9 @@ func TestDBCreateBeans(t *testing.T) {
 					WithArgs("beans01", 1, now, sql.RoastLevelMediumToDark).
 					WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("mock error")))
 			},
-			want:    0,
-			wantErr: true,
+			want:       0,
+			wantErr:    true,
+			wantErrMsg: "failed to retrieve last inserted id: mock error",
 		},
 		{
 			name: "Beans - foreign key constraint error - roaster does not exist",
@@ -139,9 +116,7 @@ func TestDBCreateBeans(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -156,6 +131,9 @@ func TestDBCreateBeans(t *testing.T) {
 			}
 			if tt.unexpectedErr != nil && errors.Is(err, tt.unexpectedErr) {
 				t.Errorf("Bean.CreateBeans() error = %v, must not be %v", err, tt.unexpectedErr)
+			}
+			if tt.wantErrMsg != "" && (err == nil || err.Error() != tt.wantErrMsg) {
+				t.Errorf("Bean.CreateBeans() error = %v, want error message %q", err, tt.wantErrMsg)
 			}
 
 			if !reflect.DeepEqual(id, tt.want) {
@@ -243,9 +221,7 @@ func TestBeanGetBeansById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -344,9 +320,7 @@ func TestBeanGetAllBeans(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -451,9 +425,7 @@ func TestBeanUpdateBeansById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -546,9 +518,7 @@ func TestBeanDeleteBeansById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -598,9 +568,7 @@ func TestBeanPing(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Bean{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)

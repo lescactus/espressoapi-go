@@ -16,29 +16,6 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
-func TestNew(t *testing.T) {
-	sqlxdb := &sqlx.DB{}
-	type args struct {
-		db *sqlx.DB
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Sheet
-	}{
-		{"Nil args", args{nil}, &Sheet{nil}},
-		{"Non nil args", args{sqlxdb}, &Sheet{sqlxdb}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.db)
-			if got.db != tt.want.db {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestDBCreateSheet(t *testing.T) {
 	type args struct {
 		ctx   context.Context
@@ -86,9 +63,7 @@ func TestDBCreateSheet(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -158,9 +133,7 @@ func TestSheetGetSheetById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -233,9 +206,7 @@ func TestSheetGetSheetByName(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -318,9 +289,7 @@ func TestSheetGetAllSheets(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -434,9 +403,7 @@ func TestSheetUpdateSheetById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -515,9 +482,7 @@ func TestSheetDeleteSheetById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -564,9 +529,7 @@ func TestSheetPing(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Sheet{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
