@@ -33,7 +33,7 @@ func (db *Sheet) CreateSheet(ctx context.Context, sheet *sql.Sheet) error {
 
 func (db *Sheet) GetSheetById(ctx context.Context, id int) (*sql.Sheet, error) {
 	var sheet sql.Sheet
-	if err := db.db.QueryRowxContext(ctx, "SELECT * FROM sheets WHERE id = $1", id).StructScan(&sheet); err != nil {
+	if err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM sheets WHERE id = $1", id).StructScan(&sheet); err != nil {
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrSheetDoesNotExist
 		}
@@ -45,7 +45,7 @@ func (db *Sheet) GetSheetById(ctx context.Context, id int) (*sql.Sheet, error) {
 
 func (db *Sheet) GetSheetByName(ctx context.Context, name string) (*sql.Sheet, error) {
 	var sheet sql.Sheet
-	if err := db.db.QueryRowxContext(ctx, "SELECT * FROM sheets WHERE name = $1", name).StructScan(&sheet); err != nil {
+	if err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM sheets WHERE name = $1", name).StructScan(&sheet); err != nil {
 		if err == dbsql.ErrNoRows {
 			return nil, errors.ErrSheetDoesNotExist
 		}
@@ -57,7 +57,7 @@ func (db *Sheet) GetSheetByName(ctx context.Context, name string) (*sql.Sheet, e
 
 func (db *Sheet) GetAllSheets(ctx context.Context) ([]sql.Sheet, error) {
 	sheets := make([]sql.Sheet, 0)
-	if err := db.db.SelectContext(ctx, &sheets, "SELECT * FROM sheets"); err != nil {
+	if err := db.db.SelectContext(ctx, &sheets, "SELECT id, name, created_at, updated_at FROM sheets"); err != nil {
 		return sheets, fmt.Errorf("failed to read records for sheets: %w", err)
 	}
 

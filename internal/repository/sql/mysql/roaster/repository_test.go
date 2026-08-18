@@ -123,7 +123,7 @@ func TestRoasterGetRoasterById(t *testing.T) {
 			name: "Roaster exists",
 			args: args{ctx: context.TODO(), id: 1},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE id = \\?$").WithArgs(1).WillReturnRows(
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE id = \\?$").WithArgs(1).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "roaster01"),
 				)
 			},
@@ -134,7 +134,7 @@ func TestRoasterGetRoasterById(t *testing.T) {
 			name: "Roaster does not exists",
 			args: args{ctx: context.TODO(), id: 2},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE id = \\?$").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE id = \\?$").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,
@@ -143,7 +143,7 @@ func TestRoasterGetRoasterById(t *testing.T) {
 			name: "Error",
 			args: args{ctx: context.TODO(), id: 3},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE id = \\?$").WithArgs(3).WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE id = \\?$").WithArgs(3).WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -198,7 +198,7 @@ func TestRoasterGetRoasterByName(t *testing.T) {
 			name: "Roaster exists",
 			args: args{ctx: context.TODO(), name: "roaster01"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE name = \\?$").WithArgs("roaster01").WillReturnRows(
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE name = \\?$").WithArgs("roaster01").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "roaster01"),
 				)
 			},
@@ -209,7 +209,7 @@ func TestRoasterGetRoasterByName(t *testing.T) {
 			name: "Roaster does not exists",
 			args: args{ctx: context.TODO(), name: "roaster02"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE name = \\?$").WithArgs("roaster02").WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE name = \\?$").WithArgs("roaster02").WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,
@@ -218,7 +218,7 @@ func TestRoasterGetRoasterByName(t *testing.T) {
 			name: "Error",
 			args: args{ctx: context.TODO(), name: "roaster03"},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("^SELECT \\* FROM roasters WHERE name = \\?$").WithArgs("roaster03").WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("^SELECT id, name, created_at, updated_at FROM roasters WHERE name = \\?$").WithArgs("roaster03").WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    nil,
 			wantErr: true,
@@ -274,7 +274,7 @@ func TestRoasterGetAllRoasters(t *testing.T) {
 			name: "Empty result",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM roasters").WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}),
 				)
 			},
@@ -285,7 +285,7 @@ func TestRoasterGetAllRoasters(t *testing.T) {
 			name: "Non empty result",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM roasters").WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters").WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
 						AddRow(1, "roaster01", now, nil).
 						AddRow(2, "roaster02", now, now).
@@ -303,7 +303,7 @@ func TestRoasterGetAllRoasters(t *testing.T) {
 			name: "Error",
 			args: args{context.TODO()},
 			mockClosure: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM roasters").WillReturnError(fmt.Errorf("mock error"))
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters").WillReturnError(fmt.Errorf("mock error"))
 			},
 			want:    []sql.Roaster{},
 			wantErr: true,
@@ -407,7 +407,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			args: args{ctx: context.TODO(), id: 1, roaster: &sql.Roaster{Id: 1, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 1).WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectQuery("SELECT * FROM roasters WHERE id = ?").WithArgs(1).WillReturnRows(
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters WHERE id = ?").WithArgs(1).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "roasternewname"),
 				)
 			},
@@ -419,7 +419,7 @@ func TestRoasterUpdateRoasterById(t *testing.T) {
 			args: args{ctx: context.TODO(), id: 2, roaster: &sql.Roaster{Id: 2, Name: "roasternewname"}},
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectExec("UPDATE roasters SET name = ? WHERE id = ?").WithArgs("roasternewname", 2).WillReturnResult(sqlmock.NewResult(0, 0))
-				mock.ExpectQuery("SELECT * FROM roasters WHERE id = ?").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters WHERE id = ?").WithArgs(2).WillReturnError(dbsql.ErrNoRows)
 			},
 			want:    nil,
 			wantErr: true,

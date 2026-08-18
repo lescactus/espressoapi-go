@@ -32,7 +32,7 @@ func TestRoasterRepositoryPostgresBehavior(t *testing.T) {
 		{
 			name: "get missing roaster returns domain error",
 			run: func(t *testing.T, repository *Roaster, mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("SELECT * FROM roasters WHERE id = $1").
+				mock.ExpectQuery("SELECT id, name, created_at, updated_at FROM roasters WHERE id = $1").
 					WithArgs(42).
 					WillReturnError(dbsql.ErrNoRows)
 
