@@ -316,6 +316,66 @@ testcases:
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
 
+- name: PUT /rest/v1/beans/:id - roast date omitted
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01-updated-without-roast-date", "roaster_id": 1, "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    - result.bodyjson.roast_date ShouldBeBlank
+
+- name: GET /rest/v1/beans/:id - roast date omitted update persisted
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .PUT-rest-v1-beans-id-roast-date-omitted.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.roast_date ShouldBeBlank
+
+- name: PUT /rest/v1/beans/:id - null roast date
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01-updated-with-null-roast-date", "roaster_id": 1, "roast_date": null, "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    - result.bodyjson.roast_date ShouldBeBlank
+
+- name: GET /rest/v1/beans/:id - null roast date update persisted
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .PUT-rest-v1-beans-id-null-roast-date.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.roast_date ShouldBeBlank
+
+- name: PUT /rest/v1/beans/:id - malformed roast date
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "not-a-date", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - >
+      result.bodyjson.msg ShouldEqual "invalid time format: parsing time "not-a-date" as "2006-01-02": cannot parse "not-a-date" as "2006""
+
 - name: DELETE /rest/v1/beans/:id - not found
   steps:
   - type: http

@@ -222,7 +222,7 @@ type UpdateBeansByIdRequestParams struct {
 type UpdateBeansByIdRequest struct {
 	Name       string         `json:"name"`
 	RoasterId  int            `json:"roaster_id"`
-	RoastDate  RoastDate      `json:"roast_date"`
+	RoastDate  *RoastDate     `json:"roast_date"`
 	RoastLevel sql.RoastLevel `json:"roast_level"`
 }
 
@@ -284,7 +284,7 @@ func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 		Roaster: &roaster.Roaster{
 			Id: beansReq.RoasterId,
 		},
-		RoastDate:  (*time.Time)(&beansReq.RoastDate),
+		RoastDate:  (*time.Time)(beansReq.RoastDate),
 		RoastLevel: beansReq.RoastLevel,
 	}
 
