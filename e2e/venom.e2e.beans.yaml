@@ -124,7 +124,7 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+      {"name": "beans01", "roaster_id": 100000000, "roast_date": "2021-02-18", "roast_level": 2}
     assertions:
     - result.statuscode ShouldEqual 404
     - result.bodyjson.msg ShouldEqual "no roaster found for given id"
