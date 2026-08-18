@@ -45,22 +45,38 @@ func NewErrorResponse(status int, msg string) *ErrorResponse {
 }
 
 var domainErrorResponses = map[error]ErrorResponse{
-	domainerrors.ErrSheetDoesNotExist:                          {status: http.StatusNotFound, Msg: "no sheet found for given id"},
-	domainerrors.ErrSheetAlreadyExists:                         {status: http.StatusConflict, Msg: "a sheet with the given name already exists"},
-	domainerrors.ErrSheetNameIsEmpty:                           {status: http.StatusBadRequest, Msg: "sheet name must not be empty"},
-	domainerrors.ErrRoasterDoesNotExist:                        {status: http.StatusNotFound, Msg: "no roaster found for given id"},
-	domainerrors.ErrRoasterAlreadyExists:                       {status: http.StatusConflict, Msg: "a roaster with the given name already exists"},
-	domainerrors.ErrRoasterNameIsEmpty:                         {status: http.StatusBadRequest, Msg: "roaster name must not be empty"},
-	domainerrors.ErrBeansDoesNotExist:                          {status: http.StatusNotFound, Msg: "no beans found for given id"},
-	domainerrors.ErrBeansAlreadyExists:                         {status: http.StatusConflict, Msg: "beans already exist"},
-	domainerrors.ErrShotDoesNotExist:                           {status: http.StatusNotFound, Msg: "no shot found for given id"},
-	domainerrors.ErrShotAlreadyExists:                          {status: http.StatusConflict, Msg: "shot already exists"},
-	domainerrors.ErrShotRatingOutOfRange:                       {status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"},
+	// Catch if the sheet does not exist
+	domainerrors.ErrSheetDoesNotExist: {status: http.StatusNotFound, Msg: "no sheet found for given id"},
+	// Catch if the sheet already exists
+	domainerrors.ErrSheetAlreadyExists: {status: http.StatusConflict, Msg: "a sheet with the given name already exists"},
+	// Catch if the sheet name is empty
+	domainerrors.ErrSheetNameIsEmpty: {status: http.StatusBadRequest, Msg: "sheet name must not be empty"},
+	// Catch if the roaster does not exist
+	domainerrors.ErrRoasterDoesNotExist: {status: http.StatusNotFound, Msg: "no roaster found for given id"},
+	// Catch if the roaster already exists
+	domainerrors.ErrRoasterAlreadyExists: {status: http.StatusConflict, Msg: "a roaster with the given name already exists"},
+	// Catch if the roaster name is empty
+	domainerrors.ErrRoasterNameIsEmpty: {status: http.StatusBadRequest, Msg: "roaster name must not be empty"},
+	// Catch if the beans does not exist
+	domainerrors.ErrBeansDoesNotExist: {status: http.StatusNotFound, Msg: "no beans found for given id"},
+	// Catch if beans already exist
+	domainerrors.ErrBeansAlreadyExists: {status: http.StatusConflict, Msg: "beans already exist"},
+	// Catch if the shot does not exist
+	domainerrors.ErrShotDoesNotExist: {status: http.StatusNotFound, Msg: "no shot found for given id"},
+	// Catch if a shot already exists
+	domainerrors.ErrShotAlreadyExists: {status: http.StatusConflict, Msg: "shot already exists"},
+	// Catch if the shot rating is out of range
+	domainerrors.ErrShotRatingOutOfRange: {status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"},
+	// Catch if the shot comparison with previous result is out of range
 	domainerrors.ErrShotComparisonWithPreviousResultOutOfRange: {status: http.StatusBadRequest, Msg: "shot comparison with previous result is out of range. Must be between 0 and 3"},
-	domainerrors.ErrBeansRoastLevelOutOfRange:                  {status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},
-	domainerrors.ErrBeansForeignKeyConstraint:                  {status: http.StatusBadRequest, Msg: "cannot delete due to existing references: beans foreign key constraint failed"},
-	domainerrors.ErrShotForeignKeyConstraint:                   {status: http.StatusBadRequest, Msg: "cannot delete due to existing references: shot foreign key constraint failed"},
-	domainerrors.ErrBeansNameIsEmpty:                           {status: http.StatusBadRequest, Msg: "beans name must not be empty"},
+	// Catch if the beans roast level is out of range
+	domainerrors.ErrBeansRoastLevelOutOfRange: {status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},
+	// Catch if the beans foreign key constraint failed
+	domainerrors.ErrBeansForeignKeyConstraint: {status: http.StatusBadRequest, Msg: "cannot delete due to existing references: beans foreign key constraint failed"},
+	// Catch if the shot foreign key constraint failed
+	domainerrors.ErrShotForeignKeyConstraint: {status: http.StatusBadRequest, Msg: "cannot delete due to existing references: shot foreign key constraint failed"},
+	// Catch if the beans name is empty
+	domainerrors.ErrBeansNameIsEmpty: {status: http.StatusBadRequest, Msg: "beans name must not be empty"},
 }
 
 // SetErrorResponse will attempt to parse the given error
