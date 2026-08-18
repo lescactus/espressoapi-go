@@ -643,6 +643,7 @@ func TestShotDeleteShotById(t *testing.T) {
 		args        args
 		mockClosure func(mock sqlmock.Sqlmock)
 		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Shots found - no error",
@@ -659,6 +660,18 @@ func TestShotDeleteShotById(t *testing.T) {
 				mock.ExpectExec("DELETE from shots where id = ?").WithArgs(1).WillReturnError(fmt.Errorf("mock error"))
 			},
 			wantErr: true,
+		},
+		{
+			name: "Shots referenced by beans maps foreign key error",
+			args: args{ctx: context.TODO(), id: 1},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec("DELETE FROM shots WHERE id = ?").WithArgs(1).WillReturnError(&mysql.MySQLError{
+					Number:  1451,
+					Message: "Cannot delete or update a parent row: a foreign key constraint fails (`espresso-api`.`beans`, CONSTRAINT `beans_shot_id_fkey` FOREIGN KEY (`shot_id`) REFERENCES `shots` (`id`))",
+				})
+			},
+			wantErr:     true,
+			expectedErr: domainerrors.ErrBeansForeignKeyConstraint,
 		},
 		{
 			name: "Shots not found - No error",
@@ -692,8 +705,12 @@ func TestShotDeleteShotById(t *testing.T) {
 
 			// Set mock expectations
 			tt.mockClosure(mock)
-			if err := mdb.DeleteShotById(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
+			err = mdb.DeleteShotById(tt.args.ctx, tt.args.id)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Shot.DeleteShotById() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Shot.DeleteShotById() error = %v, want %v", err, tt.expectedErr)
 			}
 		})
 	}

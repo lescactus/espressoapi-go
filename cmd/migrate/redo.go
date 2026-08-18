@@ -13,9 +13,10 @@ var RedoCmd = &cobra.Command{
 	Long: `Reapply the last migration. It is the equivalent of running "down" and then "up" as would
 "sql-migrate redo" do.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		source := sqlmigrate.EmbedFileSystemMigrationSource{
-			FileSystem: *app.App.MigrationsFS,
-			Root:       "migrations/sql/mysql",
+		source, err := migrationSource(app.App.MigrationsFS, app.App.Cfg.DatabaseType)
+		if err != nil {
+			app.App.Logger.Fatal().Err(err).Msg("Failed to select migrations")
+			return
 		}
 
 		migrations, _, err := sqlmigrate.PlanMigration(app.App.Db.DB, string(app.App.Cfg.DatabaseType), source, sqlmigrate.Down, 1)

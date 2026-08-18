@@ -13,9 +13,10 @@ var SkipCmd = &cobra.Command{
 	Long: `Sets the database level to the most recent version available, without running the migrations. 
 It is the equivalent of running "sql-migrate skip".`,
 	Run: func(cmd *cobra.Command, args []string) {
-		source := sqlmigrate.EmbedFileSystemMigrationSource{
-			FileSystem: *app.App.MigrationsFS,
-			Root:       "migrations/sql/mysql",
+		source, err := migrationSource(app.App.MigrationsFS, app.App.Cfg.DatabaseType)
+		if err != nil {
+			app.App.Logger.Fatal().Err(err).Msg("Failed to select migrations")
+			return
 		}
 
 		n, err := sqlmigrate.SkipMax(app.App.Db.DB, string(app.App.Cfg.DatabaseType), source, sqlmigrate.Up, limit)

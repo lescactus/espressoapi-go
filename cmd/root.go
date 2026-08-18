@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/lescactus/espressoapi-go/cmd/app"
 	"github.com/lescactus/espressoapi-go/internal/config"
@@ -54,23 +56,28 @@ func initConfig() {
 		cfg.LoggerFormat,
 	)
 
-	var sqlxdb *sqlx.DB
-	switch cfg.DatabaseType {
-	case config.DatabaseTypeMySQL:
-		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
-		if err != nil {
-			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err)
-		}
+	driverName, err := databaseDriverName(cfg.DatabaseType)
+	if err != nil {
+		log.Fatalf("unable to select database driver: %s", err)
+	}
 
-	// Using mysql by default
-	default:
-		sqlxdb, err = sqlx.Connect(string(config.DatabaseTypeMySQL), cfg.DatabaseDatasourceName)
-		if err != nil {
-			log.Fatalf("unable to connect to %s: %s", config.DatabaseTypeMySQL, err)
-		}
+	sqlxdb, err := sqlx.Connect(driverName, cfg.DatabaseDatasourceName)
+	if err != nil {
+		log.Fatalf("unable to connect to %s: %s", cfg.DatabaseType, err)
 	}
 
 	app.App.Db = sqlxdb
 	app.App.Cfg = cfg
 	app.App.Logger = logger
+}
+
+func databaseDriverName(databaseType config.DatabaseType) (string, error) {
+	switch databaseType {
+	case config.DatabaseTypeMySQL:
+		return "mysql", nil
+	case config.DatabaseTypePostgres:
+		return "pgx", nil
+	default:
+		return "", fmt.Errorf("unsupported database type %q", databaseType)
+	}
 }

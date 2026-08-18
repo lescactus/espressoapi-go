@@ -13,6 +13,7 @@ jobs:
   e2e:
     strategy:
       matrix:
+          database: [mysql, postgres]
           testsuites:
             - venom.e2e.roasters.yaml
             - venom.e2e.sheets.yaml
@@ -20,6 +21,10 @@ jobs:
             - venom.e2e.shots.yaml
             - venom.e2e.swagger.yaml
     runs-on: ubuntu-latest
+    env:
+      DATABASE_TYPE: ${{ matrix.database }}
+      DATABASE_DATASOURCE_NAME: ${{ matrix.database == 'mysql' && 'root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true' || 'postgres://root:root@127.0.0.1:5432/espresso-api?sslmode=disable' }}
+      E2E_DATABASE_DSN: ${{ matrix.database == 'mysql' && 'root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true' || 'postgres://root:root@127.0.0.1:5432/espresso-api?sslmode=disable' }}
     steps:
     - uses: actions/checkout@v7
 
@@ -39,18 +44,13 @@ jobs:
 
     - name: Docker compose up
       run: |
-        docker compose build --pull
-        docker compose up -d --wait mysql
-        docker compose up -d --wait --no-recreate
-
-    - name: Debug when failure happened
-      if: ${{ failure() }}
-      run: docker compose logs
+        docker compose --profile ${{ matrix.database }} build --pull
+        docker compose --profile ${{ matrix.database }} up -d --wait --no-recreate
 
     - name: Run sql migrations
       run: go run main.go migrate up
 
-    - name: Verify MySQL enum constraints
+    - name: Verify database enum constraints
       if: matrix.testsuites == 'venom.e2e.beans.yaml'
       run: go test -tags=integration ./e2e
 
@@ -58,3 +58,11 @@ jobs:
       run: |
         export IS_TTY=true
         venom run -vv ./e2e/${{ matrix.testsuites }}
+
+    - name: Debug when failure happened
+      if: ${{ failure() }}
+      run: docker compose --profile ${{ matrix.database }} logs
+
+    - name: Docker compose down
+      if: ${{ always() }}
+      run: docker compose --profile ${{ matrix.database }} down -v

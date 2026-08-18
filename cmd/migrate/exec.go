@@ -6,13 +6,12 @@ import (
 )
 
 func execMigrations(direction sqlmigrate.MigrationDirection) (int, error) {
-	migrations := sqlmigrate.EmbedFileSystemMigrationSource{
-		FileSystem: *app.App.MigrationsFS,
-		Root:       "migrations/sql/mysql",
+	migrations, err := migrationSource(app.App.MigrationsFS, app.App.Cfg.DatabaseType)
+	if err != nil {
+		return 0, err
 	}
 
 	var n int
-	var err error
 	if version >= 0 {
 		n, err = sqlmigrate.ExecVersion(app.App.Db.DB, string(app.App.Cfg.DatabaseType), migrations, direction, version)
 	} else {
