@@ -126,6 +126,12 @@ func TestParseMySQLError(t *testing.T) {
 			name: "duplicate roaster", err: &mysql.MySQLError{Number: 1062}, entity: &EntityRoaster, fallback: fallback, want: domainerrors.ErrRoasterAlreadyExists,
 		},
 		{
+			name: "duplicate beans", err: &mysql.MySQLError{Number: 1062}, entity: &EntityBeans, fallback: fallback, want: domainerrors.ErrBeansAlreadyExists,
+		},
+		{
+			name: "duplicate shot", err: &mysql.MySQLError{Number: 1062}, entity: &EntityShot, fallback: fallback, want: domainerrors.ErrShotAlreadyExists,
+		},
+		{
 			name: "duplicate unknown entity returns fallback", err: &mysql.MySQLError{Number: 1062}, entity: &unknownEntity, fallback: fallback, want: fallback,
 		},
 		{
@@ -148,6 +154,9 @@ func TestParseMySQLError(t *testing.T) {
 		},
 		{
 			name: "missing roaster with explicit entity", err: &mysql.MySQLError{Number: 1452}, entity: &EntityRoaster, fallback: fallback, want: domainerrors.ErrRoasterDoesNotExist,
+		},
+		{
+			name: "missing roaster inferred from referenced table with explicit beans entity", err: &mysql.MySQLError{Number: 1452, Message: roasterDoesNotExistError}, entity: &EntityBeans, fallback: fallback, want: domainerrors.ErrRoasterDoesNotExist,
 		},
 		{
 			name: "missing beans with explicit entity", err: &mysql.MySQLError{Number: 1452}, entity: &EntityBeans, fallback: fallback, want: domainerrors.ErrBeansDoesNotExist,

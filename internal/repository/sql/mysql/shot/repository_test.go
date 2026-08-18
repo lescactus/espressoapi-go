@@ -4,6 +4,7 @@ import (
 	"context"
 	dbsql "database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
@@ -59,6 +61,7 @@ func TestShotCreateShot(t *testing.T) {
 		mockClosure func(mock sqlmock.Sqlmock)
 		want        int
 		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Shots - no error",
@@ -87,6 +90,21 @@ func TestShotCreateShot(t *testing.T) {
 			},
 			want:    0,
 			wantErr: true,
+		},
+		{
+			name: "Shots - duplicate error",
+			args: args{ctx: context.TODO(), shot: &sql.Shot{Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1},
+				ComparisonWithPreviousResult: sql.Unknown, AdditionalNotes: "This is a test"}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec(`INSERT INTO
+				shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).
+					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
+					WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:        0,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrShotAlreadyExists,
 		},
 		{
 			name: "Shots - foreign key constraint error - sheets does not exist",
@@ -174,6 +192,9 @@ func TestShotCreateShot(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Shot.CreateShot() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Shot.CreateShot() error = %v, want %v", err, tt.expectedErr)
 			}
 
 			if !reflect.DeepEqual(id, tt.want) {
@@ -485,6 +506,7 @@ func TestShotUpdateShotById(t *testing.T) {
 		mockClosure func(mock sqlmock.Sqlmock)
 		want        *sql.Shot
 		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Shot.Id matching id - No error",
@@ -507,6 +529,18 @@ func TestShotUpdateShotById(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+		},
+		{
+			name: "Shot duplicate",
+			args: args{ctx: context.TODO(), id: 1, shot: &sql.Shot{Id: 1, Sheet: &sql.Sheet{Id: 1}, Beans: &sql.Beans{Id: 1}, AdditionalNotes: "This is a test"}},
+			mockClosure: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec(expectQuery).
+					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Worst, "This is a test", 1).
+					WillReturnError(&mysql.MySQLError{Number: 1062})
+			},
+			want:        nil,
+			wantErr:     true,
+			expectedErr: domainerrors.ErrShotAlreadyExists,
 		},
 		{
 			name: "Shot.Id not matching id - Error",
@@ -582,6 +616,9 @@ func TestShotUpdateShotById(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Shot.UpdateShotById() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Shot.UpdateShotById() error = %v, want %v", err, tt.expectedErr)
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {

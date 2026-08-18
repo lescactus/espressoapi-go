@@ -93,9 +93,17 @@ func (h *Handler) SetErrorResponse(w http.ResponseWriter, err error) {
 		case errors.Is(err, domainerrors.ErrBeansDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no beans found for given id"}
 
+		// Catch if beans already exist
+		case errors.Is(err, domainerrors.ErrBeansAlreadyExists):
+			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "beans already exist"}
+
 		// Catch if the shot does not exist
 		case errors.Is(err, domainerrors.ErrShotDoesNotExist):
 			errResp = &ErrorResponse{status: http.StatusNotFound, Msg: "no shot found for given id"}
+
+		// Catch if a shot already exists
+		case errors.Is(err, domainerrors.ErrShotAlreadyExists):
+			errResp = &ErrorResponse{status: http.StatusConflict, Msg: "shot already exists"}
 
 		// Catch if the shot rating is out of range
 		case errors.Is(err, domainerrors.ErrShotRatingOutOfRange):

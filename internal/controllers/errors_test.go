@@ -109,10 +109,22 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
+			name:           "errors.ErrBeansAlreadyExists error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansAlreadyExists},
+			want:           &ErrorResponse{status: http.StatusConflict, Msg: "beans already exist"},
+			wantStatusCode: http.StatusConflict,
+		},
+		{
 			name:           "errors.ErrShotDoesNotExist error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotDoesNotExist},
 			want:           &ErrorResponse{status: http.StatusNotFound, Msg: "no shot found for given id"},
 			wantStatusCode: http.StatusNotFound,
+		},
+		{
+			name:           "errors.ErrShotAlreadyExists error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotAlreadyExists},
+			want:           &ErrorResponse{status: http.StatusConflict, Msg: "shot already exists"},
+			wantStatusCode: http.StatusConflict,
 		},
 		{
 			name:           "errors.ErrShotRatingOutOfRange error",

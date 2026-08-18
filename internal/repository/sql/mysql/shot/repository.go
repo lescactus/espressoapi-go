@@ -31,7 +31,7 @@ func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
 	res, err := db.db.ExecContext(ctx, query,
 		shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
 	if err != nil {
-		return 0, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to insert record to the database: %w", err))
+		return 0, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityShot, fmt.Errorf("failed to insert record to the database: %w", err))
 	}
 
 	id, err := res.LastInsertId()
@@ -161,7 +161,7 @@ func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sq
 		shot.AdditionalNotes,
 		id)
 	if err != nil {
-		return nil, mysqlerrors.ParseMySQLError(err, nil, fmt.Errorf("failed to update record in the database: %w", err))
+		return nil, mysqlerrors.ParseMySQLError(err, &mysqlerrors.EntityShot, fmt.Errorf("failed to update record in the database: %w", err))
 	}
 
 	return shot, nil
