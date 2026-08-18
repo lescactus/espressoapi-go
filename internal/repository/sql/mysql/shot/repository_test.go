@@ -26,30 +26,6 @@ func (a AnyTime) Match(v driver.Value) bool {
 	return ok
 }
 
-func TestNew(t *testing.T) {
-	type args struct {
-		db *sqlx.DB
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Shot
-	}{
-		{
-			name: "nil db",
-			args: args{db: nil},
-			want: &Shot{db: nil},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.db); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestShotCreateShot(t *testing.T) {
 	type args struct {
 		ctx  context.Context
@@ -61,6 +37,7 @@ func TestShotCreateShot(t *testing.T) {
 		mockClosure func(mock sqlmock.Sqlmock)
 		want        int
 		wantErr     bool
+		wantErrMsg  string
 		expectedErr error
 	}{
 		{
@@ -88,8 +65,9 @@ func TestShotCreateShot(t *testing.T) {
 					WithArgs(1, 1, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Unknown, "This is a test").
 					WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("mock error")))
 			},
-			want:    0,
-			wantErr: true,
+			want:       0,
+			wantErr:    true,
+			wantErrMsg: "failed to retrieve last inserted id: mock error",
 		},
 		{
 			name: "Shots - duplicate error",
@@ -181,9 +159,7 @@ func TestShotCreateShot(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -195,6 +171,9 @@ func TestShotCreateShot(t *testing.T) {
 			}
 			if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
 				t.Errorf("Shot.CreateShot() error = %v, want %v", err, tt.expectedErr)
+			}
+			if tt.wantErrMsg != "" && (err == nil || err.Error() != tt.wantErrMsg) {
+				t.Errorf("Shot.CreateShot() error = %v, want error message %q", err, tt.wantErrMsg)
 			}
 
 			if !reflect.DeepEqual(id, tt.want) {
@@ -319,9 +298,7 @@ WHERE shots.id = ?`
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -455,9 +432,7 @@ INNER JOIN
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -605,9 +580,7 @@ func TestShotUpdateShotById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -699,9 +672,7 @@ func TestShotDeleteShotById(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
@@ -755,9 +726,7 @@ func TestShotPing(t *testing.T) {
 			}
 			defer db.Close()
 
-			mdb := &Shot{
-				db: sqlx.NewDb(db, "sqlmock"),
-			}
+			mdb := New(sqlx.NewDb(db, "sqlmock"))
 
 			// Set mock expectations
 			tt.mockClosure(mock)
