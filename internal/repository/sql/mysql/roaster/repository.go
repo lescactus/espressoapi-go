@@ -2,12 +2,13 @@ package roaster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	dbsql "database/sql"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
@@ -41,8 +42,8 @@ func (db *Roaster) GetRoasterById(ctx context.Context, id int) (*sql.Roaster, er
 	err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM roasters WHERE id = ?", id).StructScan(&r)
 	if err != nil {
 		// No row found, return nil
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrRoasterDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrRoasterDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for roaster id=%d from the database: %w", id, err)
 	}
@@ -56,8 +57,8 @@ func (db *Roaster) GetRoasterByName(ctx context.Context, name string) (*sql.Roas
 	err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM roasters WHERE name = ?", name).StructScan(&r)
 	if err != nil {
 		// No row found, return nil
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrRoasterDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrRoasterDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for roaster name=\"%s\" from the database: %w", name, err)
 	}
@@ -100,7 +101,7 @@ func (db *Roaster) DeleteRoasterById(ctx context.Context, id int) error {
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {
-		return errors.ErrRoasterDoesNotExist
+		return domainerrors.ErrRoasterDoesNotExist
 	}
 
 	return nil

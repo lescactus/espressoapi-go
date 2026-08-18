@@ -2,12 +2,13 @@ package sheet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	dbsql "database/sql"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/repository"
 	"github.com/lescactus/espressoapi-go/internal/repository/sql/mysql/mysqlerrors"
@@ -40,8 +41,8 @@ func (db *Sheet) GetSheetById(ctx context.Context, id int) (*sql.Sheet, error) {
 	err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM sheets WHERE id = ?", id).StructScan(&s)
 	if err != nil {
 		// No row found, return nil
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrSheetDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrSheetDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for sheet id=%d from the database: %w", id, err)
 	}
@@ -55,8 +56,8 @@ func (db *Sheet) GetSheetByName(ctx context.Context, name string) (*sql.Sheet, e
 	err := db.db.QueryRowxContext(ctx, "SELECT id, name, created_at, updated_at FROM sheets WHERE name = ?", name).StructScan(&s)
 	if err != nil {
 		// No row found, return nil
-		if err == dbsql.ErrNoRows {
-			return nil, errors.ErrSheetDoesNotExist
+		if errors.Is(err, dbsql.ErrNoRows) {
+			return nil, domainerrors.ErrSheetDoesNotExist
 		}
 		return nil, fmt.Errorf("failed to read record for sheet name=\"%s\" from the database: %w", name, err)
 	}
@@ -99,7 +100,7 @@ func (db *Sheet) DeleteSheetById(ctx context.Context, id int) error {
 	}
 
 	if row, _ := res.RowsAffected(); row != 1 {
-		return errors.ErrSheetDoesNotExist
+		return domainerrors.ErrSheetDoesNotExist
 	}
 
 	return nil

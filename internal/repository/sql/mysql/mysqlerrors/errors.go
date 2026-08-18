@@ -1,6 +1,7 @@
 package mysqlerrors
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -48,7 +49,8 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 
 	// Checking if the entry inserted is a duplicate:
 	// ERROR 1062 (23000): Duplicate entry 'xxxxx' for key 'yyyy'
-	if me, ok := err.(*mysql.MySQLError); ok {
+	var me *mysql.MySQLError
+	if errors.As(err, &me) {
 		// ERROR 3819 (HY000): Check constraint 'constraint_name' is violated.
 		if me.Number == 3819 {
 			for constraint, mappedErr := range checkConstraintErrors {
