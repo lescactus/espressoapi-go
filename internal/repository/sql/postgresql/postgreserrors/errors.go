@@ -5,16 +5,12 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
+	sqlerrors "github.com/lescactus/espressoapi-go/internal/repository/sql/errors"
 )
 
-type Entity string
+type Entity = sqlerrors.Entity
 
 var (
-	EntitySheet   Entity = "sheets"
-	EntityRoaster Entity = "roasters"
-	EntityBeans   Entity = "beans"
-	EntityShot    Entity = "shots"
-
 	checkConstraintErrors = map[string]error{
 		"chk_beans_roast_level":                     domainerrors.ErrBeansRoastLevelOutOfRange,
 		"chk_shots_comparison_with_previous_result": domainerrors.ErrShotComparisonWithPreviousResultOutOfRange,
@@ -24,22 +20,19 @@ var (
 		"shots_sheet_id_fkey":   domainerrors.ErrSheetDoesNotExist,
 		"shots_beans_id_fkey":   domainerrors.ErrBeansDoesNotExist,
 	}
-	entityToErrAlreadyExists = map[Entity]error{
-		EntitySheet:   domainerrors.ErrSheetAlreadyExists,
-		EntityRoaster: domainerrors.ErrRoasterAlreadyExists,
-		EntityBeans:   domainerrors.ErrBeansAlreadyExists,
-		EntityShot:    domainerrors.ErrShotAlreadyExists,
-	}
-	entityToErrForeignKeyConstraint = map[Entity]error{
-		EntityBeans: domainerrors.ErrBeansForeignKeyConstraint,
-		EntityShot:  domainerrors.ErrShotForeignKeyConstraint,
-	}
-	entityToErrDoesNotExist = map[Entity]error{
-		EntitySheet:   domainerrors.ErrSheetDoesNotExist,
-		EntityRoaster: domainerrors.ErrRoasterDoesNotExist,
-		EntityBeans:   domainerrors.ErrBeansDoesNotExist,
-		EntityShot:    domainerrors.ErrShotDoesNotExist,
-	}
+)
+
+var (
+	EntitySheet   = sqlerrors.EntitySheet
+	EntityRoaster = sqlerrors.EntityRoaster
+	EntityBeans   = sqlerrors.EntityBeans
+	EntityShot    = sqlerrors.EntityShot
+)
+
+var (
+	entityToErrAlreadyExists        = sqlerrors.EntityToErrAlreadyExists
+	entityToErrForeignKeyConstraint = sqlerrors.EntityToErrForeignKeyConstraint
+	entityToErrDoesNotExist         = sqlerrors.EntityToErrDoesNotExist
 )
 
 func ParsePostgresError(err error, entity *Entity, fallback error) error {
@@ -57,27 +50,19 @@ func ParsePostgresError(err error, entity *Entity, fallback error) error {
 		if entity == nil {
 			return fallback
 		}
-		return mappedEntityError(entityToErrAlreadyExists, *entity, fallback)
+		return sqlerrors.MappedEntityError(entityToErrAlreadyExists, *entity, fallback)
 	case "23503":
 		if entity == nil {
-			return mappedEntityError(entityToErrForeignKeyConstraint, Entity(postgresError.TableName), fallback)
+			return sqlerrors.MappedEntityError(entityToErrForeignKeyConstraint, Entity(postgresError.TableName), fallback)
 		}
 		if mappedError, ok := foreignKeyReferenceErrors[postgresError.ConstraintName]; ok {
 			return mappedError
 		}
-		return mappedEntityError(entityToErrDoesNotExist, *entity, fallback)
+		return sqlerrors.MappedEntityError(entityToErrDoesNotExist, *entity, fallback)
 	case "23514":
 		if mappedError, ok := checkConstraintErrors[postgresError.ConstraintName]; ok {
 			return mappedError
 		}
-	}
-
-	return fallback
-}
-
-func mappedEntityError(entityErrors map[Entity]error, entity Entity, fallback error) error {
-	if err, ok := entityErrors[entity]; ok {
-		return err
 	}
 
 	return fallback

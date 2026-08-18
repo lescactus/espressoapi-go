@@ -6,41 +6,32 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/lescactus/espressoapi-go/internal/errors"
+	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
+	sqlerrors "github.com/lescactus/espressoapi-go/internal/repository/sql/errors"
 )
 
-type Entity string
+type Entity = sqlerrors.Entity
 
 var (
-	EntitySheet           Entity = "sheets"
-	EntityRoaster         Entity = "roasters"
-	EntityBeans           Entity = "beans"
-	EntityShot            Entity = "shots"
-	error1451TablePattern        = regexp.MustCompile(`\x60([^\x60]+)\x60\.\x60([^\x60]+)\x60`)
-	error1452TablePattern        = regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
-	checkConstraintErrors        = map[string]error{
-		"chk_beans_roast_level":                     errors.ErrBeansRoastLevelOutOfRange,
-		"chk_shots_comparison_with_previous_result": errors.ErrShotComparisonWithPreviousResultOutOfRange,
+	error1451TablePattern = regexp.MustCompile(`\x60([^\x60]+)\x60\.\x60([^\x60]+)\x60`)
+	error1452TablePattern = regexp.MustCompile(`FOREIGN KEY \(\x60(.+?)\x60\) REFERENCES \x60(.+?)\x60 \(\x60id\x60`)
+	checkConstraintErrors = map[string]error{
+		"chk_beans_roast_level":                     domainerrors.ErrBeansRoastLevelOutOfRange,
+		"chk_shots_comparison_with_previous_result": domainerrors.ErrShotComparisonWithPreviousResultOutOfRange,
 	}
+)
 
-	entityToErrAlreadyExists = map[Entity]error{
-		EntitySheet:   errors.ErrSheetAlreadyExists,
-		EntityRoaster: errors.ErrRoasterAlreadyExists,
-		EntityBeans:   errors.ErrBeansAlreadyExists,
-		EntityShot:    errors.ErrShotAlreadyExists,
-	}
+var (
+	EntitySheet   = sqlerrors.EntitySheet
+	EntityRoaster = sqlerrors.EntityRoaster
+	EntityBeans   = sqlerrors.EntityBeans
+	EntityShot    = sqlerrors.EntityShot
+)
 
-	entityToErrForeignKeyConstraint = map[Entity]error{
-		EntityBeans: errors.ErrBeansForeignKeyConstraint,
-		EntityShot:  errors.ErrShotForeignKeyConstraint,
-	}
-
-	entityToErrDoesNotExist = map[Entity]error{
-		EntitySheet:   errors.ErrSheetDoesNotExist,
-		EntityRoaster: errors.ErrRoasterDoesNotExist,
-		EntityBeans:   errors.ErrBeansDoesNotExist,
-		EntityShot:    errors.ErrShotDoesNotExist,
-	}
+var (
+	entityToErrAlreadyExists        = sqlerrors.EntityToErrAlreadyExists
+	entityToErrForeignKeyConstraint = sqlerrors.EntityToErrForeignKeyConstraint
+	entityToErrDoesNotExist         = sqlerrors.EntityToErrDoesNotExist
 )
 
 // ParseMySQLError parses a MySQL error and returns a more specific error based on the error code.
@@ -72,7 +63,7 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 			if entity == nil {
 				return fallback
 			}
-			return mappedEntityError(entityToErrAlreadyExists, *entity, fallback)
+			return sqlerrors.MappedEntityError(entityToErrAlreadyExists, *entity, fallback)
 		}
 
 		// Checking if the error is due to a foreign key constraint
@@ -84,9 +75,9 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 				if err != nil {
 					return fallback
 				}
-				return mappedEntityError(entityToErrForeignKeyConstraint, table, fallback)
+				return sqlerrors.MappedEntityError(entityToErrForeignKeyConstraint, table, fallback)
 			}
-			return mappedEntityError(entityToErrForeignKeyConstraint, *entity, fallback)
+			return sqlerrors.MappedEntityError(entityToErrForeignKeyConstraint, *entity, fallback)
 		}
 
 		// Checking if the error is due to a foreign key constraint
@@ -95,21 +86,13 @@ func ParseMySQLError(err error, entity *Entity, fallback error) error {
 		if me.Number == 1452 {
 			table, err := ExtractTableNameFromError1452(*me)
 			if err == nil {
-				return mappedEntityError(entityToErrDoesNotExist, table, fallback)
+				return sqlerrors.MappedEntityError(entityToErrDoesNotExist, table, fallback)
 			}
 			if entity == nil {
 				return fallback
 			}
-			return mappedEntityError(entityToErrDoesNotExist, *entity, fallback)
+			return sqlerrors.MappedEntityError(entityToErrDoesNotExist, *entity, fallback)
 		}
-	}
-
-	return fallback
-}
-
-func mappedEntityError(entityErrors map[Entity]error, entity Entity, fallback error) error {
-	if err, ok := entityErrors[entity]; ok {
-		return err
 	}
 
 	return fallback
