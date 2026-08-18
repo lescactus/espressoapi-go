@@ -21,6 +21,8 @@ func TestBeanHandlersHappyPaths(t *testing.T) {
 	first := testBean(1, "first")
 	second := testBean(2, "second")
 	updated := testBean(9, "updated beans")
+	updatedWithoutRoastDate := testBean(10, "updated beans without roast date")
+	updatedWithoutRoastDate.RoastDate = nil
 	tests := []struct {
 		name      string
 		method    string
@@ -93,6 +95,32 @@ func TestBeanHandlersHappyPaths(t *testing.T) {
 					}
 					assertBeanRequest(t, value, 9, "updated beans", 6, &expectedRoastDate, modelsql.RoastLevelMedium)
 					return updated, nil
+				}
+			},
+		},
+		{
+			name: "update without roast date", method: http.MethodPut, target: "/rest/v1/beans/10", body: `{"name":"updated beans without roast date","roaster_id":6,"roast_level":2}`, id: "10",
+			status: http.StatusOK, expected: BeansResponse{*updatedWithoutRoastDate}, handler: (*Handler).UpdateBeanById,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.updateBeanByID = func(_ context.Context, id int, value *bean.Bean) (*bean.Bean, error) {
+					if id != 10 {
+						t.Errorf("id = %d, want 10", id)
+					}
+					assertBeanRequest(t, value, 10, "updated beans without roast date", 6, nil, modelsql.RoastLevelMedium)
+					return updatedWithoutRoastDate, nil
+				}
+			},
+		},
+		{
+			name: "update with null roast date", method: http.MethodPut, target: "/rest/v1/beans/10", body: `{"name":"updated beans without roast date","roaster_id":6,"roast_date":null,"roast_level":2}`, id: "10",
+			status: http.StatusOK, expected: BeansResponse{*updatedWithoutRoastDate}, handler: (*Handler).UpdateBeanById,
+			configure: func(t *testing.T, service *fakeBeanService) {
+				service.updateBeanByID = func(_ context.Context, id int, value *bean.Bean) (*bean.Bean, error) {
+					if id != 10 {
+						t.Errorf("id = %d, want 10", id)
+					}
+					assertBeanRequest(t, value, 10, "updated beans without roast date", 6, nil, modelsql.RoastLevelMedium)
+					return updatedWithoutRoastDate, nil
 				}
 			},
 		},
