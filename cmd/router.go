@@ -76,5 +76,13 @@ func newRouter(restHandler *rest.Handler, webHandler *web.Handler, chain alice.C
 	r.Handler(http.MethodPut, "/beans/update/:id", chain.ThenFunc(webHandler.UpdateBean))
 	r.Handler(http.MethodDelete, "/beans/delete/:id", chain.ThenFunc(webHandler.DeleteBean))
 
+	r.Handler(http.MethodGet, "/shots", chain.ThenFunc(webHandler.ListShots))
+	r.Handler(http.MethodGet, "/shots/add", chain.ThenFunc(webHandler.AddShotForm))
+	r.Handler(http.MethodPost, "/shots/add", chain.ThenFunc(webHandler.CreateShot))
+	r.Handler(http.MethodGet, "/shots/get/:id", chain.ThenFunc(webHandler.GetShot))
+	r.Handler(http.MethodGet, "/shots/update/:id", chain.ThenFunc(webHandler.EditShotForm))
+	r.Handler(http.MethodPut, "/shots/update/:id", chain.ThenFunc(webHandler.UpdateShot))
+	r.Handler(http.MethodDelete, "/shots/delete/:id", chain.ThenFunc(webHandler.DeleteShot))
+
 	return r
 }

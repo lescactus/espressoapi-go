@@ -184,6 +184,13 @@ func TestNewRouter_RegistersAllExistingRoutes(t *testing.T) {
 		{"web edit bean form", http.MethodGet, "/beans/update/1"},
 		{"web update bean", http.MethodPut, "/beans/update/1"},
 		{"web delete bean", http.MethodDelete, "/beans/delete/1"},
+		{"web list shots", http.MethodGet, "/shots"},
+		{"web add shot form", http.MethodGet, "/shots/add"},
+		{"web create shot", http.MethodPost, "/shots/add"},
+		{"web get shot", http.MethodGet, "/shots/get/1"},
+		{"web edit shot form", http.MethodGet, "/shots/update/1"},
+		{"web update shot", http.MethodPut, "/shots/update/1"},
+		{"web delete shot", http.MethodDelete, "/shots/delete/1"},
 	}
 
 	for _, tt := range tests {

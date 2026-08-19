@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
-	"github.com/lescactus/espressoapi-go/internal/services/shot"
 )
 
 func render(t *testing.T, c templ.Component) string {
@@ -92,18 +90,13 @@ func TestHome_EmptyStateShowsCallToAction(t *testing.T) {
 	}
 }
 
-func TestShotsSummary_ShowsShotDataOrEmptyState(t *testing.T) {
-	empty := render(t, ShotsSummary(nil))
-	if !strings.Contains(empty, "No shots logged") {
-		t.Errorf("expected an empty-state message, got: %s", empty)
-	}
+func TestDetail_IncludesShotsCRUDSection(t *testing.T) {
+	html := render(t, Detail(testSheet(), nil))
 
-	populated := render(t, ShotsSummary([]shot.Shot{
-		{Id: 5, GrindSetting: 12, QuantityIn: 18, QuantityOut: 36, Rating: 8.5, Beans: &bean.Bean{Name: "Ethiopia"}},
-	}))
-	for _, want := range []string{"5", "Ethiopia", "12", "18.0", "36.0", "8.5"} {
-		if !strings.Contains(populated, want) {
-			t.Errorf("expected shots summary to contain %q, got: %s", want, populated)
-		}
+	if !strings.Contains(html, `id="shot-dialog"`) {
+		t.Errorf("expected the shot dialog target to be present, got: %s", html)
+	}
+	if !strings.Contains(html, "/shots/add?sheet_id=42") {
+		t.Errorf("expected the add-shot link to lock the current sheet, got: %s", html)
 	}
 }

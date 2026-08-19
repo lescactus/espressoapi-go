@@ -243,7 +243,7 @@ WHERE shots.id = ?`
 				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
 					sqlmock.NewRows(
 						[]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
-						AddRow(1, 11, 18.0, 36.0, 25*time.Second, 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight))
+						AddRow(1, 11, 18.0, 36.0, int64(25000), 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight))
 			},
 			want: &sql.Shot{
 				Id:                           1,
@@ -383,7 +383,7 @@ INNER JOIN
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
-						AddRow(1, 11, 18.0, 36.0, 25*time.Second, 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
+						AddRow(1, 11, 18.0, 36.0, int64(25000), 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
 				)
 			},
 			want: []sql.Shot{
@@ -519,7 +519,7 @@ WHERE shots.sheet_id = ?`
 			mockClosure: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
 					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
-						AddRow(1, 11, 18.0, 36.0, 25*time.Second, 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
+						AddRow(1, 11, 18.0, 36.0, int64(25000), 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
 				)
 			},
 			want: []sql.Shot{

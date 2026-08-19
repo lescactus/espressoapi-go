@@ -227,7 +227,7 @@ func (h *Handler) EditSheetForm(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			writeHTMLStatus(w, http.StatusOK)
-			_ = viewsheets.DetailEditing(state, createdAt, updatedAt, shots).Render(r.Context(), w)
+			_ = viewsheets.DetailEditing(state, createdAt, updatedAt, shots, s.Id).Render(r.Context(), w)
 			return
 		}
 		sheets, err := h.SheetService.GetAllSheets(r.Context())
