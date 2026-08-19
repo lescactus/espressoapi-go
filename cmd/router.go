@@ -59,5 +59,13 @@ func newRouter(restHandler *rest.Handler, webHandler *web.Handler, chain alice.C
 	r.Handler(http.MethodPut, "/sheets/update/:id", chain.ThenFunc(webHandler.UpdateSheet))
 	r.Handler(http.MethodDelete, "/sheets/delete/:id", chain.ThenFunc(webHandler.DeleteSheet))
 
+	r.Handler(http.MethodGet, "/roasters", chain.ThenFunc(webHandler.ListRoasters))
+	r.Handler(http.MethodGet, "/roasters/add", chain.ThenFunc(webHandler.AddRoasterForm))
+	r.Handler(http.MethodPost, "/roasters/add", chain.ThenFunc(webHandler.CreateRoaster))
+	r.Handler(http.MethodGet, "/roasters/get/:id", chain.ThenFunc(webHandler.GetRoaster))
+	r.Handler(http.MethodGet, "/roasters/update/:id", chain.ThenFunc(webHandler.EditRoasterForm))
+	r.Handler(http.MethodPut, "/roasters/update/:id", chain.ThenFunc(webHandler.UpdateRoaster))
+	r.Handler(http.MethodDelete, "/roasters/delete/:id", chain.ThenFunc(webHandler.DeleteRoaster))
+
 	return r
 }

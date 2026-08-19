@@ -1,0 +1,33 @@
+package roasters
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/services/roaster"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// Row renders a roaster's view-mode table row.
+templ Row(r roaster.Roaster) {
+	<tr id={ rowElementID(r.Id) }>
+		<td>{ strconv.Itoa(r.Id) }</td>
+		<td>{ r.Name }</td>
+		<td>{ shared.FormatTimestamp(r.CreatedAt) }</td>
+		<td>{ shared.FormatTimestamp(r.UpdatedAt) }</td>
+		<td>
+			<a
+				href={ templ.URL(updatePath(r.Id)) }
+				hx-get={ updatePath(r.Id) }
+				hx-target={ "#" + rowElementID(r.Id) }
+				hx-swap="outerHTML"
+			>Edit</a>
+			<a
+				href="#"
+				hx-delete={ deletePath(r.Id) }
+				hx-target="closest tr"
+				hx-swap="outerHTML"
+				hx-confirm={ "Are you sure you want to delete " + r.Name + "?" }
+			>Delete</a>
+		</td>
+	</tr>
+}
