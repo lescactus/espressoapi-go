@@ -12,6 +12,89 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 )
 
+func TestShotRepositoryPostgresGetShotsBySheetId(t *testing.T) {
+	expectQuery := `
+SELECT
+	shots.id,
+	shots.grind_setting,
+	shots.quantity_in,
+	shots.quantity_out,
+	shots.shot_time,
+	shots.water_temperature,
+	shots.rating,
+	shots.is_too_bitter,
+	shots.is_too_sour,
+	shots.comparison_with_previous_result,
+	shots.additional_notes,
+	shots.created_at,
+	shots.updated_at,
+	sheet.id as "sheet.id",
+	sheet.name as "sheet.name",
+	beans.id as "beans.id",
+	beans.name as "beans.name",
+	beans.roast_date as "beans.roast_date",
+	beans.roast_level as "beans.roast_level",
+	roaster.id AS "beans.roaster.id",
+	roaster.name AS "beans.roaster.name",
+	roaster.created_at AS "beans.roaster.created_at",
+	roaster.updated_at AS "beans.roaster.updated_at"
+FROM shots
+INNER JOIN
+	sheets sheet ON shots.sheet_id = sheet.id
+INNER JOIN
+	beans beans ON shots.beans_id = beans.id
+INNER JOIN
+	roasters roaster ON beans.roaster_id = roaster.id
+WHERE shots.sheet_id = $1`
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock)
+	}{
+		{
+			name: "uses the postgres $1 placeholder and returns an empty slice for a sheet without shots",
+			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level", "beans.roaster.id", "beans.roaster.name", "beans.roaster.created_at", "beans.roaster.updated_at"}),
+				)
+
+				got, err := repository.GetShotsBySheetId(context.Background(), 1)
+				if err != nil {
+					t.Fatalf("GetShotsBySheetId() error = %v", err)
+				}
+				if len(got) != 0 {
+					t.Errorf("GetShotsBySheetId() = %v, want an empty slice", got)
+				}
+			},
+		},
+		{
+			name: "propagates a database error",
+			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnError(errors.New("mock error"))
+
+				if _, err := repository.GetShotsBySheetId(context.Background(), 1); err == nil {
+					t.Fatal("GetShotsBySheetId() expected an error, got nil")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+			if err != nil {
+				t.Fatalf("sqlmock.New() error = %v", err)
+			}
+			defer db.Close()
+
+			tt.run(t, New(sqlx.NewDb(db, "sqlmock")), mock)
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestShotRepositoryPostgresCreate(t *testing.T) {
 	tests := []struct {
 		name string

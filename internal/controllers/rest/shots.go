@@ -394,3 +394,62 @@ func (h *Handler) DeleteShotById(w http.ResponseWriter, r *http.Request) {
 
 	h.writeJSONResponse(w, http.StatusOK, i)
 }
+
+// swagger:route GET /rest/v1/sheets/{id}/shots sheets getShotsBySheetId
+//
+// # Get shots by sheet id
+//
+// This will return every shot for the sheet with the given id, as a JSON
+// array with the same shape as GET /rest/v1/shots. Returns an empty array
+// for an existing sheet without shots.
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: http, https
+//
+//	Deprecated: false
+//
+//	Security:
+//	  api_key:
+//	  oauth:
+//
+//	Parameters:
+//	  + name: id
+//	    in: path
+//	    description: id of the sheet whose shots to get
+//	    required: true
+//	    type: integer
+//	    format: int32
+//
+//	Responses:
+//	  200: ShotResponse
+//	  400: ErrorResponse
+//	  404: ErrorResponse
+func (h *Handler) GetShotsBySheetId(w http.ResponseWriter, r *http.Request) {
+	id, err := h.getIdFromParams(r.Context())
+	if err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+
+	if _, err := h.SheetService.GetSheetById(r.Context(), id); err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+
+	shots, err := h.ShotService.GetShotsBySheetId(r.Context(), id)
+	if err != nil {
+		h.SetErrorResponse(w, err)
+		return
+	}
+	shotsResp := make([]ShotResponse, len(shots))
+	for k, v := range shots {
+		shotsResp[k] = ShotResponse{v}
+	}
+
+	h.writeJSONResponse(w, http.StatusOK, &shotsResp)
+}

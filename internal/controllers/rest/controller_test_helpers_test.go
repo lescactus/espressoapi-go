@@ -201,13 +201,14 @@ func (f *fakeBeanService) Ping(ctx context.Context) error {
 }
 
 type fakeShotService struct {
-	t              *testing.T
-	createShot     func(context.Context, *shot.Shot) (*shot.Shot, error)
-	getShotByID    func(context.Context, int) (*shot.Shot, error)
-	getAllShots    func(context.Context) ([]shot.Shot, error)
-	updateShotByID func(context.Context, int, *shot.Shot) (*shot.Shot, error)
-	deleteShotByID func(context.Context, int) error
-	ping           func(context.Context) error
+	t                 *testing.T
+	createShot        func(context.Context, *shot.Shot) (*shot.Shot, error)
+	getShotByID       func(context.Context, int) (*shot.Shot, error)
+	getAllShots       func(context.Context) ([]shot.Shot, error)
+	getShotsBySheetID func(context.Context, int) ([]shot.Shot, error)
+	updateShotByID    func(context.Context, int, *shot.Shot) (*shot.Shot, error)
+	deleteShotByID    func(context.Context, int) error
+	ping              func(context.Context) error
 }
 
 var _ shot.Service = (*fakeShotService)(nil)
@@ -234,6 +235,14 @@ func (f *fakeShotService) GetAllShots(ctx context.Context) ([]shot.Shot, error) 
 		return nil, nil
 	}
 	return f.getAllShots(ctx)
+}
+
+func (f *fakeShotService) GetShotsBySheetId(ctx context.Context, sheetId int) ([]shot.Shot, error) {
+	if f.getShotsBySheetID == nil {
+		f.t.Fatalf("unexpected GetShotsBySheetId call")
+		return nil, nil
+	}
+	return f.getShotsBySheetID(ctx, sheetId)
 }
 
 func (f *fakeShotService) UpdateShotById(ctx context.Context, id int, value *shot.Shot) (*shot.Shot, error) {

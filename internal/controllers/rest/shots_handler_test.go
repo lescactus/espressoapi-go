@@ -10,6 +10,7 @@ import (
 
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	modelsql "github.com/lescactus/espressoapi-go/internal/models/sql"
+	"github.com/lescactus/espressoapi-go/internal/services/sheet"
 	"github.com/lescactus/espressoapi-go/internal/services/shot"
 )
 
@@ -195,6 +196,69 @@ func TestShotHandlersErrorPaths(t *testing.T) {
 			assertJSONResponse(t, recorder, tt.status, ErrorResponse{Msg: tt.message})
 		})
 	}
+}
+
+func TestGetShotsBySheetId(t *testing.T) {
+	t.Run("populated sheet", func(t *testing.T) {
+		handler, sheetSvc, _, _, shotSvc := newTestHandler(t)
+		sheetSvc.getSheetByID = func(_ context.Context, id int) (*sheet.Sheet, error) {
+			if id != 3 {
+				t.Errorf("id = %d, want 3", id)
+			}
+			return &sheet.Sheet{Id: 3, Name: "sheet03"}, nil
+		}
+		shotSvc.getShotsBySheetID = func(_ context.Context, sheetId int) ([]shot.Shot, error) {
+			if sheetId != 3 {
+				t.Errorf("sheetId = %d, want 3", sheetId)
+			}
+			return []shot.Shot{*testShot(1)}, nil
+		}
+
+		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/3/shots", "", "", "3")
+		recorder := executeControllerHandler(handler, (*Handler).GetShotsBySheetId, req)
+
+		assertJSONResponse(t, recorder, http.StatusOK, &[]ShotResponse{{*testShot(1)}})
+	})
+
+	t.Run("existing sheet without shots returns an empty array", func(t *testing.T) {
+		handler, sheetSvc, _, _, shotSvc := newTestHandler(t)
+		sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) {
+			return &sheet.Sheet{Id: 3, Name: "sheet03"}, nil
+		}
+		shotSvc.getShotsBySheetID = func(context.Context, int) ([]shot.Shot, error) {
+			return []shot.Shot{}, nil
+		}
+
+		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/3/shots", "", "", "3")
+		recorder := executeControllerHandler(handler, (*Handler).GetShotsBySheetId, req)
+
+		assertJSONResponse(t, recorder, http.StatusOK, &[]ShotResponse{})
+	})
+
+	t.Run("missing sheet returns 404 before querying shots", func(t *testing.T) {
+		handler, sheetSvc, _, _, shotSvc := newTestHandler(t)
+		sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) {
+			return nil, domainerrors.ErrSheetDoesNotExist
+		}
+		shotSvc.getShotsBySheetID = func(context.Context, int) ([]shot.Shot, error) {
+			t.Fatal("GetShotsBySheetId should not be called when the sheet does not exist")
+			return nil, nil
+		}
+
+		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/99/shots", "", "", "99")
+		recorder := executeControllerHandler(handler, (*Handler).GetShotsBySheetId, req)
+
+		assertJSONResponse(t, recorder, http.StatusNotFound, ErrorResponse{Msg: "no sheet found for given id"})
+	})
+
+	t.Run("invalid id returns 400", func(t *testing.T) {
+		handler, _, _, _, _ := newTestHandler(t)
+
+		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/abc/shots", "", "", "abc")
+		recorder := executeControllerHandler(handler, (*Handler).GetShotsBySheetId, req)
+
+		assertJSONResponse(t, recorder, http.StatusBadRequest, ErrorResponse{Msg: "id must be an integer"})
+	})
 }
 
 func assertShotRequest(t *testing.T, value *shot.Shot, id int) {

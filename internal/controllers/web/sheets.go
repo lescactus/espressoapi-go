@@ -186,7 +186,12 @@ func (h *Handler) GetSheet(w http.ResponseWriter, r *http.Request) {
 
 	writeHTMLStatus(w, http.StatusOK)
 	if !isHXRequest(r) {
-		_ = viewsheets.Detail(*s).Render(r.Context(), w)
+		shots, err := h.ShotService.GetShotsBySheetId(r.Context(), id)
+		if err != nil {
+			h.writeFullPageError(w, r, mapDomainError(err))
+			return
+		}
+		_ = viewsheets.Detail(*s, shots).Render(r.Context(), w)
 		return
 	}
 	if viewContext(r) == viewContextList {
@@ -216,8 +221,13 @@ func (h *Handler) EditSheetForm(w http.ResponseWriter, r *http.Request) {
 
 	if !isHXRequest(r) {
 		if vc == viewContextDetail {
+			shots, err := h.ShotService.GetShotsBySheetId(r.Context(), id)
+			if err != nil {
+				h.writeFullPageError(w, r, mapDomainError(err))
+				return
+			}
 			writeHTMLStatus(w, http.StatusOK)
-			_ = viewsheets.DetailEditing(state, createdAt, updatedAt).Render(r.Context(), w)
+			_ = viewsheets.DetailEditing(state, createdAt, updatedAt, shots).Render(r.Context(), w)
 			return
 		}
 		sheets, err := h.SheetService.GetAllSheets(r.Context())

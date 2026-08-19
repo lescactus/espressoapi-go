@@ -300,6 +300,15 @@ func (db *Shot) GetAllShots(ctx context.Context) ([]sql.Shot, error) {
 	return shots, nil
 }
 
+func (db *Shot) GetShotsBySheetId(ctx context.Context, sheetId int) ([]sql.Shot, error) {
+	shots := make([]sql.Shot, 0)
+	query := db.dialect.Rebind(shotQuery + "\nWHERE shots.sheet_id = ?")
+	if err := db.db.SelectContext(ctx, &shots, query, sheetId); err != nil {
+		return shots, fmt.Errorf("failed to read records for shots with sheet_id=%d: %w", sheetId, err)
+	}
+	return shots, nil
+}
+
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
 	query := db.dialect.Rebind(`UPDATE shots SET
 	sheet_id = ?, beans_id = ?, grind_setting = ?, quantity_in = ?, quantity_out = ?, shot_time = ?, water_temperature = ?, rating = ?, is_too_bitter = ?, is_too_sour = ?, comparison_with_previous_result = ?, additional_notes = ?

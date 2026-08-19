@@ -101,6 +101,9 @@ type unusedShotService struct{}
 func (unusedShotService) CreateShot(context.Context, *shot.Shot) (*shot.Shot, error) { return nil, nil }
 func (unusedShotService) GetShotById(context.Context, int) (*shot.Shot, error)       { return nil, nil }
 func (unusedShotService) GetAllShots(context.Context) ([]shot.Shot, error)           { return nil, nil }
+func (unusedShotService) GetShotsBySheetId(context.Context, int) ([]shot.Shot, error) {
+	return nil, nil
+}
 func (unusedShotService) UpdateShotById(context.Context, int, *shot.Shot) (*shot.Shot, error) {
 	return nil, nil
 }
@@ -111,6 +114,17 @@ func newTestSheetHandler(t *testing.T) (*Handler, *fakeSheetService) {
 	t.Helper()
 	svc := &fakeSheetService{t: t}
 	return NewHandler(svc, unusedRoasterService{}, unusedBeanService{}, unusedShotService{}), svc
+}
+
+// shotsBySheetIDStub is a minimal shot.Service exposing only a configurable
+// GetShotsBySheetId, used to test the sheet detail page's shots summary.
+type shotsBySheetIDStub struct {
+	unusedShotService
+	getShotsBySheetID func(context.Context, int) ([]shot.Shot, error)
+}
+
+func (s shotsBySheetIDStub) GetShotsBySheetId(ctx context.Context, sheetId int) ([]shot.Shot, error) {
+	return s.getShotsBySheetID(ctx, sheetId)
 }
 
 // newWebRequest builds a request with an optional :id URL param and optional
@@ -345,6 +359,25 @@ func TestGetSheet_FullDetailPageVsViewContextFragments(t *testing.T) {
 	h.GetSheet(listFragment, newWebRequest(http.MethodGet, "/sheets/get/1", "", "", "1", true))
 	if !strings.Contains(listFragment.Body.String(), `id="sheet-row-1"`) {
 		t.Errorf("expected the list row fragment by default, got: %s", listFragment.Body.String())
+	}
+}
+
+func TestGetSheet_DetailPageIncludesShots(t *testing.T) {
+	sheetSvc := &fakeSheetService{t: t}
+	sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) { return testSheet(1, "Double shot"), nil }
+	shotSvc := shotsBySheetIDStub{getShotsBySheetID: func(_ context.Context, sheetId int) ([]shot.Shot, error) {
+		if sheetId != 1 {
+			t.Errorf("sheetId = %d, want 1", sheetId)
+		}
+		return []shot.Shot{{Id: 9, Beans: &bean.Bean{Name: "Ethiopia"}}}, nil
+	}}
+	h := NewHandler(sheetSvc, unusedRoasterService{}, unusedBeanService{}, shotSvc)
+
+	rec := httptest.NewRecorder()
+	h.GetSheet(rec, newWebRequest(http.MethodGet, "/sheets/get/1", "", "", "1", false))
+
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Ethiopia") {
+		t.Errorf("expected the detail page to include the sheet's shots, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

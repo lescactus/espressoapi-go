@@ -1,7 +1,10 @@
 package sheets
 
 import (
+	"strconv"
+
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
 	"github.com/lescactus/espressoapi-go/views/templates/shared"
 )
 
@@ -50,19 +53,60 @@ templ DetailHeaderEdit(state FormState, createdAt, updatedAt string) {
 	</hgroup>
 }
 
+// ShotsSummary renders a read-only summary table of a sheet's shots. Full
+// add/edit/delete wiring is added alongside the /shots feature.
+templ ShotsSummary(shots []shot.Shot) {
+	<div class="table-scroll">
+		if len(shots) == 0 {
+			<p><em>No shots logged for this sheet yet.</em></p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Beans</th>
+						<th>Grind</th>
+						<th>In (g)</th>
+						<th>Out (g)</th>
+						<th>Rating</th>
+						<th>Logged</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, sh := range shots {
+						<tr>
+							<td>{ strconv.Itoa(sh.Id) }</td>
+							if sh.Beans != nil {
+								<td>{ sh.Beans.Name }</td>
+							} else {
+								<td></td>
+							}
+							<td>{ strconv.Itoa(sh.GrindSetting) }</td>
+							<td>{ strconv.FormatFloat(sh.QuantityIn, 'f', 1, 64) }</td>
+							<td>{ strconv.FormatFloat(sh.QuantityOut, 'f', 1, 64) }</td>
+							<td>{ strconv.FormatFloat(sh.Rating, 'f', 1, 64) }</td>
+							<td>{ shared.FormatTimestamp(sh.CreatedAt) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
 // Detail renders the full sheet detail page.
-templ Detail(s sheet.Sheet) {
+templ Detail(s sheet.Sheet, shots []shot.Shot) {
 	@shared.Layout(s.Name, "sheets") {
 		@DetailHeader(s)
-		<p><em>Shots for this sheet will appear here.</em></p>
+		@ShotsSummary(shots)
 	}
 }
 
 // DetailEditing renders the full sheet detail page with the header already
 // in edit mode (full-page fallback for a direct GET to the update URL).
-templ DetailEditing(state FormState, createdAt, updatedAt string) {
+templ DetailEditing(state FormState, createdAt, updatedAt string, shots []shot.Shot) {
 	@shared.Layout(state.Name, "sheets") {
 		@DetailHeaderEdit(state, createdAt, updatedAt)
-		<p><em>Shots for this sheet will appear here.</em></p>
+		@ShotsSummary(shots)
 	}
 }

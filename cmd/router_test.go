@@ -114,6 +114,9 @@ func (stubShotService) GetShotById(context.Context, int) (*shot.Shot, error) {
 	return stubShot(), nil
 }
 func (stubShotService) GetAllShots(context.Context) ([]shot.Shot, error) { return nil, nil }
+func (stubShotService) GetShotsBySheetId(context.Context, int) ([]shot.Shot, error) {
+	return nil, nil
+}
 func (stubShotService) UpdateShotById(context.Context, int, *shot.Shot) (*shot.Shot, error) {
 	return stubShot(), nil
 }
@@ -155,6 +158,7 @@ func TestNewRouter_RegistersAllExistingRoutes(t *testing.T) {
 		{"get all shots", http.MethodGet, "/rest/v1/shots"},
 		{"update shot by id", http.MethodPut, "/rest/v1/shots/1"},
 		{"delete shot by id", http.MethodDelete, "/rest/v1/shots/1"},
+		{"get shots by sheet id", http.MethodGet, "/rest/v1/sheets/1/shots"},
 		{"redoc", http.MethodGet, "/redoc"},
 		{"swagger ui", http.MethodGet, "/swagger"},
 		{"swagger json", http.MethodGet, "/swagger.json"},

@@ -41,6 +41,7 @@ func newRouter(restHandler *rest.Handler, webHandler *web.Handler, chain alice.C
 	r.Handler(http.MethodGet, "/rest/v1/shots", chain.ThenFunc(restHandler.GetAllShots))
 	r.Handler(http.MethodPut, "/rest/v1/shots/:id", chain.ThenFunc(restHandler.UpdateShotById))
 	r.Handler(http.MethodDelete, "/rest/v1/shots/:id", chain.ThenFunc(restHandler.DeleteShotById))
+	r.Handler(http.MethodGet, "/rest/v1/sheets/:id/shots", chain.ThenFunc(restHandler.GetShotsBySheetId))
 
 	redocOpts := middleware.RedocOpts{Path: "redoc", SpecURL: "swagger.json"}
 	swaggerUiOpts := middleware.SwaggerUIOpts{Path: "swagger", SpecURL: "swagger.json"}
