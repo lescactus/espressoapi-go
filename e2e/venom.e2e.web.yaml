@@ -1,0 +1,479 @@
+name: HTTP tests suite for the web UI
+
+vars:
+  baseuri: http://127.0.0.1:8080
+
+testcases:
+- name: GET /ping
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/ping"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson.ping ShouldEqual pong
+
+- name: GET / - home page renders direct navigation
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.content-type ShouldEqual "text/html; charset=utf-8"
+    - result.body ShouldContainSubstring "Sheets"
+    - result.body ShouldContainSubstring "Roasters"
+    - result.body ShouldContainSubstring "Beans"
+    - result.body ShouldContainSubstring "Shots"
+
+# ---------------------------------------------------------------------------
+# Roasters CRUD (inline-row pattern)
+# ---------------------------------------------------------------------------
+
+- name: GET /roasters - direct navigation, empty list
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/roasters"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: GET /roasters/add - htmx fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/roasters/add"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring roaster-row-add
+
+- name: POST /roasters/add - no Content-Type header - 415
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/roasters/add"
+    headers:
+      HX-Request: "true"
+    body: "name=roaster01"
+    assertions:
+    - result.statuscode ShouldEqual 415
+
+- name: POST /roasters/add - empty name - 400
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/roasters/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name="
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.body ShouldContainSubstring "must not be empty"
+
+- name: POST /roasters/add - create roaster (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/roasters/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=roaster01"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "roaster01"
+    - result.body ShouldContainSubstring "hx-swap-oob"
+
+- name: POST /roasters/add - duplicate name - 409
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/roasters/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=roaster01"
+    assertions:
+    - result.statuscode ShouldEqual 409
+
+- name: GET /roasters/get/1 - htmx row fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/roasters/get/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "roaster01"
+
+- name: GET /roasters/get/1000000 - not found
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/roasters/get/1000000"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 404
+
+- name: GET /roasters/update/1 - htmx edit fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/roasters/update/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "roaster01"
+
+- name: PUT /roasters/update/1 - rename
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/roasters/update/1"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=roaster01-updated"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "roaster01-updated"
+
+# ---------------------------------------------------------------------------
+# Beans CRUD (dialog pattern)
+# ---------------------------------------------------------------------------
+
+- name: GET /beans/add - htmx dialog fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/beans/add"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "roaster01-updated"
+
+- name: POST /beans/add - no Content-Type header - 415
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/beans/add"
+    headers:
+      HX-Request: "true"
+    body: "name=beans01"
+    assertions:
+    - result.statuscode ShouldEqual 415
+
+- name: POST /beans/add - create beans (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/beans/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=beans01&roast_date=2024-01-01&roast_level=0&roaster_id=1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.hx-reswap ShouldEqual none
+    - result.headers.hx-trigger ShouldEqual dialog-close
+    - result.body ShouldContainSubstring "beans01"
+    - result.body ShouldContainSubstring "hx-swap-oob"
+
+- name: POST /beans/add - empty name - 400
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/beans/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=&roast_level=0&roaster_id=1"
+    assertions:
+    - result.statuscode ShouldEqual 400
+
+- name: GET /beans/get/1 - htmx row fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/beans/get/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "beans01"
+
+- name: GET /beans/update/1 - htmx dialog fragment prefilled
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/beans/update/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "beans01"
+
+- name: PUT /beans/update/1 - update roast level
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/beans/update/1"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=beans01&roast_date=2024-01-01&roast_level=2&roaster_id=1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.hx-trigger ShouldEqual dialog-close
+    - result.body ShouldContainSubstring "beans01"
+
+# ---------------------------------------------------------------------------
+# Sheets CRUD (inline-row pattern) and sheet detail page
+# ---------------------------------------------------------------------------
+
+- name: GET /sheets/add - htmx fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/sheets/add"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: POST /sheets/add - create sheet (id=1)
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/sheets/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=sheet01"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "sheet01"
+
+- name: GET /sheets/get/1 - direct navigation renders full detail page with empty shots section
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/sheets/get/1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.content-type ShouldEqual "text/html; charset=utf-8"
+    - result.body ShouldContainSubstring "sheet01"
+
+- name: GET /sheets/get/1000000 - unknown sheet renders styled 404 page on direct navigation
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/sheets/get/1000000"
+    assertions:
+    - result.statuscode ShouldEqual 404
+
+- name: GET /sheets/update/1 - htmx edit fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/sheets/update/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "sheet01"
+
+# ---------------------------------------------------------------------------
+# Shots CRUD (dialog pattern, sheet-locked add) and scoped shots on the
+# sheet detail page
+# ---------------------------------------------------------------------------
+
+- name: GET /shots/add?sheet_id=1 - sheet-locked htmx dialog fragment
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/shots/add?sheet_id=1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "sheet01"
+    - result.body ShouldContainSubstring "<strong>Sheet:</strong>"
+    - result.body ShouldNotContainSubstring "<select name=sheet_id"
+
+- name: POST /shots/add - no Content-Type header - 415
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/shots/add"
+    headers:
+      HX-Request: "true"
+    body: "sheet_id=1&beans_id=1&rating=8"
+    assertions:
+    - result.statuscode ShouldEqual 415
+
+- name: POST /shots/add - create shot (id=1) with realistic shot_time
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/shots/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "sheet_id=1&beans_id=1&grind_setting=11&quantity_in=18&quantity_out=36&shot_time=28.5&water_temperature=90&rating=4.5&comparison_with_previous_result=2&additional_notes=test"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.hx-reswap ShouldEqual none
+    - result.headers.hx-trigger ShouldEqual dialog-close
+    - result.body ShouldContainSubstring "28.5 s"
+    - result.body ShouldContainSubstring "hx-swap-oob"
+
+- name: POST /shots/add - missing sheet selection - 400
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/shots/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "beans_id=1&grind_setting=11&quantity_in=18&quantity_out=36&rating=4.5"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.body ShouldContainSubstring "Select a sheet."
+
+- name: GET /shots - htmx list fragment shows the created shot
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/shots"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "28.5 s"
+
+- name: GET /sheets/get/1 - direct navigation now shows the scoped shot
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/sheets/get/1"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "28.5 s"
+
+- name: GET /shots/update/1 - htmx dialog fragment prefilled
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/shots/update/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.body ShouldContainSubstring "28.5"
+
+- name: PUT /shots/update/1 - update rating
+  steps:
+  - type: http
+    method: PUT
+    url: "{{ .baseuri }}/shots/update/1"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "sheet_id=1&beans_id=1&grind_setting=11&quantity_in=18&quantity_out=36&shot_time=28.5&water_temperature=90&rating=5.0&comparison_with_previous_result=2&additional_notes=test"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.hx-trigger ShouldEqual dialog-close
+    - result.body ShouldContainSubstring "5.0"
+
+# ---------------------------------------------------------------------------
+# Foreign-key conflicts and cleanup deletes
+# ---------------------------------------------------------------------------
+
+- name: DELETE /sheets/delete/1 - blocked while a shot references it
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/sheets/delete/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 409
+
+- name: DELETE /beans/delete/1 - blocked while a shot references it
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/beans/delete/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 409
+
+- name: DELETE /shots/delete/1
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/shots/delete/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: DELETE /shots/delete/1000000 - not found
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/shots/delete/1000000"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 404
+
+- name: DELETE /sheets/delete/1 - direct navigation from detail page redirects to the list
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/sheets/delete/1?view_context=sheet-detail"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.headers.hx-redirect ShouldEqual /sheets
+
+- name: DELETE /beans/delete/1
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/beans/delete/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: DELETE /roasters/delete/1
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/roasters/delete/1"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 200
+
+- name: DELETE /roasters/delete/1000000 - not found
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/roasters/delete/1000000"
+    headers:
+      HX-Request: "true"
+    assertions:
+    - result.statuscode ShouldEqual 404
