@@ -1,0 +1,107 @@
+// Package shared holds the layout, navigation, and reusable UI components used
+// by every web page and htmx fragment.
+package shared
+
+// Layout wraps page content in the site skeleton: head/CDN links, nav, the
+// alerts region, the page content, and the footer. active identifies the
+// current nav item (e.g. "sheets") for aria-current.
+templ Layout(title string, active string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } - espressoapi-go</title>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
+				integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU"
+				crossorigin="anonymous"
+			/>
+			<script
+				src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
+				integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V"
+				crossorigin="anonymous"
+			></script>
+			<style>
+				.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+				.table-scroll { overflow-x: auto; }
+				#alerts { position: fixed; top: 1rem; right: 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem; }
+				#alerts .alert-success, #alerts .alert-error { margin: 0; padding: 0.75rem 1rem; border-radius: var(--pico-border-radius); }
+				#alerts .alert-error { background: var(--pico-del-color); color: var(--pico-contrast); }
+				#alerts .alert-success { background: var(--pico-ins-color); color: var(--pico-contrast); }
+			</style>
+		</head>
+		<body>
+			@Nav(active)
+			<main class="container">
+				<div id="alerts"></div>
+				{ children... }
+			</main>
+			@Footer()
+			<script>
+				// Dark mode: default to prefers-color-scheme, override via nav toggle, persist in localStorage.
+				(function () {
+					var stored = localStorage.getItem("theme");
+					if (stored) {
+						document.documentElement.setAttribute("data-theme", stored);
+					}
+					document.addEventListener("click", function (evt) {
+						var toggle = evt.target.closest("[data-theme-toggle]");
+						if (!toggle) return;
+						var current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+						var next = current === "dark" ? "light" : "dark";
+						document.documentElement.setAttribute("data-theme", next);
+						localStorage.setItem("theme", next);
+					});
+				})();
+
+				// Auto-dismiss success/error alerts a few seconds after they are inserted.
+				(function () {
+					function scheduleDismiss(el) {
+						setTimeout(function () {
+							if (el && el.parentNode) el.parentNode.removeChild(el);
+						}, 5000);
+					}
+					new MutationObserver(function (mutations) {
+						mutations.forEach(function (m) {
+							m.addedNodes.forEach(function (n) {
+								if (n.nodeType === 1 && n.matches && n.matches(".alert-success")) scheduleDismiss(n);
+							});
+						});
+					}).observe(document.getElementById("alerts"), { childList: true });
+				})();
+
+				// Let expected HTML error responses (validation/domain errors) swap normally;
+				// htmx's default behavior already only blocks swaps for network errors, so this
+				// listener only needs to ensure our declared 4xx statuses are treated as swappable.
+				document.body.addEventListener("htmx:beforeSwap", function (evt) {
+					var status = evt.detail.xhr.status;
+					if (status === 400 || status === 404 || status === 409 || status === 413 || status === 415) {
+						evt.detail.shouldSwap = true;
+					}
+				});
+
+				// Shared <dialog> controller for bean/shot add/edit forms.
+				document.body.addEventListener("htmx:afterSwap", function (evt) {
+					var dialog = evt.target.querySelector ? evt.target.querySelector("dialog[open]") : null;
+					if (evt.target.matches && evt.target.matches("dialog")) dialog = evt.target;
+					if (dialog && typeof dialog.showModal === "function" && !dialog.hasAttribute("data-modal-open")) {
+						dialog.setAttribute("data-modal-open", "true");
+						dialog.showModal();
+					}
+				});
+				document.body.addEventListener("htmx:trigger:dialog-close", function (evt) {
+					var dialog = document.querySelector("dialog[open]");
+					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
+				});
+				document.addEventListener("click", function (evt) {
+					var closer = evt.target.closest("[data-dialog-close]");
+					if (!closer) return;
+					var dialog = evt.target.closest("dialog");
+					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
+				});
+			</script>
+		</body>
+	</html>
+}

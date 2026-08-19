@@ -1,0 +1,26 @@
+package shared
+
+templ navLink(href, label, active, current string) {
+	if active == current {
+		<li><a href={ templ.URL(href) } aria-current="page">{ label }</a></li>
+	} else {
+		<li><a href={ templ.URL(href) }>{ label }</a></li>
+	}
+}
+
+templ Nav(active string) {
+	<nav class="container">
+		<ul>
+			<li><strong><a href="/">espressoapi-go</a></strong></li>
+		</ul>
+		<ul>
+			@navLink("/sheets", "Sheets", active, "sheets")
+			@navLink("/roasters", "Roasters", active, "roasters")
+			@navLink("/beans", "Beans", active, "beans")
+			@navLink("/shots", "Shots", active, "shots")
+			<li>
+				<a href="#" data-theme-toggle role="button" class="outline" aria-label="Toggle dark mode">🌓</a>
+			</li>
+		</ul>
+	</nav>
+}

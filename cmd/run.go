@@ -14,6 +14,7 @@ import (
 	"github.com/lescactus/espressoapi-go/cmd/app"
 	"github.com/lescactus/espressoapi-go/internal/config"
 	"github.com/lescactus/espressoapi-go/internal/controllers/rest"
+	"github.com/lescactus/espressoapi-go/internal/controllers/web"
 	"github.com/rs/zerolog/hlog"
 	"github.com/spf13/cobra"
 
@@ -51,8 +52,9 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	svcBean := svcbean.New(repositories.beans)
 	svcShot := svcshot.New(repositories.shot)
 
-	// Create handler and middleware chain
+	// Create handlers and middleware chain
 	h := rest.NewHandler(svcSheet, svcRoaster, svcBean, svcShot, app.App.Cfg.ServerMaxRequestSize)
+	webHandler := web.NewHandler(svcSheet, svcRoaster, svcBean, svcShot)
 	c := alice.New()
 
 	// Logger fields
@@ -79,7 +81,7 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	c = c.Append(h.MaxReqSize())
 
 	// Build the route table and server
-	r := newRouter(h, c)
+	r := newRouter(h, webHandler, c)
 	s := &http.Server{
 		Addr:              app.App.Cfg.ServerAddr,
 		Handler:           handlers.RecoveryHandler(handlers.PrintRecoveryStack(true))(r), // recover from panics and print recovery stack

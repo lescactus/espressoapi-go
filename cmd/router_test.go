@@ -11,6 +11,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/cmd/app"
 	"github.com/lescactus/espressoapi-go/internal/controllers/rest"
+	"github.com/lescactus/espressoapi-go/internal/controllers/web"
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
@@ -121,7 +122,8 @@ func (stubShotService) Ping(context.Context) error                { return nil }
 
 func newTestRouter() http.Handler {
 	h := rest.NewHandler(stubSheetService{}, stubRoasterService{}, stubBeanService{}, stubShotService{}, 1<<20)
-	return newRouter(h, alice.New())
+	web := web.NewHandler(stubSheetService{}, stubRoasterService{}, stubBeanService{}, stubShotService{})
+	return newRouter(h, web, alice.New())
 }
 
 func TestNewRouter_RegistersAllExistingRoutes(t *testing.T) {
@@ -156,6 +158,14 @@ func TestNewRouter_RegistersAllExistingRoutes(t *testing.T) {
 		{"redoc", http.MethodGet, "/redoc"},
 		{"swagger ui", http.MethodGet, "/swagger"},
 		{"swagger json", http.MethodGet, "/swagger.json"},
+		{"web home", http.MethodGet, "/"},
+		{"web list sheets", http.MethodGet, "/sheets"},
+		{"web add sheet form", http.MethodGet, "/sheets/add"},
+		{"web create sheet", http.MethodPost, "/sheets/add"},
+		{"web get sheet", http.MethodGet, "/sheets/get/1"},
+		{"web edit sheet form", http.MethodGet, "/sheets/update/1"},
+		{"web update sheet", http.MethodPut, "/sheets/update/1"},
+		{"web delete sheet", http.MethodDelete, "/sheets/delete/1"},
 	}
 
 	for _, tt := range tests {

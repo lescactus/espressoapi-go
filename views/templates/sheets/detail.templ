@@ -1,0 +1,68 @@
+package sheets
+
+import (
+	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// DetailHeader renders the sheet detail page's header in view mode.
+templ DetailHeader(s sheet.Sheet) {
+	<hgroup id="sheet-detail-header">
+		<h1>{ s.Name }</h1>
+		<p>
+			Created { shared.FormatTimestamp(s.CreatedAt) } &middot; Updated { shared.FormatTimestamp(s.UpdatedAt) }
+		</p>
+		<a
+			href="#"
+			hx-get={ updatePath(s.Id) + "?view_context=sheet-detail" }
+			hx-target="#sheet-detail-header"
+			hx-swap="outerHTML"
+		>Rename</a>
+		<a
+			href="#"
+			hx-delete={ deletePath(s.Id) + "?view_context=sheet-detail" }
+			hx-confirm={ "Are you sure you want to delete " + s.Name + "?" }
+		>Delete</a>
+	</hgroup>
+}
+
+// DetailHeaderEdit renders the sheet detail page's header in edit mode.
+templ DetailHeaderEdit(state FormState, createdAt, updatedAt string) {
+	<hgroup id="sheet-detail-header">
+		<input type="text" name="name" required value={ state.Name } { nameFieldAttrs(state.Error)... }/>
+		if state.Error != "" {
+			<small>{ state.Error }</small>
+		}
+		<p>Created { createdAt } &middot; Updated { updatedAt }</p>
+		<button
+			type="button"
+			hx-put={ updatePath(state.ID) + "?view_context=sheet-detail" }
+			hx-include="closest hgroup"
+			hx-target="#sheet-detail-header"
+			hx-swap="outerHTML"
+		>Save</button>
+		<a
+			href="#"
+			hx-get={ getPath(state.ID) + "?view_context=sheet-detail" }
+			hx-target="#sheet-detail-header"
+			hx-swap="outerHTML"
+		>Cancel</a>
+	</hgroup>
+}
+
+// Detail renders the full sheet detail page.
+templ Detail(s sheet.Sheet) {
+	@shared.Layout(s.Name, "sheets") {
+		@DetailHeader(s)
+		<p><em>Shots for this sheet will appear here.</em></p>
+	}
+}
+
+// DetailEditing renders the full sheet detail page with the header already
+// in edit mode (full-page fallback for a direct GET to the update URL).
+templ DetailEditing(state FormState, createdAt, updatedAt string) {
+	@shared.Layout(state.Name, "sheets") {
+		@DetailHeaderEdit(state, createdAt, updatedAt)
+		<p><em>Shots for this sheet will appear here.</em></p>
+	}
+}

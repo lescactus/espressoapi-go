@@ -7,11 +7,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/internal/controllers/rest"
+	"github.com/lescactus/espressoapi-go/internal/controllers/web"
 )
 
-// newRouter builds the complete HTTP route table for the REST API and
-// documentation endpoints. chain is applied to every route registered here.
-func newRouter(restHandler *rest.Handler, chain alice.Chain) http.Handler {
+// newRouter builds the complete HTTP route table for the REST API, the web
+// UI, and documentation endpoints. chain is applied to every route
+// registered here.
+func newRouter(restHandler *rest.Handler, webHandler *web.Handler, chain alice.Chain) http.Handler {
 	r := httprouter.New()
 
 	r.Handler(http.MethodGet, "/ping", chain.ThenFunc(restHandler.Ping))
@@ -45,6 +47,17 @@ func newRouter(restHandler *rest.Handler, chain alice.Chain) http.Handler {
 	r.Handler(http.MethodGet, "/redoc", middleware.Redoc(redocOpts, nil))
 	r.Handler(http.MethodGet, "/swagger", middleware.SwaggerUI(swaggerUiOpts, nil))
 	r.Handler(http.MethodGet, "/swagger.json", chain.ThenFunc(restHandler.Swagger))
+
+	// Web UI
+	r.Handler(http.MethodGet, "/", chain.ThenFunc(webHandler.Home))
+
+	r.Handler(http.MethodGet, "/sheets", chain.ThenFunc(webHandler.ListSheets))
+	r.Handler(http.MethodGet, "/sheets/add", chain.ThenFunc(webHandler.AddSheetForm))
+	r.Handler(http.MethodPost, "/sheets/add", chain.ThenFunc(webHandler.CreateSheet))
+	r.Handler(http.MethodGet, "/sheets/get/:id", chain.ThenFunc(webHandler.GetSheet))
+	r.Handler(http.MethodGet, "/sheets/update/:id", chain.ThenFunc(webHandler.EditSheetForm))
+	r.Handler(http.MethodPut, "/sheets/update/:id", chain.ThenFunc(webHandler.UpdateSheet))
+	r.Handler(http.MethodDelete, "/sheets/delete/:id", chain.ThenFunc(webHandler.DeleteSheet))
 
 	return r
 }
