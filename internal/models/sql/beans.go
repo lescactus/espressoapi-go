@@ -17,6 +17,25 @@ func (r RoastLevel) IsValid() bool {
 	return r >= RoastLevelLight && r <= RoastLevelDark
 }
 
+// String renders a human label for display. JSON encoding stays numeric;
+// this is not used by MarshalJSON.
+func (r RoastLevel) String() string {
+	switch r {
+	case RoastLevelLight:
+		return "Light"
+	case RoastLevelLightToMedium:
+		return "Light to medium"
+	case RoastLevelMedium:
+		return "Medium"
+	case RoastLevelMediumToDark:
+		return "Medium to dark"
+	case RoastLevelDark:
+		return "Dark"
+	default:
+		return "Unknown"
+	}
+}
+
 type Beans struct {
 	Id         int        `db:"id"`
 	Roaster    *Roaster   `db:"roaster"`

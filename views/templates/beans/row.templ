@@ -1,0 +1,43 @@
+package beans
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/services/bean"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// Row renders a bean's view-mode table row. oobMode is "" for a normal row,
+// "insert" to append it out-of-band into the beans table body (after a
+// dialog create, whose primary swap target is the dialog itself), or
+// "replace" to replace the existing row by id out-of-band (after an edit).
+templ Row(b bean.Bean, oobMode string) {
+	<tr id={ rowElementID(b.Id) } { rowOOBAttrs(oobMode)... }>
+		<td>{ strconv.Itoa(b.Id) }</td>
+		<td>{ b.Name }</td>
+		if b.Roaster != nil {
+			<td>{ b.Roaster.Name }</td>
+		} else {
+			<td></td>
+		}
+		<td>{ dateOnly(b.RoastDate) }</td>
+		<td>{ b.RoastLevel.String() }</td>
+		<td>{ shared.FormatTimestamp(b.CreatedAt) }</td>
+		<td>{ shared.FormatTimestamp(b.UpdatedAt) }</td>
+		<td>
+			<a
+				href="#"
+				hx-get={ updatePath(b.Id) }
+				hx-target="#bean-dialog"
+				hx-swap="innerHTML"
+			>Edit</a>
+			<a
+				href="#"
+				hx-delete={ deletePath(b.Id) }
+				hx-target="closest tr"
+				hx-swap="outerHTML"
+				hx-confirm={ "Are you sure you want to delete " + b.Name + "?" }
+			>Delete</a>
+		</td>
+	</tr>
+}

@@ -91,7 +91,7 @@ templ Layout(title string, active string) {
 						dialog.showModal();
 					}
 				});
-				document.body.addEventListener("htmx:trigger:dialog-close", function (evt) {
+				document.body.addEventListener("dialog-close", function () {
 					var dialog = document.querySelector("dialog[open]");
 					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
 				});

@@ -1,0 +1,109 @@
+package beans
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/models/sql"
+	"github.com/lescactus/espressoapi-go/internal/services/roaster"
+)
+
+func submitAttrs(isAdd bool, id int) templ.Attributes {
+	if isAdd {
+		return templ.Attributes{"hx-post": "/beans/add"}
+	}
+	return templ.Attributes{"hx-put": updatePath(id)}
+}
+
+func fieldAttrs(errMsg string) templ.Attributes {
+	attrs := templ.Attributes{}
+	if errMsg != "" {
+		attrs["aria-invalid"] = "true"
+	}
+	return attrs
+}
+
+var roastLevels = []sql.RoastLevel{
+	sql.RoastLevelLight,
+	sql.RoastLevelLightToMedium,
+	sql.RoastLevelMedium,
+	sql.RoastLevelMediumToDark,
+	sql.RoastLevelDark,
+}
+
+// Form renders the bean add/edit dialog form content (the caller injects it
+// into the persistent #bean-dialog element). Metadata is read-only and only
+// shown in edit mode.
+templ Form(state FormState, roasters []roaster.Roaster, isAdd bool, createdAt, updatedAt string) {
+	<article>
+		<header>
+			if isAdd {
+				<h3>Add bean</h3>
+			} else {
+				<h3>Edit bean</h3>
+			}
+		</header>
+			if !isAdd {
+				<p>
+					<small>ID { strconv.Itoa(state.ID) } &middot; Created { createdAt } &middot; Updated { updatedAt }</small>
+				</p>
+			}
+			<label>
+				Name
+				<input type="text" name="name" required value={ state.Name } { fieldAttrs(state.fieldError("name"))... }/>
+				if msg := state.fieldError("name"); msg != "" {
+					<small>{ msg }</small>
+				}
+			</label>
+			<label>
+				Roaster
+				if len(roasters) == 0 {
+					<select name="roaster_id" disabled></select>
+					<small>No roasters yet. <a href="/roasters">Create one first.</a></small>
+				} else {
+					<select name="roaster_id" required { fieldAttrs(state.fieldError("roaster_id"))... }>
+						<option value="">Select a roaster&hellip;</option>
+						for _, r := range roasters {
+							if strconv.Itoa(r.Id) == state.RoasterID {
+								<option value={ strconv.Itoa(r.Id) } selected>{ r.Name }</option>
+							} else {
+								<option value={ strconv.Itoa(r.Id) }>{ r.Name }</option>
+							}
+						}
+					</select>
+					if msg := state.fieldError("roaster_id"); msg != "" {
+						<small>{ msg }</small>
+					}
+				}
+			</label>
+			<label>
+				Roast date
+				<input type="date" name="roast_date" value={ state.RoastDate } { fieldAttrs(state.fieldError("roast_date"))... }/>
+				if msg := state.fieldError("roast_date"); msg != "" {
+					<small>{ msg }</small>
+				}
+			</label>
+			<label>
+				Roast level
+				<select name="roast_level">
+					for _, lvl := range roastLevels {
+						if strconv.Itoa(int(lvl)) == state.RoastLevel {
+							<option value={ strconv.Itoa(int(lvl)) } selected>{ lvl.String() }</option>
+						} else {
+							<option value={ strconv.Itoa(int(lvl)) }>{ lvl.String() }</option>
+						}
+					}
+				</select>
+			</label>
+		<footer>
+			<button
+				type="button"
+				{ submitAttrs(isAdd, state.ID)... }
+				hx-include="closest dialog"
+				hx-target="#bean-dialog"
+				hx-swap="innerHTML"
+				disabled?={ len(roasters) == 0 }
+			>Save</button>
+			<button type="button" data-dialog-close class="secondary">Cancel</button>
+		</footer>
+	</article>
+}

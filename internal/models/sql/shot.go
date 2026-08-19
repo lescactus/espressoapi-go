@@ -16,6 +16,23 @@ func (r ComparisonWithPreviousResult) IsValid() bool {
 	return r >= Worst && r <= Unknown
 }
 
+// String renders a human label for display. JSON encoding stays numeric;
+// this is not used by MarshalJSON.
+func (r ComparisonWithPreviousResult) String() string {
+	switch r {
+	case Worst:
+		return "Worse"
+	case Same:
+		return "Same"
+	case Better:
+		return "Better"
+	case Unknown:
+		return "Unknown"
+	default:
+		return "Unknown"
+	}
+}
+
 type Shot struct {
 	Id                           int                          `db:"id"`
 	Sheet                        *Sheet                       `db:"sheet"`

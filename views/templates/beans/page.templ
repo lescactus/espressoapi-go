@@ -1,0 +1,59 @@
+package beans
+
+import (
+	"github.com/lescactus/espressoapi-go/internal/services/bean"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+templ sortHeader(label, col, sortCol, order string) {
+	<th>
+		<a href="#" hx-get={ "/beans?sort=" + col + "&order=" + nextSortOrder(sortCol, order, col) } hx-target="#beans-table" hx-swap="outerHTML">
+			{ label }
+			if sortCol == col && order == "asc" {
+				<span> &#9650;</span>
+			}
+			if sortCol == col && order == "desc" {
+				<span> &#9660;</span>
+			}
+		</a>
+	</th>
+}
+
+// Table renders the beans table fragment.
+templ Table(beans []bean.Bean, sortCol, order string) {
+	<table id="beans-table">
+		<thead>
+			<tr>
+				@sortHeader("ID", "id", sortCol, order)
+				@sortHeader("Name", "name", sortCol, order)
+				<th>Roaster</th>
+				@sortHeader("Roast date", "roast_date", sortCol, order)
+				@sortHeader("Roast level", "roast_level", sortCol, order)
+				@sortHeader("Created", "created_at", sortCol, order)
+				@sortHeader("Updated", "updated_at", sortCol, order)
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody id="beans-tbody">
+			for _, b := range beans {
+				@Row(b, "")
+			}
+		</tbody>
+	</table>
+}
+
+// Page renders the full beans list page, including the persistent (initially
+// empty) dialog target used by the add/edit form.
+templ Page(beans []bean.Bean, sortCol, order string) {
+	@shared.Layout("Beans", "beans") {
+		<hgroup>
+			<h1>Beans</h1>
+			<p>Coffee beans registered under a roaster.</p>
+		</hgroup>
+		<a role="button" hx-get="/beans/add" hx-target="#bean-dialog" hx-swap="innerHTML">Add bean</a>
+		<div class="table-scroll">
+			@Table(beans, sortCol, order)
+		</div>
+		<dialog id="bean-dialog"></dialog>
+	}
+}

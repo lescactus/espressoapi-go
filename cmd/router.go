@@ -68,5 +68,13 @@ func newRouter(restHandler *rest.Handler, webHandler *web.Handler, chain alice.C
 	r.Handler(http.MethodPut, "/roasters/update/:id", chain.ThenFunc(webHandler.UpdateRoaster))
 	r.Handler(http.MethodDelete, "/roasters/delete/:id", chain.ThenFunc(webHandler.DeleteRoaster))
 
+	r.Handler(http.MethodGet, "/beans", chain.ThenFunc(webHandler.ListBeans))
+	r.Handler(http.MethodGet, "/beans/add", chain.ThenFunc(webHandler.AddBeanForm))
+	r.Handler(http.MethodPost, "/beans/add", chain.ThenFunc(webHandler.CreateBean))
+	r.Handler(http.MethodGet, "/beans/get/:id", chain.ThenFunc(webHandler.GetBean))
+	r.Handler(http.MethodGet, "/beans/update/:id", chain.ThenFunc(webHandler.EditBeanForm))
+	r.Handler(http.MethodPut, "/beans/update/:id", chain.ThenFunc(webHandler.UpdateBean))
+	r.Handler(http.MethodDelete, "/beans/delete/:id", chain.ThenFunc(webHandler.DeleteBean))
+
 	return r
 }
