@@ -11,7 +11,7 @@ import (
 templ Row(s sheet.Sheet) {
 	<tr id={ rowElementID(s.Id) }>
 		<td>{ strconv.Itoa(s.Id) }</td>
-		<td>{ s.Name }</td>
+		<td><a href={ templ.URL(getPath(s.Id)) }>{ s.Name }</a></td>
 		<td>{ shared.FormatTimestamp(s.CreatedAt) }</td>
 		<td>{ shared.FormatTimestamp(s.UpdatedAt) }</td>
 		<td>

@@ -38,6 +38,14 @@ func TestRow_ShowsAllColumnsAndActions(t *testing.T) {
 	}
 }
 
+func TestRow_NameLinksToTheSheetDetailPage(t *testing.T) {
+	html := render(t, Row(testSheet()))
+
+	if !strings.Contains(html, `<a href="/sheets/get/42">Double shot</a>`) {
+		t.Errorf("expected the name to link to the sheet's detail page, got: %s", html)
+	}
+}
+
 func TestEditRow_MetadataIsReadOnly(t *testing.T) {
 	html := render(t, EditRow(FormState{ID: 42, Name: "Double shot"}, "2026-01-02 03:04", "2026-01-05 06:07"))
 
