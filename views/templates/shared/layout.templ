@@ -26,6 +26,10 @@ templ Layout(title string, active string) {
 			<style>
 				.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
 				.table-scroll { overflow-x: auto; }
+				.table-scroll table { width: max-content; min-width: 100%; }
+				.table-scroll th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+				.col-resizer { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; user-select: none; touch-action: none; }
+				.col-resizer:hover, .col-resizer.is-resizing { background: var(--pico-primary); opacity: 0.5; }
 				#alerts { position: fixed; top: 1rem; right: 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem; }
 				#alerts .alert-success, #alerts .alert-error { margin: 0; padding: 0.75rem 1rem; border-radius: var(--pico-border-radius); }
 				#alerts .alert-error { background: var(--pico-del-color); color: var(--pico-contrast); }
@@ -107,6 +111,66 @@ templ Layout(title string, active string) {
 					var dialog = evt.target.closest("dialog");
 					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
 				});
+
+				// Draggable column resizing for every table under .table-scroll. Handles
+				// are added on demand (idempotent) so this also covers tables swapped in
+				// later by htmx (e.g. re-sorting, which replaces the whole <table>).
+				(function () {
+					function addResizeHandles() {
+						document.querySelectorAll(".table-scroll table").forEach(function (table) {
+							if (table.hasAttribute("data-resizable")) return;
+							var ths = table.querySelectorAll("thead tr th");
+							// Pin each column's current auto-computed width, and give the table
+							// itself an explicit pixel width (their sum), before switching to a
+							// fixed layout. table-layout: fixed ignores a <th>'s inline width
+							// when the table's own width is an intrinsic keyword (max-content),
+							// so this must be a definite length for per-column resizing to work.
+							var total = 0;
+							ths.forEach(function (th) {
+								var width = th.offsetWidth;
+								th.style.width = width + "px";
+								total += width;
+							});
+							table.style.width = total + "px";
+							table.style.tableLayout = "fixed";
+							table.setAttribute("data-resizable", "true");
+							ths.forEach(function (th) {
+								if (th.querySelector(".col-resizer")) return;
+								var handle = document.createElement("span");
+								handle.className = "col-resizer";
+								th.appendChild(handle);
+							});
+						});
+					}
+					addResizeHandles();
+					document.body.addEventListener("htmx:afterSwap", addResizeHandles);
+
+					var resizing = null;
+					document.addEventListener("mousedown", function (evt) {
+						var handle = evt.target.closest(".col-resizer");
+						if (!handle) return;
+						evt.preventDefault();
+						var th = handle.parentElement;
+						var table = th.closest("table");
+						resizing = { th: th, table: table, startX: evt.clientX, startWidth: th.offsetWidth, startTableWidth: table.offsetWidth };
+						handle.classList.add("is-resizing");
+					});
+					document.addEventListener("mousemove", function (evt) {
+						if (!resizing) return;
+						var width = Math.max(40, resizing.startWidth + (evt.clientX - resizing.startX));
+						resizing.th.style.width = width + "px";
+						// Keep the table's own (definite, fixed-layout) width in sync so the
+						// browser doesn't redistribute the resized column's space among
+						// the others to make the total add back up.
+						resizing.table.style.width = (resizing.startTableWidth + (width - resizing.startWidth)) + "px";
+					});
+					document.addEventListener("mouseup", function () {
+						if (!resizing) return;
+						var handle = resizing.th.querySelector(".col-resizer");
+						if (handle) handle.classList.remove("is-resizing");
+						resizing = null;
+					});
+				})();
 			</script>
 		</body>
 	</html>
