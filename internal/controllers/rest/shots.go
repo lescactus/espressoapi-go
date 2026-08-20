@@ -3,7 +3,6 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
@@ -24,12 +23,13 @@ type CreateShotParams struct {
 // CreateShotRequest represents the request body for creating a shot
 // swagger:model
 type CreateShotRequest struct {
-	SheetId                      int                              `json:"sheet_id"`
-	BeansId                      int                              `json:"beans_id"`
-	GrindSetting                 int                              `json:"grind_setting"`
-	QuantityIn                   float64                          `json:"quantity_in"`
-	QuantityOut                  float64                          `json:"quantity_out"`
-	ShotTime                     time.Duration                    `json:"shot_time"`
+	SheetId      int     `json:"sheet_id"`
+	BeansId      int     `json:"beans_id"`
+	GrindSetting int     `json:"grind_setting"`
+	QuantityIn   float64 `json:"quantity_in"`
+	QuantityOut  float64 `json:"quantity_out"`
+	// Shot duration in seconds (0 < value <= 3600), e.g. 28.5
+	ShotTime                     DurationSeconds                  `json:"shot_time"`
 	WaterTemperature             float64                          `json:"water_temperature"`
 	Rating                       float64                          `json:"rating"`
 	IsTooBitter                  bool                             `json:"is_too_bitter"`
@@ -51,6 +51,14 @@ type CreateShotRequest struct {
 type ShotResponse struct {
 	// swagger:allOf
 	shot.Shot
+	// Shot duration in seconds (0 < value <= 3600), e.g. 28.5
+	ShotTime DurationSeconds `json:"shot_time"`
+}
+
+// newShotResponse builds a ShotResponse, converting the domain model's
+// nanosecond-native ShotTime to its seconds wire representation.
+func newShotResponse(s shot.Shot) ShotResponse {
+	return ShotResponse{Shot: s, ShotTime: NewDurationSeconds(s.ShotTime)}
 }
 
 func logShotFromRequest(r *http.Request, shot *shot.Shot, msg string) {
@@ -128,7 +136,7 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 		GrindSetting:                 shotReq.GrindSetting,
 		QuantityIn:                   shotReq.QuantityIn,
 		QuantityOut:                  shotReq.QuantityOut,
-		ShotTime:                     shotReq.ShotTime,
+		ShotTime:                     shotReq.ShotTime.Duration(),
 		WaterTemperature:             shotReq.WaterTemperature,
 		Rating:                       shotReq.Rating,
 		IsTooBitter:                  shotReq.IsTooBitter,
@@ -142,7 +150,7 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
-	shotResp := ShotResponse{*shot}
+	shotResp := newShotResponse(*shot)
 	logShotFromRequest(r, shot, "shot successfully created")
 
 	h.writeJSONResponse(w, http.StatusCreated, shotResp)
@@ -192,7 +200,7 @@ func (h *Handler) GetShotById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
-	shotResp := ShotResponse{*shot}
+	shotResp := newShotResponse(*shot)
 	logShotFromRequest(r, shot, "shot found by id")
 
 	h.writeJSONResponse(w, http.StatusOK, shotResp)
@@ -230,7 +238,7 @@ func (h *Handler) GetAllShots(w http.ResponseWriter, r *http.Request) {
 	}
 	shotsResp := make([]ShotResponse, len(shots))
 	for k, v := range shots {
-		shotsResp[k] = ShotResponse{v}
+		shotsResp[k] = newShotResponse(v)
 	}
 
 	h.writeJSONResponse(w, http.StatusOK, &shotsResp)
@@ -248,12 +256,13 @@ type UpdateShotByIdRequestParams struct {
 // with the given id
 // swagger:model
 type UpdateShotByIdRequest struct {
-	SheetId                      int                              `json:"sheet_id"`
-	BeansId                      int                              `json:"beans_id"`
-	GrindSetting                 int                              `json:"grind_setting"`
-	QuantityIn                   float64                          `json:"quantity_in"`
-	QuantityOut                  float64                          `json:"quantity_out"`
-	ShotTime                     time.Duration                    `json:"shot_time"`
+	SheetId      int     `json:"sheet_id"`
+	BeansId      int     `json:"beans_id"`
+	GrindSetting int     `json:"grind_setting"`
+	QuantityIn   float64 `json:"quantity_in"`
+	QuantityOut  float64 `json:"quantity_out"`
+	// Shot duration in seconds (0 < value <= 3600), e.g. 28.5
+	ShotTime                     DurationSeconds                  `json:"shot_time"`
 	WaterTemperature             float64                          `json:"water_temperature"`
 	Rating                       float64                          `json:"rating"`
 	IsTooBitter                  bool                             `json:"is_too_bitter"`
@@ -321,7 +330,7 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 		GrindSetting:                 shotReq.GrindSetting,
 		QuantityIn:                   shotReq.QuantityIn,
 		QuantityOut:                  shotReq.QuantityOut,
-		ShotTime:                     shotReq.ShotTime,
+		ShotTime:                     shotReq.ShotTime.Duration(),
 		WaterTemperature:             shotReq.WaterTemperature,
 		Rating:                       shotReq.Rating,
 		IsTooBitter:                  shotReq.IsTooBitter,
@@ -335,7 +344,7 @@ func (h *Handler) UpdateShotById(w http.ResponseWriter, r *http.Request) {
 		h.SetErrorResponse(w, err)
 		return
 	}
-	shotResp := ShotResponse{*shot}
+	shotResp := newShotResponse(*shot)
 	logShotFromRequest(r, shot, "shot successfully updated")
 
 	h.writeJSONResponse(w, http.StatusOK, shotResp)
@@ -448,7 +457,7 @@ func (h *Handler) GetShotsBySheetId(w http.ResponseWriter, r *http.Request) {
 	}
 	shotsResp := make([]ShotResponse, len(shots))
 	for k, v := range shots {
-		shotsResp[k] = ShotResponse{v}
+		shotsResp[k] = newShotResponse(v)
 	}
 
 	h.writeJSONResponse(w, http.StatusOK, &shotsResp)

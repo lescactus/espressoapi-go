@@ -18,7 +18,7 @@ VALUES
 -- shots
 -- 0 = false
 -- 1 = true
-INSERT INTO shots (grind_setting, quantity_in, quantity_out, shot_time, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes, sheet_id, beans_id)
+INSERT INTO shots (grind_setting, quantity_in, quantity_out, shot_time_ms, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes, sheet_id, beans_id)
 VALUES
 (12, 18.0, 36.0, 25, 6.3, 0, 1, 0, 'Lets try more output', 2, 1),
 (12, 18.0, 38.0, 26, 8.0, 0, 0, 1, 'Pretty good', 2, 1),

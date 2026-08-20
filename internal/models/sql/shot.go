@@ -40,7 +40,7 @@ type Shot struct {
 	GrindSetting                 int                          `db:"grind_setting"`
 	QuantityIn                   float64                      `db:"quantity_in"`
 	QuantityOut                  float64                      `db:"quantity_out"`
-	ShotTime                     time.Duration                `db:"shot_time"`
+	ShotTime                     time.Duration                `db:"shot_time_ms"`
 	WaterTemperature             float64                      `db:"water_temperature"`
 	Rating                       float64                      `db:"rating"`
 	IsTooBitter                  bool                         `db:"is_too_bitter"`

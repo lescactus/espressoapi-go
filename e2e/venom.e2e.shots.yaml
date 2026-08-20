@@ -242,7 +242,7 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24000000, "rating":8.0, "additional_notes":"this is a test"}
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "additional_notes":"this is a test"}
     assertions:
     - result.statuscode ShouldEqual 201
     - result.bodyjson ShouldContainKey "id"
@@ -255,7 +255,7 @@ testcases:
     - result.bodyjson.grind_setting ShouldEqual "12"
     - result.bodyjson.quantity_in ShouldEqual "18"
     - result.bodyjson.quantity_out ShouldEqual "35.5"
-    - result.bodyjson.shot_time ShouldEqual "24000000"
+    - result.bodyjson.shot_time ShouldEqual "24"
     - result.bodyjson.water_temperature ShouldEqual "93"
     - result.bodyjson.rating ShouldEqual "8"
     - result.bodyjson.is_too_bitter ShouldEqual "false"
@@ -264,6 +264,32 @@ testcases:
     - result.bodyjson.additional_notes ShouldEqual "this is a test"
     - result.bodyjson.created_at ShouldNotBeBlank
     - result.bodyjson.updated_at ShouldBeBlank
+
+- name: POST /rest/v1/shots - fractional shot_time echoes exactly
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":28.5, "rating":8.0, "additional_notes":"this is a test"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson.shot_time ShouldEqual "28.5"
+
+- name: POST /rest/v1/shots - legacy nanosecond shot_time value is rejected
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":5000, "rating":8.0, "additional_notes":"this is a test"}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "shot_time must be a number of seconds greater than 0 and at most 3600"
 
 - name: POST /rest/v1/shots - comparison with previous result is too high
   steps:
@@ -424,7 +450,7 @@ testcases:
     headers:
       Content-Type: application/json
     body: |
-      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24000000, "rating":8.0, "comparison_with_previous_result":3, "additional_notes":"this is a test - updated"}
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":24, "rating":8.0, "comparison_with_previous_result":3, "additional_notes":"this is a test - updated"}
     assertions:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-shots-with-body-with-correct-Content-Type-header-correct-json-sheet-and-beans-exists.result.bodyjson.id }}"
@@ -436,7 +462,7 @@ testcases:
     - result.bodyjson.grind_setting ShouldEqual "12"
     - result.bodyjson.quantity_in ShouldEqual "18"
     - result.bodyjson.quantity_out ShouldEqual "35.5"
-    - result.bodyjson.shot_time ShouldEqual "24000000"
+    - result.bodyjson.shot_time ShouldEqual "24"
     - result.bodyjson.water_temperature ShouldEqual "93"
     - result.bodyjson.rating ShouldEqual "8"
     - result.bodyjson.is_too_bitter ShouldEqual "false"

@@ -1,126 +1,128 @@
-# `shot_time` storage precision: INT vs BIGINT, nanoseconds vs milliseconds
+# `shot_time`: storage unit, Go type, and wire format
 
 ## Status
 
-Implemented (commit `db0b4e8`, branch `feat/web-frontend-htmx`). Documenting here so
-a future change can be made deliberately instead of re-discovering the constraint.
+- **Implemented** (commit `db0b4e8`, branch `feat/web-frontend-htmx`): milliseconds-in-`INT`
+  storage with conversion at the repository boundary. See "Background" below.
+- **Implemented — "Option A"** (this commit, branch `feat/web-frontend-htmx`):
+  human-readable **float seconds on the wire** (REST) and the SQL column renamed to
+  `shot_time_ms`. See "[Option A — decision record](#option-a--decision-record)" below
+  for what was built and the one deliberate deviation from the original spec.
 
-## The problem
+## Unit map (current, Option A implemented)
 
-`sql.Shot.ShotTime` (see [`internal/models/sql/shot.go`](../internal/models/sql/shot.go))
-is typed as Go's `time.Duration`, i.e. an `int64` count of **nanoseconds**. Before this
-fix, [`internal/repository/sql/shared/repository.go`](../internal/repository/sql/shared/repository.go)
-passed that raw nanosecond value straight through to the SQL driver on
-`CreateShot`/`UpdateShotById`, and scanned the column straight back into a
-`time.Duration` on every read (`GetShotById`, `GetAllShots`, `GetShotsBySheetId`).
+| Layer | Representation | Unit |
+|---|---|---|
+| REST JSON (`shot_time`) | JSON number (float) | **seconds** (`28.5` = 28.5 s) |
+| Web form input/display | `<input type=number step=0.1>` / `28.5 s` | **seconds** |
+| Go in-memory (`shot.Shot.ShotTime`, `sql.Shot.ShotTime`) | `time.Duration` | **nanoseconds** (native) |
+| SQL column (`shots.shot_time_ms`) | `INT` | **milliseconds** |
 
-The `shots.shot_time` column, however, is a 32-bit SQL `INT`
-(see `migrations/sql/mysql/20240104154454-.sql` and the Postgres equivalent), whose
-max value is `2,147,483,647`. In nanoseconds that's about **2.15 seconds**. Any
-shot duration longer than ~2.15s overflows the column outright.
+The only unit-crossing points are: (1) the REST/web parse+render boundary
+(seconds ↔ `time.Duration`), and (2) the repository SQL read/write boundary
+(`time.Duration` ↔ milliseconds). Nothing in between converts anything.
 
-This bug pre-dates the web UI work; it was silently unreachable for a long time
-because no existing REST caller (fixtures, e2e tests) ever submitted a realistic
-`shot_time` value — all the venom e2e literals used tiny placeholder values like
-`shot_time: 24` (i.e. 24 **nanoseconds**), which round-trips fine but is not
-representative of an actual espresso shot (typically 20-40 real seconds). It was
-only caught when the new web form (`/shots/add`) submitted a real value (28.5s) and
-MySQL rejected the INSERT with:
+## Background (already implemented — for context only)
 
-```
-Error 1264 (22003): Out of range value for column 'shot_time' at row 1
-```
+`sql.Shot.ShotTime` ([`internal/models/sql/shot.go`](../internal/models/sql/shot.go)) is
+Go's `time.Duration` (an `int64` of nanoseconds). The `shots` shot-time column is a
+32-bit SQL `INT` (max `2,147,483,647`), so raw nanoseconds overflow at ~2.15 s. This
+was silently unreachable until the web form submitted a real value (28.5 s) and MySQL
+rejected the INSERT (`Error 1264 ... Out of range value for column 'shot_time'`).
 
-## Options considered
+Fix chosen (commit `db0b4e8`): keep the `INT` column, store **milliseconds**, convert
+only at the repository boundary in
+[`internal/repository/sql/shared/repository.go`](../internal/repository/sql/shared/repository.go):
 
-1. **Widen the column to `BIGINT` (schema migration), keep storing raw nanoseconds.**
-   - Pro: no precision loss whatsoever, no unit-conversion code at the repository
-     boundary.
-   - Con: requires a new migration file for both MySQL and Postgres, plus a
-     production migration rollout. Higher blast radius for what is otherwise a
-     boundary-only bug.
-2. **Keep the `INT` column, but change the *stored unit* from nanoseconds to a
-   coarser unit, converting only at the SQL read/write boundary in the
-   repository layer.** Go's `time.Duration` type and the REST/JSON contract stay
-   exactly as they are; only the bytes that hit the database change meaning.
-   - Sub-choice: which coarser unit?
-     - **Whole seconds**: max ~2.147 billion seconds (~68 years) of headroom, but
-       truncates any sub-second precision. This conflicts with `SPEC.md`'s
-       explicit requirement that the web UI accept shot time at **0.1-second**
-       granularity — storing whole seconds would silently round `28.5s` to `28s`
-       or `29s` server-side.
-     - **Milliseconds** *(chosen)*: max ~2.147 billion ms (~24.8 days) of
-       headroom — comfortably more than any real shot duration — while
-       preserving the UI's 0.1s (100ms) granularity **losslessly** (100ms is an
-       exact multiple of 1ms, so nothing is rounded away).
-     - **Microseconds**: max ~2.147 billion µs (~35.8 minutes) of headroom. This
-       is still more than any real shot duration (typically well under a minute),
-       but the safety margin is far smaller than milliseconds (35.8 minutes vs.
-       24.8 days) for no practical precision benefit, since the web UI only needs
-       0.1s (100ms) granularity. Not chosen for that reason.
-3. **Do nothing / defer, and document the limitation** (e.g. reject or clamp
-   shot times above ~2.1s at the web/service layer). Rejected: this would make
-   the shots feature nearly useless, since virtually every real shot exceeds 2.1s.
+- Writes (`CreateShot`, `UpdateShotById`): bind `shot.ShotTime.Milliseconds()`.
+- Reads (`GetShotById`, `GetAllShots`, `GetShotsBySheetId`): after sqlx struct-scan,
+  correct with `shots[i].ShotTime *= time.Millisecond`.
 
-## Decision: option 2, milliseconds
+Milliseconds give ~24.8 days of headroom and represent the UI's 0.1 s granularity
+losslessly. Whole seconds (violates the 0.1 s requirement) and microseconds (needless
+tight headroom) were rejected; widening to `BIGINT` nanoseconds was rejected as a
+larger blast radius for no practical benefit. Test literals were updated accordingly
+(`shot_time: 24000000` in venom, `int64(25000)` in sqlmock rows).
 
-No schema migration. The persistence boundary in
-[`internal/repository/sql/shared/repository.go`](../internal/repository/sql/shared/repository.go)
-now does the conversion **only** at the four call sites that touch the
-`shot_time` column:
+Before Option A, the REST JSON contract was the **raw nanosecond integer**
+(`"shot_time": 28500000000` = 28.5 s).
 
-- `CreateShot` / `UpdateShotById` (write): `shot.ShotTime.Milliseconds()` — converts
-  the in-memory `time.Duration` (nanoseconds) to an `int64` count of milliseconds
-  before binding it as a query argument.
-- `GetShotById` / `GetAllShots` / `GetShotsBySheetId` (read): after the `sqlx`
-  struct-scan populates `ShotTime` with the raw column value (which sqlx treats as
-  a `time.Duration`-shaped `int64`, i.e. the number is currently *mislabelled* as
-  nanoseconds), each result's `ShotTime` field is corrected with
-  `shot.ShotTime *= time.Millisecond` (equivalently, for slices,
-  `shots[i].ShotTime *= time.Millisecond`), which multiplies the raw millisecond
-  count by `1,000,000` to yield the correct nanosecond-denominated
-  `time.Duration`.
+---
 
-Everything **outside** the repository package is unaffected:
+## Option A — decision record
 
-- `sql.Shot.ShotTime` is still `time.Duration` (nanoseconds) everywhere in Go code
-  (services, REST controllers, web controllers, templates).
-- The REST JSON contract for `shot_time` is unchanged — it is still the raw
-  nanosecond integer, exactly as before this fix. A client sending
-  `"shot_time": 28500000000` (28.5s) gets back `28500000000` again, byte-for-byte,
-  because the round trip through milliseconds is lossless for any value that is a
-  whole multiple of 1ms.
-- Only values with **sub-millisecond** precision (fewer than 6 significant
-  nanosecond digits, e.g. `"shot_time": 24` = 24ns) are truncated to the nearest
-  millisecond on write — in practice `0`. This is a real, disclosed behavior
-  change for that edge case; see "Known consequence" below.
+`shot_time` is now a **JSON number of seconds** on the REST API (`25` = 25 s,
+`25.5` = 25.5 s), on every endpoint that carries a shot. Go code keeps
+`time.Duration` everywhere internally. SQL keeps `INT` milliseconds, and the column
+was renamed `shot_time` → `shot_time_ms` so the stored unit is self-documenting (the
+original overflow bug existed precisely because the column's unit was invisible).
 
-## Known consequence: e2e/test literals updated
+This was a **deliberate breaking change** to the REST contract — there were no
+external consumers.
 
-The pre-existing venom e2e suite ([`e2e/venom.e2e.shots.yaml`](../e2e/venom.e2e.shots.yaml))
-and the MySQL shot repository sqlmock tests
-([`internal/repository/sql/mysql/shot/repository_test.go`](../internal/repository/sql/mysql/shot/repository_test.go))
-used placeholder values like `shot_time: 24` (24 nanoseconds) purely as "any
-non-zero integer" filler — not as a realistic value. Under millisecond-precision
-storage those tiny literals would round-trip to `0`, so they were updated to
-`24000000` (24,000,000 ns = 24 ms) in the e2e YAML, and to `int64(25000)` (25,000 ms
-= the millisecond-column value corresponding to the previously-asserted
-`25 * time.Second` Go struct field) in the repository test mocks. No other
-REST/domain behavior was changed.
+### What was built
 
-## If a future change is needed
+1. Wire unit: seconds, JSON **number** only. A JSON string (`"25.5"`) is rejected.
+2. Validation: value must be finite, `> 0`, and `<= 3600` (max plausible shot time,
+   also a guard so a legacy nanosecond-denominated caller fails loudly with a 400
+   instead of silently storing centuries). Validation lives entirely in
+   `DurationSeconds.UnmarshalJSON` ([`internal/controllers/rest/types.go`](../internal/controllers/rest/types.go)) —
+   it only fires when the `shot_time` JSON key is present, matching the pre-existing
+   handler behavior of treating an omitted `shot_time` as "not provided" rather than
+   inventing a new required-field check (several pre-existing tests, both unit and
+   e2e, submit bodies that omit `shot_time` while testing unrelated fields).
+3. Precision: parse → **round to the nearest millisecond** → stored as seconds
+   rounded to that precision. Marshal from that same rounded value, never from raw
+   nanoseconds — this guarantees `25.3` round-trips as exactly `25.3`, avoiding
+   binary-float artifacts like `25.299999999`.
+4. Storage: unchanged `INT` milliseconds; column renamed to `shot_time_ms`
+   (`migrations/sql/{mysql,postgres}/20260820160000-rename-shot-time-to-shot-time-ms.sql`).
+5. Service layer: no contract change. `shot.Shot.ShotTime` stays `time.Duration`.
+6. NaN/Inf need no explicit JSON-side check — they are not valid JSON numbers and
+   `encoding/json` rejects them.
 
-If nanosecond (or even microsecond) precision genuinely becomes a requirement:
+### One deliberate deviation from the original spec
 
-1. Widen `shots.shot_time` to `BIGINT` via a new migration in both
-   `migrations/sql/mysql/` and `migrations/sql/postgres/`.
-2. Remove the `.Milliseconds()` conversion on write and the `* time.Millisecond`
-   conversion on read in `internal/repository/sql/shared/repository.go`, going
-   back to storing/reading the raw `time.Duration` value directly.
-3. Revert the `shot_time` literals in `e2e/venom.e2e.shots.yaml` and the mocked
-   row values in the MySQL/Postgres shot repository tests back to their original
-   raw-nanosecond form if desired (not required — the current literals are still
-   valid nanosecond values, just chosen to also survive millisecond rounding).
-4. Re-run `go test ./... `, the full venom e2e suite (per-suite against a fresh
-   database — the suites are not designed to be chained on one database), and a
-   live Docker Compose smoke test before merging.
+The original instructions suggested `type DurationSeconds time.Duration`. The
+implementation instead uses **`type DurationSeconds float64`**
+([`internal/controllers/rest/types.go`](../internal/controllers/rest/types.go)).
+This is a pure internal-representation choice — it does not affect the wire format,
+validation rules, or rounding behavior above — and was made because a `float64`
+underlying type lets go-swagger's reflection infer `type: number, format: double`
+directly, with zero custom swagger annotations, confirmed correct in the regenerated
+`docs/swagger.json`.
+
+### Web layer
+
+Deliberately left unchanged. The web form already speaks seconds and already allows
+`shot_time` to be optional (empty string → zero duration, no error) — a constraint
+incompatible with the REST rule that a *present* `shot_time` must be `> 0`. Unifying
+the two would have changed existing web behavior, so no shared helper was extracted;
+REST and web validate independently, as before.
+
+### Verification performed
+
+- Full `go test ./...`, `go vet ./...`, `gofmt -l .`, `go mod tidy -diff` (clean).
+- Migration up/down/up round-trip verified live on both MySQL 8 and PostgreSQL 16.
+- Full venom e2e suites (shots, sheets, beans, roasters, web, swagger) passed against
+  fresh MySQL; the shots suite (the one exercising `shot_time`) also passed against
+  fresh PostgreSQL.
+- Manual smoke test: created a shot via REST with `"shot_time": 28.5`; response
+  echoed `"shot_time": 28.5` exactly; DB row held `28500` in `shot_time_ms`.
+
+---
+
+## Historical note: why not other designs
+
+Recorded from the design discussion (2026-08-20) so the decision is traceable:
+
+- **New field `shot_time_seconds` + deprecation** — rejected: compatibility tax with
+  zero consumers, and the embedded-DTO pattern makes field suppression awkward.
+- **Duration strings (`"25.5s"`)** — rejected: user wants plain floats; HTML number
+  inputs can't produce strings; `Duration.String()` formats `90s` as `1m30s`.
+- **Versioned `/rest/v2`** — rejected: route duplication overkill for a unit change
+  with no consumers.
+- **`BIGINT` nanoseconds storage** — rejected: the wire needs nothing finer than ms;
+  a rename to a self-documenting `shot_time_ms` is more valuable than raw-ns fidelity.
+- **`DECIMAL(10,3)` seconds storage** — rejected: requires a scan shim in `sql.Shot`,
+  threatening the keep-`time.Duration` requirement at the model layer.

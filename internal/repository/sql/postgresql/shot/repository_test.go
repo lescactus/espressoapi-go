@@ -21,7 +21,7 @@ SELECT
 	shots.grind_setting,
 	shots.quantity_in,
 	shots.quantity_out,
-	shots.shot_time,
+	shots.shot_time_ms,
 	shots.water_temperature,
 	shots.rating,
 	shots.is_too_bitter,
@@ -57,7 +57,7 @@ WHERE shots.sheet_id = $1`
 			name: "uses the postgres $1 placeholder and returns an empty slice for a sheet without shots",
 			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
-					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level", "beans.roaster.id", "beans.roaster.name", "beans.roaster.created_at", "beans.roaster.updated_at"}),
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time_ms", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level", "beans.roaster.id", "beans.roaster.name", "beans.roaster.created_at", "beans.roaster.updated_at"}),
 				)
 
 				got, err := repository.GetShotsBySheetId(context.Background(), 1)
@@ -74,7 +74,7 @@ WHERE shots.sheet_id = $1`
 			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
 				now := time.Now()
 				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
-					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time_ms", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
 						AddRow(1, 11, 18.0, 36.0, int64(25000), 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
 				)
 
@@ -149,7 +149,7 @@ func TestShotRepositoryPostgresCreate(t *testing.T) {
 		{
 			name: "create returns postgres generated id",
 			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("INSERT INTO shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id").
+				mock.ExpectQuery("INSERT INTO shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time_ms, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id").
 					WithArgs(1, 2, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Worst, "notes").
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(8))
 
@@ -169,7 +169,7 @@ func TestShotRepositoryPostgresCreate(t *testing.T) {
 		{
 			name: "create with missing sheet returns domain error",
 			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
-				mock.ExpectQuery("INSERT INTO shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id").
+				mock.ExpectQuery("INSERT INTO shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time_ms, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id").
 					WithArgs(1, 2, 0, 0.0, 0.0, 0, 0.0, 0.0, false, false, sql.Worst, "notes").
 					WillReturnError(&pgconn.PgError{Code: "23503", ConstraintName: "shots_sheet_id_fkey"})
 

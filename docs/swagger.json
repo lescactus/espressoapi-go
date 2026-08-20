@@ -1089,15 +1089,8 @@
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/bean"
     },
     "ComparisonWithPreviousResult": {
-      "description": "0 = worst, 1 = same, 2 = better, 3 = unknown.",
       "type": "integer",
       "format": "uint8",
-      "enum": [
-        0,
-        1,
-        2,
-        3
-      ],
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "CreateBeansRequest": {
@@ -1194,7 +1187,7 @@
           "x-go-name": "SheetId"
         },
         "shot_time": {
-          "$ref": "#/definitions/Duration"
+          "$ref": "#/definitions/DurationSeconds"
         },
         "water_temperature": {
           "type": "number",
@@ -1209,6 +1202,12 @@
       "type": "integer",
       "format": "int64",
       "x-go-package": "time"
+    },
+    "DurationSeconds": {
+      "description": "DurationSeconds is the wire representation of a shot duration: a JSON\nnumber of seconds (25.5 == 25.5s). It stores seconds rounded to the\nnearest millisecond, matching the shots table's storage precision, so a\nvalue round-trips exactly through Marshal/Unmarshal.",
+      "type": "number",
+      "format": "double",
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "ItemDeletedResponse": {
       "description": "ItemDeletedResponse represents the response when an item is deleted",
@@ -1232,16 +1231,8 @@
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "RoastLevel": {
-      "description": "0 = light, 1 = light to medium, 2 = medium, 3 = medium to dark, 4 = dark.",
       "type": "integer",
       "format": "uint8",
-      "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ],
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/models/sql"
     },
     "Roaster": {
@@ -1472,7 +1463,7 @@
           "x-go-name": "SheetId"
         },
         "shot_time": {
-          "$ref": "#/definitions/Duration"
+          "$ref": "#/definitions/DurationSeconds"
         },
         "water_temperature": {
           "type": "number",
@@ -1612,8 +1603,9 @@
         },
         "sheet": {},
         "shot_time": {
-          "type": "integer",
-          "format": "int64"
+          "type": "number",
+          "format": "double",
+          "description": "Shot duration in seconds (0 \u003c value \u003c= 3600), e.g. 28.5"
         },
         "updated_at": {
           "type": "string",

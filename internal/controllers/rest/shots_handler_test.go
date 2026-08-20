@@ -20,7 +20,7 @@ const validShotRequestBody = `{
 	"grind_setting":12,
 	"quantity_in":18.5,
 	"quantity_out":37,
-	"shot_time":28000000000,
+	"shot_time":28,
 	"water_temperature":93.5,
 	"rating":8.5,
 	"is_too_bitter":false,
@@ -48,7 +48,7 @@ func TestShotHandlersHappyPaths(t *testing.T) {
 	}{
 		{
 			name: "create", method: http.MethodPost, target: "/rest/v1/shots", body: validShotRequestBody,
-			status: http.StatusCreated, expected: ShotResponse{*created}, handler: (*Handler).CreateShot,
+			status: http.StatusCreated, expected: newShotResponse(*created), handler: (*Handler).CreateShot,
 			configure: func(t *testing.T, service *fakeShotService) {
 				service.createShot = func(_ context.Context, value *shot.Shot) (*shot.Shot, error) {
 					assertShotRequest(t, value, 0)
@@ -58,7 +58,7 @@ func TestShotHandlersHappyPaths(t *testing.T) {
 		},
 		{
 			name: "get by id", method: http.MethodGet, target: "/rest/v1/shots/7", id: "7",
-			status: http.StatusOK, expected: ShotResponse{*found}, handler: (*Handler).GetShotById,
+			status: http.StatusOK, expected: newShotResponse(*found), handler: (*Handler).GetShotById,
 			configure: func(t *testing.T, service *fakeShotService) {
 				service.getShotByID = func(_ context.Context, id int) (*shot.Shot, error) {
 					if id != found.Id {
@@ -70,7 +70,7 @@ func TestShotHandlersHappyPaths(t *testing.T) {
 		},
 		{
 			name: "get all", method: http.MethodGet, target: "/rest/v1/shots",
-			status: http.StatusOK, expected: []ShotResponse{{*first}, {*second}}, handler: (*Handler).GetAllShots,
+			status: http.StatusOK, expected: []ShotResponse{newShotResponse(*first), newShotResponse(*second)}, handler: (*Handler).GetAllShots,
 			configure: func(_ *testing.T, service *fakeShotService) {
 				service.getAllShots = func(context.Context) ([]shot.Shot, error) {
 					return []shot.Shot{*first, *second}, nil
@@ -79,7 +79,7 @@ func TestShotHandlersHappyPaths(t *testing.T) {
 		},
 		{
 			name: "update", method: http.MethodPut, target: "/rest/v1/shots/9", body: validShotRequestBody, id: "9",
-			status: http.StatusOK, expected: ShotResponse{*updated}, handler: (*Handler).UpdateShotById,
+			status: http.StatusOK, expected: newShotResponse(*updated), handler: (*Handler).UpdateShotById,
 			configure: func(t *testing.T, service *fakeShotService) {
 				service.updateShotByID = func(_ context.Context, id int, value *shot.Shot) (*shot.Shot, error) {
 					if id != 9 {
@@ -198,6 +198,80 @@ func TestShotHandlersErrorPaths(t *testing.T) {
 	}
 }
 
+func TestCreateShot_ShotTimeValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    string
+		message string
+	}{
+		{
+			name:    "string value rejected",
+			body:    `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":"25.5","rating":8}`,
+			message: `request body contains an invalid value for the "shot_time" field (at position 6)`,
+		},
+		{name: "zero rejected", body: `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":0,"rating":8}`, message: errShotTimeRange},
+		{name: "negative rejected", body: `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":-1,"rating":8}`, message: errShotTimeRange},
+		{name: "just over max rejected", body: `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":3600.1,"rating":8}`, message: errShotTimeRange},
+		{name: "legacy nanoseconds value rejected", body: `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":28500000000,"rating":8}`, message: errShotTimeRange},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// service.createShot is left nil: the fake fails the test if the
+			// service is reached despite the invalid shot_time.
+			handler, _, _, _, _ := newTestHandler(t)
+			req := newControllerRequest(t, http.MethodPost, "/rest/v1/shots", tt.body, ContentTypeApplicationJSON, "")
+
+			recorder := executeControllerHandler(handler, (*Handler).CreateShot, req)
+
+			assertJSONResponse(t, recorder, http.StatusBadRequest, ErrorResponse{Msg: tt.message})
+		})
+	}
+}
+
+func TestCreateShot_ShotTimeSecondsRoundTrip(t *testing.T) {
+	tests := []struct {
+		name     string
+		body     string
+		wantEcho string
+	}{
+		{
+			name:     "boundary max 3600 accepted",
+			body:     `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":3600,"rating":8}`,
+			wantEcho: `"shot_time":3600`,
+		},
+		{
+			name:     "fractional value echoes exactly",
+			body:     `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":25.3,"rating":8}`,
+			wantEcho: `"shot_time":25.3`,
+		},
+		{
+			name:     "sub-millisecond value rounds to the nearest ms",
+			body:     `{"sheet_id":1,"beans_id":1,"grind_setting":12,"quantity_in":18,"quantity_out":36,"shot_time":25.0004,"rating":8}`,
+			wantEcho: `"shot_time":25`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, _, _, _, service := newTestHandler(t)
+			service.createShot = func(_ context.Context, value *shot.Shot) (*shot.Shot, error) {
+				s := testShot(1)
+				s.ShotTime = value.ShotTime
+				return s, nil
+			}
+			req := newControllerRequest(t, http.MethodPost, "/rest/v1/shots", tt.body, ContentTypeApplicationJSON, "")
+
+			recorder := executeControllerHandler(handler, (*Handler).CreateShot, req)
+
+			if recorder.Code != http.StatusCreated {
+				t.Fatalf("status = %d, want 201: %s", recorder.Code, recorder.Body.String())
+			}
+			if !strings.Contains(recorder.Body.String(), tt.wantEcho) {
+				t.Errorf("expected shot_time echoed as %q, got: %s", tt.wantEcho, recorder.Body.String())
+			}
+		})
+	}
+}
+
 func TestGetShotsBySheetId(t *testing.T) {
 	t.Run("populated sheet", func(t *testing.T) {
 		handler, sheetSvc, _, _, shotSvc := newTestHandler(t)
@@ -217,7 +291,7 @@ func TestGetShotsBySheetId(t *testing.T) {
 		req := newControllerRequest(t, http.MethodGet, "/rest/v1/sheets/3/shots", "", "", "3")
 		recorder := executeControllerHandler(handler, (*Handler).GetShotsBySheetId, req)
 
-		assertJSONResponse(t, recorder, http.StatusOK, &[]ShotResponse{{*testShot(1)}})
+		assertJSONResponse(t, recorder, http.StatusOK, &[]ShotResponse{newShotResponse(*testShot(1))})
 	})
 
 	t.Run("existing sheet without shots returns an empty array", func(t *testing.T) {

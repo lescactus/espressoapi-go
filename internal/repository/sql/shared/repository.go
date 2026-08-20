@@ -276,9 +276,9 @@ func NewShot(db *sqlx.DB, dialect Dialect) *Shot { return &Shot{db: db, dialect:
 
 func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
 	query := db.dialect.Rebind(`INSERT INTO
-	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
+	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time_ms, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-	// shot_time is stored in milliseconds (not nanoseconds): the shots table's
+	// shot_time_ms stores milliseconds (not nanoseconds): the shots table's
 	// INT column cannot hold a realistic duration's raw nanosecond count.
 	return db.dialect.InsertID(ctx, db.db, query, &entityShot, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime.Milliseconds(), shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
 }
@@ -321,7 +321,7 @@ func (db *Shot) GetShotsBySheetId(ctx context.Context, sheetId int) ([]sql.Shot,
 
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
 	query := db.dialect.Rebind(`UPDATE shots SET
-	sheet_id = ?, beans_id = ?, grind_setting = ?, quantity_in = ?, quantity_out = ?, shot_time = ?, water_temperature = ?, rating = ?, is_too_bitter = ?, is_too_sour = ?, comparison_with_previous_result = ?, additional_notes = ?
+	sheet_id = ?, beans_id = ?, grind_setting = ?, quantity_in = ?, quantity_out = ?, shot_time_ms = ?, water_temperature = ?, rating = ?, is_too_bitter = ?, is_too_sour = ?, comparison_with_previous_result = ?, additional_notes = ?
 	WHERE id = ?`)
 	if _, err := db.db.ExecContext(ctx, query, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime.Milliseconds(), shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes, id); err != nil {
 		return nil, db.dialect.ParseError(err, &entityShot, fmt.Errorf("failed to update record in the database: %w", err))
@@ -348,7 +348,7 @@ SELECT
 	shots.grind_setting,
 	shots.quantity_in,
 	shots.quantity_out,
-	shots.shot_time,
+	shots.shot_time_ms,
 	shots.water_temperature,
 	shots.rating,
 	shots.is_too_bitter,

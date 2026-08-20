@@ -84,6 +84,14 @@ server-rendered web UI (templ + htmx + Pico CSS) on the same port:
 | `/beans`, `/beans/add`, `/beans/get/:id`, `/beans/update/:id`, `/beans/delete/:id` | Beans list, add/edit (dialog) |
 | `/shots`, `/shots/add`, `/shots/get/:id`, `/shots/update/:id`, `/shots/delete/:id` | Shots list, add/edit (dialog); `/shots/add?sheet_id=N` locks the sheet, used from the sheet detail page |
 
+**Breaking change: `shot_time` is now seconds on the REST API.** The
+`GET`/`POST`/`PUT` `.../shots...` endpoints now read and write `shot_time` as a
+JSON number of seconds (e.g. `28.5` for 28.5 s), not raw nanoseconds. The
+underlying `shots` table column was also renamed from `shot_time` to
+`shot_time_ms` (still stored in milliseconds). See
+[`docs/shot_time-precision.md`](docs/shot_time-precision.md) for details. The
+web UI already spoke seconds and is unaffected.
+
 **Direct navigation vs. htmx.** `GET` routes render either a full page (direct
 browser navigation/refresh/deep link) or an htmx fragment, based on the
 `HX-Request` header. All mutations (`POST`/`PUT`/`DELETE`) require an
