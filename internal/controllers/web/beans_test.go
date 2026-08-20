@@ -190,11 +190,40 @@ func TestCreateBean_InvalidRoastDateReturns400(t *testing.T) {
 	}
 }
 
+func TestCreateBean_MissingRoastLevelReturns400WithFieldError(t *testing.T) {
+	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Select a roast level") {
+		t.Errorf("expected 400 with a roast level field error, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateBean_OutOfRangeRoastLevelReturns400InsteadOfWrapping(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) {
+		t.Fatalf("service must not be called for an out-of-range roast level")
+		return nil, nil
+	}
+
+	// 256 wraps to 0 (uint8) if converted without a range check.
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=256", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Invalid roast level") {
+		t.Errorf("expected 400 with an invalid roast level error, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestCreateBean_DuplicateReturns409(t *testing.T) {
 	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
 	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) { return nil, errors.ErrBeansAlreadyExists }
 
-	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1", formURLEncoded, "", true)
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=0", formURLEncoded, "", true)
 	rec := httptest.NewRecorder()
 	h.CreateBean(rec, req)
 
@@ -284,7 +313,7 @@ func TestUpdateBean_HappyPath(t *testing.T) {
 		return testBean(id, b.Name), nil
 	}
 
-	req := newWebRequest(http.MethodPut, "/beans/update/9", "name=Renamed&roaster_id=1", formURLEncoded, "9", true)
+	req := newWebRequest(http.MethodPut, "/beans/update/9", "name=Renamed&roaster_id=1&roast_level=0", formURLEncoded, "9", true)
 	rec := httptest.NewRecorder()
 	h.UpdateBean(rec, req)
 

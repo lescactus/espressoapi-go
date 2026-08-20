@@ -167,7 +167,7 @@ templ Form(state FormState, sheets []sheet.Sheet, beans []bean.Bean, isAdd bool,
 		</label>
 		<label>
 			Comparison with previous result
-			<select name="comparison_with_previous_result">
+			<select name="comparison_with_previous_result" { fieldAttrs(state.fieldError("comparison_with_previous_result"))... }>
 				for _, c := range comparisonLevels {
 					if strconv.Itoa(int(c)) == state.ComparisonWithPreviousResult {
 						<option value={ strconv.Itoa(int(c)) } selected>{ c.String() }</option>
@@ -176,6 +176,9 @@ templ Form(state FormState, sheets []sheet.Sheet, beans []bean.Bean, isAdd bool,
 					}
 				}
 			</select>
+			if msg := state.fieldError("comparison_with_previous_result"); msg != "" {
+				<small>{ msg }</small>
+			}
 		</label>
 		<label>
 			Additional notes

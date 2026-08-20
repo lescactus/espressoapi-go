@@ -86,7 +86,7 @@ templ Form(state FormState, roasters []roaster.Roaster, isAdd bool, createdAt, u
 			</label>
 			<label>
 				Roast level
-				<select name="roast_level">
+				<select name="roast_level" { fieldAttrs(state.fieldError("roast_level"))... }>
 					for _, lvl := range roastLevels {
 						if strconv.Itoa(int(lvl)) == state.RoastLevel {
 							<option value={ strconv.Itoa(int(lvl)) } selected>{ lvl.String() }</option>
@@ -95,6 +95,9 @@ templ Form(state FormState, roasters []roaster.Roaster, isAdd bool, createdAt, u
 						}
 					}
 				</select>
+				if msg := state.fieldError("roast_level"); msg != "" {
+					<small>{ msg }</small>
+				}
 			</label>
 		<footer>
 			<button

@@ -218,11 +218,12 @@ func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bo
 	}
 
 	comparison := 0
-	if state.ComparisonWithPreviousResult != "" {
-		comparison, err = strconv.Atoi(state.ComparisonWithPreviousResult)
-		if err != nil {
-			state.Errors["comparison_with_previous_result"] = "Invalid comparison value."
-		}
+	if state.ComparisonWithPreviousResult == "" {
+		state.Errors["comparison_with_previous_result"] = "Select a comparison value."
+	} else if n, err := strconv.Atoi(state.ComparisonWithPreviousResult); err != nil || n < int(sql.Worst) || n > int(sql.Unknown) {
+		state.Errors["comparison_with_previous_result"] = "Invalid comparison value."
+	} else {
+		comparison = n
 	}
 
 	if len(state.AdditionalNotes) > 511 {

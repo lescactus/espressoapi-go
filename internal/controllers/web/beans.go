@@ -142,11 +142,12 @@ func parseBeanForm(r *http.Request, id int) (viewbeans.FormState, *bean.Bean, bo
 	}
 
 	roastLevel := 0
-	if state.RoastLevel != "" {
-		roastLevel, err = strconv.Atoi(state.RoastLevel)
-		if err != nil {
-			state.Errors["roast_level"] = "Invalid roast level."
-		}
+	if state.RoastLevel == "" {
+		state.Errors["roast_level"] = "Select a roast level."
+	} else if n, err := strconv.Atoi(state.RoastLevel); err != nil || n < int(sql.RoastLevelLight) || n > int(sql.RoastLevelDark) {
+		state.Errors["roast_level"] = "Invalid roast level."
+	} else {
+		roastLevel = n
 	}
 
 	if len(state.Errors) > 0 {

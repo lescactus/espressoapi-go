@@ -124,7 +124,7 @@ func testShot(id int) *shot.Shot {
 	}
 }
 
-const validShotForm = "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&shot_time=28.5&rating=8.5"
+const validShotForm = "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&shot_time=28.5&rating=8.5&comparison_with_previous_result=0"
 
 func TestListShots_FullPageVsFragment(t *testing.T) {
 	h, svc := newTestShotHandler(t, nil, nil)
@@ -276,13 +276,42 @@ func TestCreateShot_ExcessiveShotTimeReturns400(t *testing.T) {
 	}
 }
 
+func TestCreateShot_MissingComparisonReturns400WithFieldError(t *testing.T) {
+	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=8.5", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Select a comparison value") {
+		t.Errorf("expected 400 with a comparison field error, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateShot_OutOfRangeComparisonReturns400InsteadOfWrapping(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+		t.Fatalf("service must not be called for an out-of-range comparison value")
+		return nil, nil
+	}
+
+	// 256 wraps to 0 (uint8) if converted without a range check.
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=8.5&comparison_with_previous_result=256", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Invalid comparison value") {
+		t.Errorf("expected 400 with an invalid comparison error, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestCreateShot_RatingOutOfRangeDeferredToService(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
 		return nil, errors.ErrShotRatingOutOfRange
 	}
 
-	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=11", formURLEncoded, "", true)
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=11&comparison_with_previous_result=0", formURLEncoded, "", true)
 	rec := httptest.NewRecorder()
 	h.CreateShot(rec, req)
 
