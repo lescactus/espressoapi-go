@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -378,6 +379,22 @@ func TestGetSheet_DetailPageIncludesShots(t *testing.T) {
 
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Ethiopia") {
 		t.Errorf("expected the detail page to include the sheet's shots, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestGetSheet_ShotsFetchErrorReturnsErrorStatusNotOK(t *testing.T) {
+	sheetSvc := &fakeSheetService{t: t}
+	sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) { return testSheet(1, "Double shot"), nil }
+	shotSvc := shotsBySheetIDStub{getShotsBySheetID: func(context.Context, int) ([]shot.Shot, error) {
+		return nil, stderrors.New("boom")
+	}}
+	h := NewHandler(sheetSvc, unusedRoasterService{}, unusedBeanService{}, shotSvc)
+
+	rec := httptest.NewRecorder()
+	h.GetSheet(rec, newWebRequest(http.MethodGet, "/sheets/get/1", "", "", "1", false))
+
+	if rec.Code == http.StatusOK {
+		t.Errorf("expected a non-200 status when fetching the sheet's shots fails, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

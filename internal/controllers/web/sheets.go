@@ -184,16 +184,18 @@ func (h *Handler) GetSheet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeHTMLStatus(w, http.StatusOK)
 	if !isHXRequest(r) {
 		shots, err := h.ShotService.GetShotsBySheetId(r.Context(), id)
 		if err != nil {
 			h.writeFullPageError(w, r, mapDomainError(err))
 			return
 		}
+		writeHTMLStatus(w, http.StatusOK)
 		_ = viewsheets.Detail(*s, shots).Render(r.Context(), w)
 		return
 	}
+
+	writeHTMLStatus(w, http.StatusOK)
 	if viewContext(r) == viewContextList {
 		_ = viewsheets.Row(*s).Render(r.Context(), w)
 		return
