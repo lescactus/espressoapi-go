@@ -318,15 +318,23 @@ func TestCreateShot_NonFiniteNumericFieldsReturn400(t *testing.T) {
 	}
 }
 
-func TestCreateShot_ExcessiveShotTimeReturns400(t *testing.T) {
-	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+func TestCreateShot_ShotTimeOutOfRangeMapsToShotTimeField(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+		return nil, errors.ErrShotTimeOutOfRange
+	}
 
-	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&shot_time=999999&rating=8.5", formURLEncoded, "", true)
+	// 999999 seconds parses fine (it's a valid number); range enforcement is
+	// deferred to the service, matching rating/comparison.
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&shot_time=999999&rating=8.5&comparison_with_previous_result=0", formURLEncoded, "", true)
 	rec := httptest.NewRecorder()
 	h.CreateShot(rec, req)
 
-	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "too large") {
-		t.Errorf("expected 400 with a shot_time field error, got %d: %s", rec.Code, rec.Body.String())
+	body := rec.Body.String()
+	shotTimeIdx := strings.Index(body, `name="shot_time"`)
+	msgIdx := strings.Index(body, "Shot time must be between 0 and 3600 seconds.")
+	if rec.Code != http.StatusBadRequest || shotTimeIdx < 0 || msgIdx < 0 || !(shotTimeIdx < msgIdx) {
+		t.Errorf("expected the shot-time-out-of-range error rendered under the shot_time field, got %d: %s", rec.Code, body)
 	}
 }
 

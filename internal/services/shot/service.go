@@ -22,7 +22,10 @@ import (
 // The result of a shot can be rated and compared to the previous shot.
 // It can also be too bitter or too sour.
 //
-// swagger:model
+// Not a swagger:model: it is never returned directly (rest.ShotResponse
+// carries the wire shape via swagger:allOf), and its ShotTime field would
+// otherwise generate a dead "Duration" (nanosecond int64) definition that
+// contradicts the REST contract's float-seconds shot_time.
 type Shot struct {
 	Id                           int                                  `json:"id"`
 	Sheet                        *sheet.Sheet                         `json:"sheet"`
@@ -130,6 +133,9 @@ func (s *ShotService) CreateShot(ctx context.Context, shot *Shot) (*Shot, error)
 	if !shot.ComparisonWithPreviousResult.IsValid() {
 		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
 	}
+	if shot.ShotTime < 0 || shot.ShotTime > MaxShotTime {
+		return nil, errors.ErrShotTimeOutOfRange
+	}
 
 	id, err := s.repository.CreateShot(ctx, ShotToSQL(shot))
 	if err != nil {
@@ -206,6 +212,9 @@ func (s *ShotService) UpdateShotById(ctx context.Context, id int, shot *Shot) (*
 	}
 	if !shot.ComparisonWithPreviousResult.IsValid() {
 		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
+	}
+	if shot.ShotTime < 0 || shot.ShotTime > MaxShotTime {
+		return nil, errors.ErrShotTimeOutOfRange
 	}
 
 	sqlShot := ShotToSQL(shot)

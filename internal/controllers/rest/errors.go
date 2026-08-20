@@ -69,6 +69,8 @@ var domainErrorResponses = map[error]ErrorResponse{
 	domainerrors.ErrShotRatingOutOfRange: {status: http.StatusBadRequest, Msg: "shot rating is out of range. Must be between 0.0 and 10.0"},
 	// Catch if the shot comparison with previous result is out of range
 	domainerrors.ErrShotComparisonWithPreviousResultOutOfRange: {status: http.StatusBadRequest, Msg: "shot comparison with previous result is out of range. Must be between 0 and 3"},
+	// Catch if the shot time is out of range
+	domainerrors.ErrShotTimeOutOfRange: {status: http.StatusBadRequest, Msg: "shot time is out of range. Must be between 0 and 3600 seconds"},
 	// Catch if the beans roast level is out of range
 	domainerrors.ErrBeansRoastLevelOutOfRange: {status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},
 	// Catch if the beans foreign key constraint failed

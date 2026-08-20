@@ -289,7 +289,20 @@ testcases:
       {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":5000, "rating":8.0, "additional_notes":"this is a test"}
     assertions:
     - result.statuscode ShouldEqual 400
-    - result.bodyjson.msg ShouldEqual "shot_time must be a number of seconds greater than 0 and at most 3600"
+    - result.bodyjson.msg ShouldEqual "shot time is out of range. Must be between 0 and 3600 seconds"
+
+- name: POST /rest/v1/shots - shot_time zero is accepted as "not recorded"
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": 1, "beans_id": 1, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 35.5, "shot_time":0, "rating":8.0, "additional_notes":"this is a test"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson.shot_time ShouldEqual "0"
 
 - name: POST /rest/v1/shots - comparison with previous result is too high
   steps:

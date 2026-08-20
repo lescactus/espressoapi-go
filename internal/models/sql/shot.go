@@ -2,6 +2,12 @@ package sql
 
 import "time"
 
+// ComparisonWithPreviousResult represents how a shot compares to the
+// previous one recorded for the same sheet.
+//
+// 0 = worst, 1 = same, 2 = better, 3 = unknown.
+//
+// enum: 0,1,2,3
 type ComparisonWithPreviousResult uint8
 
 const (

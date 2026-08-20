@@ -34,6 +34,7 @@ var domainErrorMessages = map[error]webError{
 	domainerrors.ErrShotAlreadyExists:                          {http.StatusConflict, "Shot already exists."},
 	domainerrors.ErrShotRatingOutOfRange:                       {http.StatusBadRequest, "Rating must be between 0 and 10."},
 	domainerrors.ErrShotComparisonWithPreviousResultOutOfRange: {http.StatusBadRequest, "Invalid comparison value."},
+	domainerrors.ErrShotTimeOutOfRange:                         {http.StatusBadRequest, "Shot time must be between 0 and 3600 seconds."},
 	domainerrors.ErrShotForeignKeyConstraint:                   {http.StatusConflict, "This sheet or beans selection is still referenced by shots. Delete those shots first."},
 }
 
@@ -79,6 +80,8 @@ func shotErrorField(err error) string {
 		return "comparison_with_previous_result"
 	case errors.Is(err, domainerrors.ErrShotRatingOutOfRange):
 		return "rating"
+	case errors.Is(err, domainerrors.ErrShotTimeOutOfRange):
+		return "shot_time"
 	default:
 		return ""
 	}

@@ -3,9 +3,9 @@ package rest
 import (
 	"encoding/json"
 	"math"
-	"net/http"
-	"strconv"
 	"time"
+
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
 )
 
 type RoastDate time.Time
@@ -45,35 +45,29 @@ type ItemDeletedResponse struct {
 // DurationSeconds is the wire representation of a shot duration: a JSON
 // number of seconds (25.5 == 25.5s). It stores seconds rounded to the
 // nearest millisecond, matching the shots table's storage precision, so a
-// value round-trips exactly through Marshal/Unmarshal.
+// value round-trips exactly through Marshal/Unmarshal. Range validation
+// (0 <= seconds <= 3600) happens once, in the service layer, so it applies
+// identically regardless of which boundary (REST or web) a value came from.
 type DurationSeconds float64
 
-// MaxShotTimeSeconds is the maximum plausible shot duration (one hour); it
-// also guards against a legacy nanosecond-denominated value being silently
-// accepted as a duration spanning centuries.
-const MaxShotTimeSeconds = 3600.0
-
-const errShotTimeRange = "shot_time must be a number of seconds greater than 0 and at most 3600"
-
+// UnmarshalJSON parses a JSON number into rounded seconds. A JSON null is
+// treated as a no-op, matching encoding/json's convention for an omitted
+// value (both leave the field at its zero value).
 func (d *DurationSeconds) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
 	var seconds float64
 	if err := json.Unmarshal(b, &seconds); err != nil {
 		return err
-	}
-	if seconds <= 0 || seconds > MaxShotTimeSeconds {
-		return NewErrorResponse(http.StatusBadRequest, errShotTimeRange)
 	}
 	*d = DurationSeconds(math.Round(seconds*1000) / 1000)
 	return nil
 }
 
-func (d DurationSeconds) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.FormatFloat(float64(d), 'f', -1, 64)), nil
-}
-
 // Duration converts d to a time.Duration for the domain/service layer.
 func (d DurationSeconds) Duration() time.Duration {
-	return time.Duration(math.Round(float64(d) * float64(time.Second)))
+	return shot.SecondsToDuration(float64(d))
 }
 
 // NewDurationSeconds converts a domain time.Duration to its wire

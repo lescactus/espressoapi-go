@@ -21,8 +21,6 @@ var shotSortColumns = []string{
 	"water_temperature", "rating", "created_at", "updated_at",
 }
 
-const maxShotTimeSeconds = 86400 // 24h: a generous sanity bound, not a domain rule
-
 func sortShots(shots []shot.Shot, col, order string) {
 	col = normalizeSortColumn(col, shotSortColumns)
 	less := func(i, j int) bool { return shotLess(shots[i], shots[j], col) }
@@ -152,8 +150,9 @@ func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 
 // parseShotForm extracts and validates shot form fields, returning the raw
 // FormState (for redisplay) and, on success, the parsed service model.
-// Rating and comparison range checks are intentionally left to the service
-// (it already validates and returns the same domain errors as the REST API).
+// Rating, comparison, and shot_time range checks are intentionally left to
+// the service (it already validates and returns the same domain errors as
+// the REST API).
 func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bool) {
 	state := viewshots.FormState{
 		ID:                           id,
@@ -201,15 +200,10 @@ func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bo
 	var shotTime time.Duration
 	if state.ShotTimeSeconds != "" {
 		seconds, err := strconv.ParseFloat(state.ShotTimeSeconds, 64)
-		switch {
-		case err != nil || math.IsNaN(seconds):
+		if err != nil || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
 			state.Errors["shot_time"] = "Shot time must be a number."
-		case seconds < 0:
-			state.Errors["shot_time"] = "Shot time must not be negative."
-		case seconds > maxShotTimeSeconds:
-			state.Errors["shot_time"] = "Shot time is too large."
-		default:
-			shotTime = time.Duration(seconds * float64(time.Second))
+		} else {
+			shotTime = shot.SecondsToDuration(seconds)
 		}
 	}
 

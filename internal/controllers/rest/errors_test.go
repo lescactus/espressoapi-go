@@ -139,6 +139,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:           "errors.ErrShotTimeOutOfRange error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrShotTimeOutOfRange},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "shot time is out of range. Must be between 0 and 3600 seconds"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "errors.ErrBeansRoastLevelOutOfRange error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansRoastLevelOutOfRange},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},

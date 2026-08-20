@@ -2,6 +2,11 @@ package sql
 
 import "time"
 
+// RoastLevel represents how dark the beans were roasted.
+//
+// 0 = light, 1 = light to medium, 2 = medium, 3 = medium to dark, 4 = dark.
+//
+// enum: 0,1,2,3,4
 type RoastLevel uint8
 
 const (
