@@ -190,6 +190,7 @@ func (h *Handler) GetSheet(w http.ResponseWriter, r *http.Request) {
 			h.writeFullPageError(w, r, mapDomainError(err))
 			return
 		}
+		sortShots(shots, "id", "asc")
 		writeHTMLStatus(w, http.StatusOK)
 		_ = viewsheets.Detail(*s, shots).Render(r.Context(), w)
 		return
@@ -228,6 +229,7 @@ func (h *Handler) EditSheetForm(w http.ResponseWriter, r *http.Request) {
 				h.writeFullPageError(w, r, mapDomainError(err))
 				return
 			}
+			sortShots(shots, "id", "asc")
 			writeHTMLStatus(w, http.StatusOK)
 			_ = viewsheets.DetailEditing(state, createdAt, updatedAt, shots, s.Id).Render(r.Context(), w)
 			return

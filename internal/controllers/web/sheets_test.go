@@ -398,6 +398,48 @@ func TestGetSheet_ShotsFetchErrorReturnsErrorStatusNotOK(t *testing.T) {
 	}
 }
 
+func TestGetSheet_DetailPageSortsShotsByIDAscending(t *testing.T) {
+	sheetSvc := &fakeSheetService{t: t}
+	sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) { return testSheet(1, "Double shot"), nil }
+	shotSvc := shotsBySheetIDStub{getShotsBySheetID: func(context.Context, int) ([]shot.Shot, error) {
+		return []shot.Shot{{Id: 9}, {Id: 3}, {Id: 5}}, nil
+	}}
+	h := NewHandler(sheetSvc, unusedRoasterService{}, unusedBeanService{}, shotSvc)
+
+	rec := httptest.NewRecorder()
+	h.GetSheet(rec, newWebRequest(http.MethodGet, "/sheets/get/1", "", "", "1", false))
+
+	body := rec.Body.String()
+	i3, i5, i9 := strings.Index(body, `id="shot-row-3"`), strings.Index(body, `id="shot-row-5"`), strings.Index(body, `id="shot-row-9"`)
+	if i3 < 0 || i5 < 0 || i9 < 0 {
+		t.Fatalf("expected all three shot rows to be rendered, got: %s", body)
+	}
+	if !(i3 < i5 && i5 < i9) {
+		t.Errorf("expected shots sorted by id ascending (3, 5, 9), got order in: %s", body)
+	}
+}
+
+func TestEditSheetForm_DetailContextSortsShotsByIDAscending(t *testing.T) {
+	sheetSvc := &fakeSheetService{t: t}
+	sheetSvc.getSheetByID = func(context.Context, int) (*sheet.Sheet, error) { return testSheet(1, "Double shot"), nil }
+	shotSvc := shotsBySheetIDStub{getShotsBySheetID: func(context.Context, int) ([]shot.Shot, error) {
+		return []shot.Shot{{Id: 9}, {Id: 3}, {Id: 5}}, nil
+	}}
+	h := NewHandler(sheetSvc, unusedRoasterService{}, unusedBeanService{}, shotSvc)
+
+	rec := httptest.NewRecorder()
+	h.EditSheetForm(rec, newWebRequest(http.MethodGet, "/sheets/update/1?view_context=sheet-detail", "", "", "1", false))
+
+	body := rec.Body.String()
+	i3, i5, i9 := strings.Index(body, `id="shot-row-3"`), strings.Index(body, `id="shot-row-5"`), strings.Index(body, `id="shot-row-9"`)
+	if i3 < 0 || i5 < 0 || i9 < 0 {
+		t.Fatalf("expected all three shot rows to be rendered, got: %s", body)
+	}
+	if !(i3 < i5 && i5 < i9) {
+		t.Errorf("expected shots sorted by id ascending (3, 5, 9), got order in: %s", body)
+	}
+}
+
 func TestUpdateSheet_HappyPathBothViewContexts(t *testing.T) {
 	h, svc := newTestSheetHandler(t)
 	svc.updateSheetByID = func(_ context.Context, id int, s *sheet.Sheet) (*sheet.Sheet, error) {
