@@ -101,6 +101,15 @@ templ Layout(title string, active string) {
 						dialog.showModal();
 					}
 				}
+				// The native "close" event fires for every way a <dialog> stops being
+				// open, including Escape (which the handlers below never see since
+				// they only run on close()/backdrop-click/data-dialog-close), so this
+				// is the one place data-modal-open is cleared - no path can leave it
+				// set once the dialog is actually closed. "close" doesn't bubble, so
+				// this listener must use the capture phase.
+				document.addEventListener("close", function (evt) {
+					if (evt.target.tagName === "DIALOG") evt.target.removeAttribute("data-modal-open");
+				}, true);
 				document.body.addEventListener("htmx:afterSwap", function (evt) {
 					// Only a GET request loads a fresh add/edit form into the dialog and
 					// should open it. A create/update POST/PUT also targets the dialog
@@ -121,13 +130,13 @@ templ Layout(title string, active string) {
 				});
 				document.body.addEventListener("dialog-close", function () {
 					var dialog = document.querySelector("dialog[open]");
-					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
+					if (dialog) dialog.close();
 				});
 				document.addEventListener("click", function (evt) {
 					var closer = evt.target.closest("[data-dialog-close]");
 					if (!closer) return;
 					var dialog = evt.target.closest("dialog");
-					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
+					if (dialog) dialog.close();
 				});
 				// Clicking the backdrop closes the dialog. Pico centers the dialog's
 				// content (the <article>) with flexbox, so the <dialog> element's own
@@ -136,7 +145,6 @@ templ Layout(title string, active string) {
 				document.addEventListener("click", function (evt) {
 					if (evt.target.tagName !== "DIALOG") return;
 					evt.target.close();
-					evt.target.removeAttribute("data-modal-open");
 				});
 
 				// Draggable column resizing for every table under .table-scroll. Handles
