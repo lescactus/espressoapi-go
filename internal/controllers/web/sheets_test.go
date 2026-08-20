@@ -145,6 +145,26 @@ func newWebRequest(method, target, body, contentType, id string, hx bool) *http.
 	return req
 }
 
+// newOversizedWebRequest builds a form-encoded POST/PUT request whose body
+// is wrapped in http.MaxBytesReader with a tiny limit, simulating the
+// production MaxReqSize middleware (internal/controllers/rest.Handler.
+// MaxReqSize, applied to every route by cmd/router.go) tripping on an
+// oversized body before the handler's r.ParseForm() call.
+func newOversizedWebRequest(method, target, contentType, id string) *http.Request {
+	body := "name=" + strings.Repeat("a", 100)
+	req := httptest.NewRequest(method, target, strings.NewReader(body))
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	req.Header.Set("HX-Request", "true")
+	req.Body = http.MaxBytesReader(httptest.NewRecorder(), req.Body, 10)
+	if id != "" {
+		params := httprouter.Params{{Key: "id", Value: id}}
+		req = req.WithContext(context.WithValue(req.Context(), httprouter.ParamsKey, params))
+	}
+	return req
+}
+
 func testSheet(id int, name string) *sheet.Sheet {
 	created := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
 	return &sheet.Sheet{Id: id, Name: name, CreatedAt: &created}
@@ -307,6 +327,18 @@ func TestCreateSheet_MalformedFormBodyReturns400(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for a malformed body, got %d", rec.Code)
+	}
+}
+
+func TestCreateSheet_OversizedBodyReturns413(t *testing.T) {
+	h, _ := newTestSheetHandler(t)
+
+	req := newOversizedWebRequest(http.MethodPost, "/sheets/add", formURLEncoded, "")
+	rec := httptest.NewRecorder()
+	h.CreateSheet(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected 413 for an oversized body, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 

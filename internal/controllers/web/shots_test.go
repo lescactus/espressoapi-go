@@ -420,6 +420,30 @@ func TestCreateShot_WrongContentTypeReturns415(t *testing.T) {
 	}
 }
 
+func TestCreateShot_MalformedFormBodyReturns400(t *testing.T) {
+	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=%zz", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for a malformed body, got %d", rec.Code)
+	}
+}
+
+func TestCreateShot_OversizedBodyReturns413(t *testing.T) {
+	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+
+	req := newOversizedWebRequest(http.MethodPost, "/shots/add", formURLEncoded, "")
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected 413 for an oversized body, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestGetShot_InvalidIDReturns400(t *testing.T) {
 	h, _ := newTestShotHandler(t, nil, nil)
 	rec := httptest.NewRecorder()

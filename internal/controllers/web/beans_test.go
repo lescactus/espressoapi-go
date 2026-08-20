@@ -287,6 +287,30 @@ func TestCreateBean_WrongContentTypeReturns415(t *testing.T) {
 	}
 }
 
+func TestCreateBean_MalformedFormBodyReturns400(t *testing.T) {
+	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=%zz", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for a malformed body, got %d", rec.Code)
+	}
+}
+
+func TestCreateBean_OversizedBodyReturns413(t *testing.T) {
+	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+
+	req := newOversizedWebRequest(http.MethodPost, "/beans/add", formURLEncoded, "")
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected 413 for an oversized body, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestGetBean_InvalidIDReturns400(t *testing.T) {
 	h, _ := newTestBeanHandler(t, nil)
 	rec := httptest.NewRecorder()

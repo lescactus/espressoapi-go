@@ -3,7 +3,9 @@ package shot
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -64,6 +66,50 @@ WHERE shots.sheet_id = $1`
 				}
 				if len(got) != 0 {
 					t.Errorf("GetShotsBySheetId() = %v, want an empty slice", got)
+				}
+			},
+		},
+		{
+			name: "returns the hydrated rows scoped to the given sheet",
+			run: func(t *testing.T, repository *Shot, mock sqlmock.Sqlmock) {
+				now := time.Now()
+				mock.ExpectQuery(expectQuery).WithArgs(1).WillReturnRows(
+					sqlmock.NewRows([]string{"id", "grind_setting", "quantity_in", "quantity_out", "shot_time", "water_temperature", "rating", "is_too_bitter", "is_too_sour", "comparison_with_previous_result", "additional_notes", "sheet.id", "sheet.name", "beans.id", "beans.name", "beans.roast_date", "beans.roast_level"}).
+						AddRow(1, 11, 18.0, 36.0, int64(25000), 90.0, 4.5, false, true, sql.Better, "This is a test", 1, "sheet01", 1, "beans01", now, sql.RoastLevelLight),
+				)
+
+				want := []sql.Shot{
+					{
+						Id:                           1,
+						GrindSetting:                 11,
+						QuantityIn:                   18.0,
+						QuantityOut:                  36.0,
+						ShotTime:                     25 * time.Second,
+						WaterTemperature:             90.0,
+						Rating:                       4.5,
+						IsTooBitter:                  false,
+						IsTooSour:                    true,
+						ComparisonWithPreviousResult: sql.Better,
+						AdditionalNotes:              "This is a test",
+						Sheet: &sql.Sheet{
+							Id:   1,
+							Name: "sheet01",
+						},
+						Beans: &sql.Beans{
+							Id:         1,
+							Name:       "beans01",
+							RoastDate:  &now,
+							RoastLevel: sql.RoastLevelLight,
+						},
+					},
+				}
+
+				got, err := repository.GetShotsBySheetId(context.Background(), 1)
+				if err != nil {
+					t.Fatalf("GetShotsBySheetId() error = %v", err)
+				}
+				if !reflect.DeepEqual(got, want) {
+					t.Errorf("GetShotsBySheetId() = %v, want %v", got, want)
 				}
 			},
 		},
