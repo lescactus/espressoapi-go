@@ -52,6 +52,17 @@ func TestRow_RoasterCellShowsIDAndName(t *testing.T) {
 	}
 }
 
+func TestRowPage_IncludesDialogTargetForEditLink(t *testing.T) {
+	html := render(t, RowPage(testBean()))
+
+	if !strings.Contains(html, "<html") || !strings.Contains(html, "<table") || !strings.Contains(html, "Ethiopia Yirgacheffe") {
+		t.Errorf("expected a full page with a one-row table, got: %s", html)
+	}
+	if !strings.Contains(html, `id="bean-dialog"`) {
+		t.Errorf("expected the row's Edit link (hx-target=\"#bean-dialog\") to have a matching dialog target, got: %s", html)
+	}
+}
+
 func TestRow_OOBModes(t *testing.T) {
 	insert := render(t, Row(testBean(), "insert"))
 	if !strings.Contains(insert, `hx-swap-oob="beforeend:#beans-tbody"`) {

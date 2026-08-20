@@ -74,6 +74,17 @@ func TestRow_SheetAndBeansCellsShowIDAndName(t *testing.T) {
 	}
 }
 
+func TestRowPage_IncludesDialogTargetForEditLink(t *testing.T) {
+	html := render(t, RowPage(testShot()))
+
+	if !strings.Contains(html, "<html") || !strings.Contains(html, "<table") {
+		t.Errorf("expected a full page with a one-row table, got: %s", html)
+	}
+	if !strings.Contains(html, `id="shot-dialog"`) {
+		t.Errorf("expected the row's Edit link (hx-target=\"#shot-dialog\") to have a matching dialog target, got: %s", html)
+	}
+}
+
 func TestRow_EditLinkCarriesViewContextOnlyWhenSheetColumnHidden(t *testing.T) {
 	withSheetColumn := render(t, Row(testShot(), true, ""))
 	if !strings.Contains(withSheetColumn, `hx-get="/shots/update/5"`) {
