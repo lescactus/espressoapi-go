@@ -30,6 +30,9 @@ templ Layout(title string, active string) {
 				.table-scroll th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 				.col-resizer { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; user-select: none; touch-action: none; }
 				.col-resizer:hover, .col-resizer.is-resizing { background: var(--pico-primary); opacity: 0.5; }
+				dialog article > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+				.dialog-close-btn { background: none; border: none; padding: 0; margin: 0; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--pico-secondary); }
+				.dialog-close-btn:hover { color: var(--pico-primary); }
 				#alerts { position: fixed; top: 1rem; right: 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem; }
 				#alerts .alert-success, #alerts .alert-error { margin: 0; padding: 0.75rem 1rem; border-radius: var(--pico-border-radius); }
 				#alerts .alert-error { background: var(--pico-del-color); color: var(--pico-contrast); }
@@ -110,6 +113,15 @@ templ Layout(title string, active string) {
 					if (!closer) return;
 					var dialog = evt.target.closest("dialog");
 					if (dialog) { dialog.close(); dialog.removeAttribute("data-modal-open"); }
+				});
+				// Clicking the backdrop closes the dialog. Pico centers the dialog's
+				// content (the <article>) with flexbox, so the <dialog> element's own
+				// box covers the full viewport; a click event's target is the <dialog>
+				// itself only when it lands outside that centered content.
+				document.addEventListener("click", function (evt) {
+					if (evt.target.tagName !== "DIALOG") return;
+					evt.target.close();
+					evt.target.removeAttribute("data-modal-open");
 				});
 
 				// Draggable column resizing for every table under .table-scroll. Handles

@@ -6,6 +6,7 @@ import (
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/services/bean"
 	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
 )
 
 func submitAttrs(isAdd bool, id int) templ.Attributes {
@@ -102,6 +103,7 @@ templ Form(state FormState, sheets []sheet.Sheet, beans []bean.Bean, isAdd bool,
 			} else {
 				<h3>Edit shot</h3>
 			}
+			@shared.DialogCloseButton()
 		</header>
 		if !isAdd {
 			<p>
