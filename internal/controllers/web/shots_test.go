@@ -171,6 +171,22 @@ func TestAddShotForm_NoLockShowsSelect(t *testing.T) {
 	}
 }
 
+func TestAddShotForm_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.getAllShots = func(context.Context) ([]shot.Shot, error) { return []shot.Shot{*testShot(1)}, nil }
+
+	rec := httptest.NewRecorder()
+	h.AddShotForm(rec, newWebRequest(http.MethodGet, "/shots/add", "", "", "", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, `id="shot-dialog"`) {
+		t.Fatalf("expected the full shots page, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `<select name="sheet_id"`) {
+		t.Errorf("expected the add form to be rendered inside the dialog, got: %s", body)
+	}
+}
+
 func TestCreateShot_HappyPath(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.createShot = func(_ context.Context, s *shot.Shot) (*shot.Shot, error) {
@@ -308,6 +324,19 @@ func TestGetShot_UnknownIDReturns404(t *testing.T) {
 	}
 }
 
+func TestGetShot_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestShotHandler(t, nil, nil)
+	svc.getShotByID = func(context.Context, int) (*shot.Shot, error) { return testShot(5), nil }
+
+	rec := httptest.NewRecorder()
+	h.GetShot(rec, newWebRequest(http.MethodGet, "/shots/get/5", "", "", "5", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, "Ethiopia") {
+		t.Fatalf("expected a full page with the shot row, got %d: %s", rec.Code, body)
+	}
+}
+
 func TestEditShotForm_PrefillsSecondsFromDuration(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.getShotByID = func(context.Context, int) (*shot.Shot, error) { return testShot(5), nil }
@@ -329,6 +358,23 @@ func TestEditShotForm_ReadsViewContextFromQueryParam(t *testing.T) {
 
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `type="hidden" name="view_context" value="sheet-shots"`) {
 		t.Errorf("expected the view_context to round-trip as a hidden field, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestEditShotForm_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.getShotByID = func(context.Context, int) (*shot.Shot, error) { return testShot(5), nil }
+	svc.getAllShots = func(context.Context) ([]shot.Shot, error) { return []shot.Shot{*testShot(5)}, nil }
+
+	rec := httptest.NewRecorder()
+	h.EditShotForm(rec, newWebRequest(http.MethodGet, "/shots/update/5", "", "", "5", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, `id="shot-dialog"`) {
+		t.Fatalf("expected the full shots page, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `value="28.0"`) {
+		t.Errorf("expected the edit form to be pre-filled inside the dialog, got: %s", body)
 	}
 }
 

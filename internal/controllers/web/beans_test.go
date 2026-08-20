@@ -114,6 +114,25 @@ func TestAddBeanForm_EmptyRoastersDisablesSubmit(t *testing.T) {
 	}
 }
 
+func TestAddBeanForm_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.getAllBeans = func(context.Context) ([]bean.Bean, error) { return []bean.Bean{*testBean(1, "Ethiopia")}, nil }
+
+	rec := httptest.NewRecorder()
+	h.AddBeanForm(rec, newWebRequest(http.MethodGet, "/beans/add", "", "", "", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, `id="bean-dialog"`) {
+		t.Fatalf("expected the full beans page, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, "Ethiopia") {
+		t.Errorf("expected the beans list to be rendered behind the dialog, got: %s", body)
+	}
+	if !strings.Contains(body, `name="name"`) {
+		t.Errorf("expected the add form to be pre-populated inside the dialog, got: %s", body)
+	}
+}
+
 func TestCreateBean_HappyPath(t *testing.T) {
 	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
 	svc.createBean = func(_ context.Context, b *bean.Bean) (*bean.Bean, error) {
@@ -217,6 +236,19 @@ func TestGetBean_UnknownIDReturns404(t *testing.T) {
 	}
 }
 
+func TestGetBean_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestBeanHandler(t, nil)
+	svc.getBeanByID = func(context.Context, int) (*bean.Bean, error) { return testBean(9, "Ethiopia"), nil }
+
+	rec := httptest.NewRecorder()
+	h.GetBean(rec, newWebRequest(http.MethodGet, "/beans/get/9", "", "", "9", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, "Ethiopia") {
+		t.Fatalf("expected a full page with the bean row, got %d: %s", rec.Code, body)
+	}
+}
+
 func TestEditBeanForm_PrefillsExistingValues(t *testing.T) {
 	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
 	svc.getBeanByID = func(context.Context, int) (*bean.Bean, error) { return testBean(9, "Ethiopia"), nil }
@@ -226,6 +258,23 @@ func TestEditBeanForm_PrefillsExistingValues(t *testing.T) {
 
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Ethiopia") {
 		t.Errorf("expected the prefilled form, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestEditBeanForm_FullPageFallbackForDirectNavigation(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.getBeanByID = func(context.Context, int) (*bean.Bean, error) { return testBean(9, "Ethiopia"), nil }
+	svc.getAllBeans = func(context.Context) ([]bean.Bean, error) { return []bean.Bean{*testBean(9, "Ethiopia")}, nil }
+
+	rec := httptest.NewRecorder()
+	h.EditBeanForm(rec, newWebRequest(http.MethodGet, "/beans/update/9", "", "", "9", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<html") || !strings.Contains(body, `id="bean-dialog"`) {
+		t.Fatalf("expected the full beans page, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `value="Ethiopia"`) {
+		t.Errorf("expected the edit form to be pre-filled inside the dialog, got: %s", body)
 	}
 }
 

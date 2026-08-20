@@ -42,9 +42,12 @@ templ Table(beans []bean.Bean, sortCol, order string) {
 	</table>
 }
 
-// Page renders the full beans list page, including the persistent (initially
-// empty) dialog target used by the add/edit form.
-templ Page(beans []bean.Bean, sortCol, order string) {
+// Page renders the full beans list page, including the persistent dialog
+// target used by the add/edit form. dialogContent pre-populates the dialog
+// (and is auto-opened by the shared layout script) for the full-page
+// fallback of a direct GET to /beans/add or /beans/update/:id; pass nil for
+// the normal list page, which leaves the dialog empty.
+templ Page(beans []bean.Bean, sortCol, order string, dialogContent templ.Component) {
 	@shared.Layout("Beans", "beans") {
 		<hgroup>
 			<h1>Beans</h1>
@@ -54,6 +57,37 @@ templ Page(beans []bean.Bean, sortCol, order string) {
 		<div class="table-scroll">
 			@Table(beans, sortCol, order)
 		</div>
-		<dialog id="bean-dialog"></dialog>
+		<dialog id="bean-dialog">
+			if dialogContent != nil {
+				@dialogContent
+			}
+		</dialog>
+	}
+}
+
+// RowPage renders a single bean row inside a minimal one-row table, wrapped
+// in the shared layout. Used as the full-page fallback for a direct GET to
+// /beans/get/:id.
+templ RowPage(b bean.Bean) {
+	@shared.Layout(b.Name, "beans") {
+		<div class="table-scroll">
+			<table>
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Name</th>
+						<th>Roaster</th>
+						<th>Roast date</th>
+						<th>Roast level</th>
+						<th>Created</th>
+						<th>Updated</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@Row(b, "")
+				</tbody>
+			</table>
+		</div>
 	}
 }

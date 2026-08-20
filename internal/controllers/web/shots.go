@@ -88,11 +88,24 @@ func (h *Handler) ListShots(w http.ResponseWriter, r *http.Request) {
 		_ = viewshots.Table(shots, sortCol, order, true, true).Render(r.Context(), w)
 		return
 	}
-	_ = viewshots.Page(shots, sortCol, order).Render(r.Context(), w)
+	_ = viewshots.Page(shots, sortCol, order, nil).Render(r.Context(), w)
+}
+
+// shotsListForPage fetches and default-sorts the full shot list, for the
+// full-page fallback of a direct GET to an add/edit dialog route.
+func (h *Handler) shotsListForPage(r *http.Request) ([]shot.Shot, error) {
+	shots, err := h.ShotService.GetAllShots(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	sortShots(shots, "id", "asc")
+	return shots, nil
 }
 
 // AddShotForm handles GET /shots/add. An optional ?sheet_id= query param
 // locks the sheet (used from the sheet detail page's "Add shot" button).
+// htmx requests get the dialog form fragment; direct navigation gets the
+// full shots list page with the dialog pre-opened.
 func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 	sheets, beans, err := h.shotFormOptions(r)
 	if err != nil {
@@ -111,9 +124,21 @@ func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	form := viewshots.Form(state, sheets, beans, true, "", "")
+
+	if !isHXRequest(r) {
+		allShots, err := h.shotsListForPage(r)
+		if err != nil {
+			h.writeFullPageError(w, r, mapDomainError(err))
+			return
+		}
+		writeHTMLStatus(w, http.StatusOK)
+		_ = viewshots.Page(allShots, "id", "asc", form).Render(r.Context(), w)
+		return
+	}
 
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewshots.Form(state, sheets, beans, true, "", "").Render(r.Context(), w)
+	_ = form.Render(r.Context(), w)
 }
 
 // parseShotForm extracts and validates shot form fields, returning the raw
@@ -274,6 +299,10 @@ func (h *Handler) GetShot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeHTMLStatus(w, http.StatusOK)
+	if !isHXRequest(r) {
+		_ = viewshots.RowPage(*s).Render(r.Context(), w)
+		return
+	}
 	_ = viewshots.Row(*s, true, "").Render(r.Context(), w)
 }
 
@@ -317,9 +346,21 @@ func (h *Handler) EditShotForm(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("view_context") == viewshots.ViewContextSheetShots {
 		state.ViewContext = viewshots.ViewContextSheetShots
 	}
+	form := viewshots.Form(state, sheets, beans, false, shared.FormatTimestamp(s.CreatedAt), shared.FormatTimestamp(s.UpdatedAt))
+
+	if !isHXRequest(r) {
+		allShots, err := h.shotsListForPage(r)
+		if err != nil {
+			h.writeFullPageError(w, r, mapDomainError(err))
+			return
+		}
+		writeHTMLStatus(w, http.StatusOK)
+		_ = viewshots.Page(allShots, "id", "asc", form).Render(r.Context(), w)
+		return
+	}
 
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewshots.Form(state, sheets, beans, false, shared.FormatTimestamp(s.CreatedAt), shared.FormatTimestamp(s.UpdatedAt)).Render(r.Context(), w)
+	_ = form.Render(r.Context(), w)
 }
 
 // UpdateShot handles PUT /shots/update/:id.

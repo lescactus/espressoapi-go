@@ -95,6 +95,12 @@ templ Layout(title string, active string) {
 				});
 
 				// Shared <dialog> controller for bean/shot add/edit forms.
+				function openDialog(dialog) {
+					if (dialog && typeof dialog.showModal === "function" && !dialog.hasAttribute("data-modal-open")) {
+						dialog.setAttribute("data-modal-open", "true");
+						dialog.showModal();
+					}
+				}
 				document.body.addEventListener("htmx:afterSwap", function (evt) {
 					// Only a GET request loads a fresh add/edit form into the dialog and
 					// should open it. A create/update POST/PUT also targets the dialog
@@ -104,10 +110,14 @@ templ Layout(title string, active string) {
 					if (evt.detail.requestConfig && evt.detail.requestConfig.verb !== "get") return;
 					var dialog = evt.target.querySelector ? evt.target.querySelector("dialog[open]") : null;
 					if (evt.target.matches && evt.target.matches("dialog")) dialog = evt.target;
-					if (dialog && typeof dialog.showModal === "function" && !dialog.hasAttribute("data-modal-open")) {
-						dialog.setAttribute("data-modal-open", "true");
-						dialog.showModal();
-					}
+					openDialog(dialog);
+				});
+				// A direct GET to an add/edit route renders its full-page fallback
+				// with the dialog already populated (see e.g. web.AddBeanForm); open
+				// it once on load. A dialog left empty by the normal list page (no
+				// child content) is untouched.
+				document.querySelectorAll("dialog").forEach(function (dialog) {
+					if (dialog.firstElementChild) openDialog(dialog);
 				});
 				document.body.addEventListener("dialog-close", function () {
 					var dialog = document.querySelector("dialog[open]");

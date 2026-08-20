@@ -60,7 +60,18 @@ func (h *Handler) ListBeans(w http.ResponseWriter, r *http.Request) {
 		_ = viewbeans.Table(beans, sortCol, order).Render(r.Context(), w)
 		return
 	}
-	_ = viewbeans.Page(beans, sortCol, order).Render(r.Context(), w)
+	_ = viewbeans.Page(beans, sortCol, order, nil).Render(r.Context(), w)
+}
+
+// beansListForPage fetches and default-sorts the full bean list, for the
+// full-page fallback of a direct GET to an add/edit dialog route.
+func (h *Handler) beansListForPage(r *http.Request) ([]bean.Bean, error) {
+	beans, err := h.BeanService.GetAllBeans(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	sortBeans(beans, "id", "asc")
+	return beans, nil
 }
 
 // beanFormState builds a blank or pre-filled form state plus the roaster
@@ -74,15 +85,29 @@ func (h *Handler) beanRoasterOptions(r *http.Request) ([]roaster.Roaster, error)
 	return roasters, nil
 }
 
-// AddBeanForm handles GET /beans/add: the dialog form fragment.
+// AddBeanForm handles GET /beans/add: the dialog form fragment for htmx, or
+// the full beans list page with the dialog pre-opened for direct navigation.
 func (h *Handler) AddBeanForm(w http.ResponseWriter, r *http.Request) {
 	roasters, err := h.beanRoasterOptions(r)
 	if err != nil {
 		h.writeGetError(w, r, mapDomainError(err))
 		return
 	}
+	form := viewbeans.Form(viewbeans.FormState{}, roasters, true, "", "")
+
+	if !isHXRequest(r) {
+		beans, err := h.beansListForPage(r)
+		if err != nil {
+			h.writeFullPageError(w, r, mapDomainError(err))
+			return
+		}
+		writeHTMLStatus(w, http.StatusOK)
+		_ = viewbeans.Page(beans, "id", "asc", form).Render(r.Context(), w)
+		return
+	}
+
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewbeans.Form(viewbeans.FormState{}, roasters, true, "", "").Render(r.Context(), w)
+	_ = form.Render(r.Context(), w)
 }
 
 // parseBeanForm extracts and validates bean form fields, returning the raw
@@ -186,6 +211,10 @@ func (h *Handler) GetBean(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeHTMLStatus(w, http.StatusOK)
+	if !isHXRequest(r) {
+		_ = viewbeans.RowPage(*b).Render(r.Context(), w)
+		return
+	}
 	_ = viewbeans.Row(*b, "").Render(r.Context(), w)
 }
 
@@ -215,9 +244,21 @@ func (h *Handler) EditBeanForm(w http.ResponseWriter, r *http.Request) {
 	if b.RoastDate != nil {
 		state.RoastDate = b.RoastDate.UTC().Format("2006-01-02")
 	}
+	form := viewbeans.Form(state, roasters, false, shared.FormatTimestamp(b.CreatedAt), shared.FormatTimestamp(b.UpdatedAt))
+
+	if !isHXRequest(r) {
+		beans, err := h.beansListForPage(r)
+		if err != nil {
+			h.writeFullPageError(w, r, mapDomainError(err))
+			return
+		}
+		writeHTMLStatus(w, http.StatusOK)
+		_ = viewbeans.Page(beans, "id", "asc", form).Render(r.Context(), w)
+		return
+	}
 
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewbeans.Form(state, roasters, false, shared.FormatTimestamp(b.CreatedAt), shared.FormatTimestamp(b.UpdatedAt)).Render(r.Context(), w)
+	_ = form.Render(r.Context(), w)
 }
 
 // UpdateBean handles PUT /beans/update/:id.
