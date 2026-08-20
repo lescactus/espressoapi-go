@@ -28,7 +28,7 @@ templ Layout(title string, active string) {
 				body { display: flex; flex-direction: column; min-height: 100vh; }
 				body > main.container { flex: 1 0 auto; }
 				body > footer.container { flex-shrink: 0; text-align: center; }
-				.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+				.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 280px)); justify-content: center; gap: 1rem; }
 				.table-scroll { overflow-x: auto; }
 				.table-scroll table { width: max-content; min-width: 100%; }
 				.table-scroll th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
