@@ -82,6 +82,14 @@ func TestDetailHeader_DeleteConfirmUsesName(t *testing.T) {
 	}
 }
 
+func TestDetailHeader_LabelsCreatedTimestampAsCreatedAt(t *testing.T) {
+	html := render(t, DetailHeader(testSheet()))
+
+	if !strings.Contains(html, "Created at 2026-01-02 03:04") {
+		t.Errorf("expected the created timestamp labeled 'Created at', got: %s", html)
+	}
+}
+
 func TestTable_ShowsSortIndicatorOnActiveColumn(t *testing.T) {
 	html := render(t, Table([]sheet.Sheet{testSheet()}, "name", "asc", false))
 
@@ -95,6 +103,17 @@ func TestHome_EmptyStateShowsCallToAction(t *testing.T) {
 
 	if !strings.Contains(html, "Add your first sheet") {
 		t.Errorf("expected empty-state call to action, got: %s", html)
+	}
+}
+
+func TestHome_CardsOmitCreatedTimestamp(t *testing.T) {
+	html := render(t, Home([]sheet.Sheet{testSheet()}))
+
+	if !strings.Contains(html, "Double shot") {
+		t.Fatalf("expected the sheet card to render, got: %s", html)
+	}
+	if strings.Contains(html, "2026-01-02 03:04") {
+		t.Errorf("expected the card to omit the created timestamp, got: %s", html)
 	}
 }
 

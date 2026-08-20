@@ -21,7 +21,6 @@ templ Home(sheets []sheet.Sheet) {
 					<a href={ templ.URL(getPath(s.Id)) } role="button" class="outline">
 						<article>
 							<h3>{ s.Name }</h3>
-							<p>{ shared.FormatTimestamp(s.CreatedAt) }</p>
 						</article>
 					</a>
 				}
