@@ -264,6 +264,40 @@ func TestCreateShot_NegativeQuantityReturns400(t *testing.T) {
 	}
 }
 
+func TestCreateShot_NonFiniteNumericFieldsReturn400(t *testing.T) {
+	cases := []struct {
+		name  string
+		form  string
+		field string
+	}{
+		{"quantity_in NaN", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=NaN&quantity_out=36&rating=8.5&comparison_with_previous_result=0", "quantity_in"},
+		{"quantity_in Inf", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=Inf&quantity_out=36&rating=8.5&comparison_with_previous_result=0", "quantity_in"},
+		{"quantity_out NaN", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=NaN&rating=8.5&comparison_with_previous_result=0", "quantity_out"},
+		{"shot_time NaN", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&shot_time=NaN&rating=8.5&comparison_with_previous_result=0", "shot_time"},
+		{"water_temperature NaN", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&water_temperature=NaN&rating=8.5&comparison_with_previous_result=0", "water_temperature"},
+		{"water_temperature Inf", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&water_temperature=Inf&rating=8.5&comparison_with_previous_result=0", "water_temperature"},
+		{"rating NaN", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=NaN&comparison_with_previous_result=0", "rating"},
+		{"rating Inf", "sheet_id=1&beans_id=2&grind_setting=12&quantity_in=18&quantity_out=36&rating=Inf&comparison_with_previous_result=0", "rating"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+			svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+				t.Fatalf("service must not be called for a non-finite %s", tc.field)
+				return nil, nil
+			}
+
+			req := newWebRequest(http.MethodPost, "/shots/add", tc.form, formURLEncoded, "", true)
+			rec := httptest.NewRecorder()
+			h.CreateShot(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
 func TestCreateShot_ExcessiveShotTimeReturns400(t *testing.T) {
 	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 

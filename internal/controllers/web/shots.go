@@ -1,6 +1,7 @@
 package web
 
 import (
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -180,12 +181,12 @@ func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bo
 	}
 
 	quantityIn, err := strconv.ParseFloat(state.QuantityIn, 64)
-	if err != nil || quantityIn < 0 {
+	if err != nil || math.IsNaN(quantityIn) || math.IsInf(quantityIn, 0) || quantityIn < 0 {
 		state.Errors["quantity_in"] = "Quantity in must be a non-negative number."
 	}
 
 	quantityOut, err := strconv.ParseFloat(state.QuantityOut, 64)
-	if err != nil || quantityOut < 0 {
+	if err != nil || math.IsNaN(quantityOut) || math.IsInf(quantityOut, 0) || quantityOut < 0 {
 		state.Errors["quantity_out"] = "Quantity out must be a non-negative number."
 	}
 
@@ -193,7 +194,7 @@ func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bo
 	if state.ShotTimeSeconds != "" {
 		seconds, err := strconv.ParseFloat(state.ShotTimeSeconds, 64)
 		switch {
-		case err != nil:
+		case err != nil || math.IsNaN(seconds):
 			state.Errors["shot_time"] = "Shot time must be a number."
 		case seconds < 0:
 			state.Errors["shot_time"] = "Shot time must not be negative."
@@ -207,13 +208,13 @@ func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bo
 	var waterTemperature float64
 	if state.WaterTemperature != "" {
 		waterTemperature, err = strconv.ParseFloat(state.WaterTemperature, 64)
-		if err != nil {
+		if err != nil || math.IsNaN(waterTemperature) || math.IsInf(waterTemperature, 0) {
 			state.Errors["water_temperature"] = "Water temperature must be a number."
 		}
 	}
 
 	rating, err := strconv.ParseFloat(state.Rating, 64)
-	if err != nil {
+	if err != nil || math.IsNaN(rating) || math.IsInf(rating, 0) {
 		state.Errors["rating"] = "Rating must be a number."
 	}
 
