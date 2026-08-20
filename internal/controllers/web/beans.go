@@ -185,7 +185,7 @@ func (h *Handler) CreateBean(w http.ResponseWriter, r *http.Request) {
 	created, err := h.BeanService.CreateBean(r.Context(), model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors["name"] = we.Message
+		state.Errors[beanErrorField(err)] = we.Message
 		h.renderBeanFormError(w, r, state, true, we.Status)
 		return
 	}
@@ -292,7 +292,7 @@ func (h *Handler) UpdateBean(w http.ResponseWriter, r *http.Request) {
 	updated, err := h.BeanService.UpdateBeanById(r.Context(), id, model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors["name"] = we.Message
+		state.Errors[beanErrorField(err)] = we.Message
 		h.renderBeanFormError(w, r, state, false, we.Status)
 		return
 	}

@@ -339,6 +339,60 @@ func TestCreateShot_OutOfRangeComparisonReturns400InsteadOfWrapping(t *testing.T
 	}
 }
 
+func TestCreateShot_SheetDoesNotExistDomainErrorMapsToSheetField(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+		return nil, errors.ErrSheetDoesNotExist
+	}
+
+	req := newWebRequest(http.MethodPost, "/shots/add", validShotForm, formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	body := rec.Body.String()
+	sheetIdx := strings.Index(body, `name="sheet_id"`)
+	msgIdx := strings.Index(body, "No sheet found for the given id.")
+	if sheetIdx < 0 || msgIdx < 0 || !(sheetIdx < msgIdx) {
+		t.Errorf("expected the sheet-not-found error rendered under the sheet field, got: %s", body)
+	}
+}
+
+func TestCreateShot_BeansDoesNotExistDomainErrorMapsToBeansField(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+		return nil, errors.ErrBeansDoesNotExist
+	}
+
+	req := newWebRequest(http.MethodPost, "/shots/add", validShotForm, formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	body := rec.Body.String()
+	beansIdx := strings.Index(body, `name="beans_id"`)
+	msgIdx := strings.Index(body, "No beans found for the given id.")
+	if beansIdx < 0 || msgIdx < 0 || !(beansIdx < msgIdx) {
+		t.Errorf("expected the beans-not-found error rendered under the beans field, got: %s", body)
+	}
+}
+
+func TestCreateShot_ComparisonOutOfRangeDomainErrorMapsToComparisonField(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {
+		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
+	}
+
+	req := newWebRequest(http.MethodPost, "/shots/add", validShotForm, formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	body := rec.Body.String()
+	comparisonIdx := strings.Index(body, `name="comparison_with_previous_result"`)
+	msgIdx := strings.Index(body, "Invalid comparison value.")
+	if comparisonIdx < 0 || msgIdx < 0 || !(comparisonIdx < msgIdx) {
+		t.Errorf("expected the comparison-out-of-range error rendered under the comparison field, got: %s", body)
+	}
+}
+
 func TestCreateShot_RatingOutOfRangeDeferredToService(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) {

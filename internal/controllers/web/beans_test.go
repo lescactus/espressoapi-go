@@ -219,6 +219,49 @@ func TestCreateBean_OutOfRangeRoastLevelReturns400InsteadOfWrapping(t *testing.T
 	}
 }
 
+func TestCreateBean_RoasterDoesNotExistDomainErrorMapsToRoasterField(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) {
+		return nil, errors.ErrRoasterDoesNotExist
+	}
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=0", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, `name="roaster_id"`) || !strings.Contains(body, "No roaster found for the given id.") {
+		t.Fatalf("expected the roaster-not-found error rendered under the roaster field, got: %s", body)
+	}
+	roasterIdx := strings.Index(body, `name="roaster_id"`)
+	msgIdx := strings.Index(body, "No roaster found for the given id.")
+	nameIdx := strings.Index(body, `name="name"`)
+	if !(roasterIdx < msgIdx) {
+		t.Errorf("expected the error message to appear after the roaster field, got: %s", body)
+	}
+	if strings.Contains(body[nameIdx:roasterIdx], "No roaster found") {
+		t.Errorf("expected the error to NOT be attached to the name field, got: %s", body)
+	}
+}
+
+func TestCreateBean_RoastLevelOutOfRangeDomainErrorMapsToRoastLevelField(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) {
+		return nil, errors.ErrBeansRoastLevelOutOfRange
+	}
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=0", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	body := rec.Body.String()
+	roastLevelIdx := strings.Index(body, `name="roast_level"`)
+	msgIdx := strings.Index(body, "Roast level must be between light and dark.")
+	if roastLevelIdx < 0 || msgIdx < 0 || !(roastLevelIdx < msgIdx) {
+		t.Errorf("expected the roast-level-out-of-range error rendered under the roast level field, got: %s", body)
+	}
+}
+
 func TestCreateBean_DuplicateReturns409(t *testing.T) {
 	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
 	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) { return nil, errors.ErrBeansAlreadyExists }

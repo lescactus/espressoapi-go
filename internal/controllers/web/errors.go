@@ -47,3 +47,33 @@ func mapDomainError(err error) webError {
 	}
 	return webError{Status: http.StatusInternalServerError, Message: "Something went wrong. Please try again."}
 }
+
+// beanErrorField resolves a bean domain error to the form field it should
+// be displayed under, falling back to "name" for anything not specific to
+// another field (e.g. a duplicate name, or an unexpected/internal error).
+func beanErrorField(err error) string {
+	switch {
+	case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
+		return "roaster_id"
+	case errors.Is(err, domainerrors.ErrBeansRoastLevelOutOfRange):
+		return "roast_level"
+	default:
+		return "name"
+	}
+}
+
+// shotErrorField resolves a shot domain error to the form field it should
+// be displayed under, falling back to "rating" for anything not specific to
+// another field (e.g. an unexpected/internal error).
+func shotErrorField(err error) string {
+	switch {
+	case errors.Is(err, domainerrors.ErrSheetDoesNotExist):
+		return "sheet_id"
+	case errors.Is(err, domainerrors.ErrBeansDoesNotExist):
+		return "beans_id"
+	case errors.Is(err, domainerrors.ErrShotComparisonWithPreviousResultOutOfRange):
+		return "comparison_with_previous_result"
+	default:
+		return "rating"
+	}
+}

@@ -274,7 +274,7 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	created, err := h.ShotService.CreateShot(r.Context(), model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors["rating"] = we.Message
+		state.Errors[shotErrorField(err)] = we.Message
 		h.renderShotFormError(w, r, state, true, we.Status)
 		return
 	}
@@ -395,7 +395,7 @@ func (h *Handler) UpdateShot(w http.ResponseWriter, r *http.Request) {
 	updated, err := h.ShotService.UpdateShotById(r.Context(), id, model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors["rating"] = we.Message
+		state.Errors[shotErrorField(err)] = we.Message
 		h.renderShotFormError(w, r, state, false, we.Status)
 		return
 	}
