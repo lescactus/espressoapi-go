@@ -187,6 +187,25 @@ func TestAddShotForm_FullPageFallbackForDirectNavigation(t *testing.T) {
 	}
 }
 
+func TestAddShotForm_SheetLockedFullPageFallbackOmitsSheetShotsViewContext(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.getAllShots = func(context.Context) ([]shot.Shot, error) { return []shot.Shot{*testShot(1)}, nil }
+
+	rec := httptest.NewRecorder()
+	h.AddShotForm(rec, newWebRequest(http.MethodGet, "/shots/add?sheet_id=1", "", "", "", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, `id="shot-dialog"`) {
+		t.Fatalf("expected the full shots page, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `type="hidden" name="sheet_id" value="1"`) {
+		t.Errorf("expected the sheet lock to still apply, got: %s", body)
+	}
+	if strings.Contains(body, `name="view_context"`) {
+		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 16-column table), got: %s", body)
+	}
+}
+
 func TestCreateShot_HappyPath(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.createShot = func(_ context.Context, s *shot.Shot) (*shot.Shot, error) {
@@ -516,6 +535,23 @@ func TestEditShotForm_FullPageFallbackForDirectNavigation(t *testing.T) {
 	}
 	if !strings.Contains(body, `value="28.0"`) {
 		t.Errorf("expected the edit form to be pre-filled inside the dialog, got: %s", body)
+	}
+}
+
+func TestEditShotForm_FullPageFallbackOmitsSheetShotsViewContextEvenIfRequested(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.getShotByID = func(context.Context, int) (*shot.Shot, error) { return testShot(5), nil }
+	svc.getAllShots = func(context.Context) ([]shot.Shot, error) { return []shot.Shot{*testShot(5)}, nil }
+
+	rec := httptest.NewRecorder()
+	h.EditShotForm(rec, newWebRequest(http.MethodGet, "/shots/update/5?view_context=sheet-shots", "", "", "5", false))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusOK || !strings.Contains(body, `id="shot-dialog"`) {
+		t.Fatalf("expected the full shots page, got %d: %s", rec.Code, body)
+	}
+	if strings.Contains(body, `name="view_context"`) {
+		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 16-column table), got: %s", body)
 	}
 }
 

@@ -133,8 +133,16 @@ func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 			h.writeFullPageError(w, r, mapDomainError(err))
 			return
 		}
+		// The full-page fallback always renders the standalone (16-column,
+		// Sheet column included) shots page, even for a sheet-locked add, so
+		// clear ViewContext here: a submission from this page must render its
+		// OOB row with the Sheet column, not assume the sheet-detail page's
+		// 15-column shape the hidden view_context field would otherwise carry.
+		fallbackState := state
+		fallbackState.ViewContext = ""
+		fallbackForm := viewshots.Form(fallbackState, sheets, beans, true, "", "")
 		writeHTMLStatus(w, http.StatusOK)
-		_ = viewshots.Page(allShots, "id", "asc", form).Render(r.Context(), w)
+		_ = viewshots.Page(allShots, "id", "asc", fallbackForm).Render(r.Context(), w)
 		return
 	}
 
@@ -356,8 +364,14 @@ func (h *Handler) EditShotForm(w http.ResponseWriter, r *http.Request) {
 			h.writeFullPageError(w, r, mapDomainError(err))
 			return
 		}
+		// See AddShotForm: the full-page fallback always renders the
+		// standalone (16-column) shots page, so clear ViewContext for the
+		// form rendered on it.
+		fallbackState := state
+		fallbackState.ViewContext = ""
+		fallbackForm := viewshots.Form(fallbackState, sheets, beans, false, shared.FormatTimestamp(s.CreatedAt), shared.FormatTimestamp(s.UpdatedAt))
 		writeHTMLStatus(w, http.StatusOK)
-		_ = viewshots.Page(allShots, "id", "asc", form).Render(r.Context(), w)
+		_ = viewshots.Page(allShots, "id", "asc", fallbackForm).Render(r.Context(), w)
 		return
 	}
 
