@@ -84,6 +84,12 @@ templ Layout(title string, active string) {
 
 				// Shared <dialog> controller for bean/shot add/edit forms.
 				document.body.addEventListener("htmx:afterSwap", function (evt) {
+					// Only a GET request loads a fresh add/edit form into the dialog and
+					// should open it. A create/update POST/PUT also targets the dialog
+					// (even when it sets HX-Reswap: none on success, which skips the
+					// actual swap but still fires this event) and must never reopen it
+					// after the dialog-close listener below has just closed it.
+					if (evt.detail.requestConfig && evt.detail.requestConfig.verb !== "get") return;
 					var dialog = evt.target.querySelector ? evt.target.querySelector("dialog[open]") : null;
 					if (evt.target.matches && evt.target.matches("dialog")) dialog = evt.target;
 					if (dialog && typeof dialog.showModal === "function" && !dialog.hasAttribute("data-modal-open")) {
