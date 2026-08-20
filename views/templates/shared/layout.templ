@@ -1,0 +1,213 @@
+// Package shared holds the layout, navigation, and reusable UI components used
+// by every web page and htmx fragment.
+package shared
+
+// Layout wraps page content in the site skeleton: head/CDN links, nav, the
+// alerts region, the page content, and the footer. active identifies the
+// current nav item (e.g. "sheets") for aria-current.
+templ Layout(title string, active string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title } - espressoapi-go</title>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.1.1/css/pico.min.css"
+				integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU"
+				crossorigin="anonymous"
+			/>
+			<script
+				src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
+				integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V"
+				crossorigin="anonymous"
+			></script>
+			<style>
+				html { height: 100%; }
+				body { display: flex; flex-direction: column; min-height: 100vh; }
+				body > main.container { flex: 1 0 auto; }
+				body > footer.container { flex-shrink: 0; text-align: center; }
+				.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 280px)); justify-content: center; gap: 1rem; }
+				.card-grid article { margin-bottom: 0; }
+				.table-scroll { overflow-x: auto; }
+				.table-scroll table { width: max-content; min-width: 100%; }
+				.table-scroll th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+				.col-resizer { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; user-select: none; touch-action: none; }
+				.col-resizer:hover, .col-resizer.is-resizing { background: var(--pico-primary); opacity: 0.5; }
+				dialog article > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+				.dialog-close-btn { background: none; border: none; padding: 0; margin: 0; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--pico-secondary); }
+				.dialog-close-btn:hover { color: var(--pico-primary); }
+				.footer-icon { vertical-align: text-bottom; }
+				#alerts { position: fixed; top: 1rem; right: 1rem; z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem; }
+				#alerts .alert-success, #alerts .alert-error { margin: 0; padding: 0.75rem 1rem; border-radius: var(--pico-border-radius); }
+				#alerts .alert-error { background: var(--pico-del-color); color: var(--pico-contrast); }
+				#alerts .alert-success { background: var(--pico-ins-color); color: var(--pico-contrast); }
+			</style>
+		</head>
+		<body>
+			@Nav(active)
+			<main class="container">
+				<div id="alerts"></div>
+				{ children... }
+			</main>
+			@Footer()
+			<script>
+				// Dark mode: default to prefers-color-scheme, override via nav toggle, persist in localStorage.
+				(function () {
+					var stored = localStorage.getItem("theme");
+					if (stored) {
+						document.documentElement.setAttribute("data-theme", stored);
+					}
+					document.addEventListener("click", function (evt) {
+						var toggle = evt.target.closest("[data-theme-toggle]");
+						if (!toggle) return;
+						var current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+						var next = current === "dark" ? "light" : "dark";
+						document.documentElement.setAttribute("data-theme", next);
+						localStorage.setItem("theme", next);
+					});
+				})();
+
+				// Auto-dismiss success/error alerts a few seconds after they are inserted.
+				(function () {
+					function scheduleDismiss(el) {
+						setTimeout(function () {
+							if (el && el.parentNode) el.parentNode.removeChild(el);
+						}, 5000);
+					}
+					new MutationObserver(function (mutations) {
+						mutations.forEach(function (m) {
+							m.addedNodes.forEach(function (n) {
+								if (n.nodeType === 1 && n.matches && n.matches(".alert-success")) scheduleDismiss(n);
+							});
+						});
+					}).observe(document.getElementById("alerts"), { childList: true });
+				})();
+
+				// Let expected HTML error responses (validation/domain errors) swap normally;
+				// htmx's default behavior already only blocks swaps for network errors, so this
+				// listener only needs to ensure our declared 4xx statuses are treated as swappable.
+				document.body.addEventListener("htmx:beforeSwap", function (evt) {
+					var status = evt.detail.xhr.status;
+					if (status === 400 || status === 404 || status === 409 || status === 413 || status === 415) {
+						evt.detail.shouldSwap = true;
+					}
+				});
+
+				// Shared <dialog> controller for bean/shot add/edit forms.
+				function openDialog(dialog) {
+					if (dialog && typeof dialog.showModal === "function" && !dialog.hasAttribute("data-modal-open")) {
+						dialog.setAttribute("data-modal-open", "true");
+						dialog.showModal();
+					}
+				}
+				// The native "close" event fires for every way a <dialog> stops being
+				// open, including Escape (which the handlers below never see since
+				// they only run on close()/backdrop-click/data-dialog-close), so this
+				// is the one place data-modal-open is cleared - no path can leave it
+				// set once the dialog is actually closed. "close" doesn't bubble, so
+				// this listener must use the capture phase.
+				document.addEventListener("close", function (evt) {
+					if (evt.target.tagName === "DIALOG") evt.target.removeAttribute("data-modal-open");
+				}, true);
+				document.body.addEventListener("htmx:afterSwap", function (evt) {
+					// Only a GET request loads a fresh add/edit form into the dialog and
+					// should open it. A create/update POST/PUT also targets the dialog
+					// (even when it sets HX-Reswap: none on success, which skips the
+					// actual swap but still fires this event) and must never reopen it
+					// after the dialog-close listener below has just closed it.
+					if (evt.detail.requestConfig && evt.detail.requestConfig.verb !== "get") return;
+					var dialog = evt.target.querySelector ? evt.target.querySelector("dialog[open]") : null;
+					if (evt.target.matches && evt.target.matches("dialog")) dialog = evt.target;
+					openDialog(dialog);
+				});
+				// A direct GET to an add/edit route renders its full-page fallback
+				// with the dialog already populated (see e.g. web.AddBeanForm); open
+				// it once on load. A dialog left empty by the normal list page (no
+				// child content) is untouched.
+				document.querySelectorAll("dialog").forEach(function (dialog) {
+					if (dialog.firstElementChild) openDialog(dialog);
+				});
+				document.body.addEventListener("dialog-close", function () {
+					var dialog = document.querySelector("dialog[open]");
+					if (dialog) dialog.close();
+				});
+				document.addEventListener("click", function (evt) {
+					var closer = evt.target.closest("[data-dialog-close]");
+					if (!closer) return;
+					var dialog = evt.target.closest("dialog");
+					if (dialog) dialog.close();
+				});
+				// Clicking the backdrop closes the dialog. Pico centers the dialog's
+				// content (the <article>) with flexbox, so the <dialog> element's own
+				// box covers the full viewport; a click event's target is the <dialog>
+				// itself only when it lands outside that centered content.
+				document.addEventListener("click", function (evt) {
+					if (evt.target.tagName !== "DIALOG") return;
+					evt.target.close();
+				});
+
+				// Draggable column resizing for every table under .table-scroll. Handles
+				// are added on demand (idempotent) so this also covers tables swapped in
+				// later by htmx (e.g. re-sorting, which replaces the whole <table>).
+				(function () {
+					function addResizeHandles() {
+						document.querySelectorAll(".table-scroll table").forEach(function (table) {
+							if (table.hasAttribute("data-resizable")) return;
+							var ths = table.querySelectorAll("thead tr th");
+							// Pin each column's current auto-computed width, and give the table
+							// itself an explicit pixel width (their sum), before switching to a
+							// fixed layout. table-layout: fixed ignores a <th>'s inline width
+							// when the table's own width is an intrinsic keyword (max-content),
+							// so this must be a definite length for per-column resizing to work.
+							var total = 0;
+							ths.forEach(function (th) {
+								var width = th.offsetWidth;
+								th.style.width = width + "px";
+								total += width;
+							});
+							table.style.width = total + "px";
+							table.style.tableLayout = "fixed";
+							table.setAttribute("data-resizable", "true");
+							ths.forEach(function (th) {
+								if (th.querySelector(".col-resizer")) return;
+								var handle = document.createElement("span");
+								handle.className = "col-resizer";
+								th.appendChild(handle);
+							});
+						});
+					}
+					addResizeHandles();
+					document.body.addEventListener("htmx:afterSwap", addResizeHandles);
+
+					var resizing = null;
+					document.addEventListener("mousedown", function (evt) {
+						var handle = evt.target.closest(".col-resizer");
+						if (!handle) return;
+						evt.preventDefault();
+						var th = handle.parentElement;
+						var table = th.closest("table");
+						resizing = { th: th, table: table, startX: evt.clientX, startWidth: th.offsetWidth, startTableWidth: table.offsetWidth };
+						handle.classList.add("is-resizing");
+					});
+					document.addEventListener("mousemove", function (evt) {
+						if (!resizing) return;
+						var width = Math.max(40, resizing.startWidth + (evt.clientX - resizing.startX));
+						resizing.th.style.width = width + "px";
+						// Keep the table's own (definite, fixed-layout) width in sync so the
+						// browser doesn't redistribute the resized column's space among
+						// the others to make the total add back up.
+						resizing.table.style.width = (resizing.startTableWidth + (width - resizing.startWidth)) + "px";
+					});
+					document.addEventListener("mouseup", function () {
+						if (!resizing) return;
+						var handle = resizing.th.querySelector(".col-resizer");
+						if (handle) handle.classList.remove("is-resizing");
+						resizing = null;
+					});
+				})();
+			</script>
+		</body>
+	</html>
+}

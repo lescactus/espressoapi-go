@@ -1,0 +1,63 @@
+package shots
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// Row renders a shot's view-mode table row with every persisted field.
+// showSheetColumn is false on the sheet detail page, where the sheet is
+// implied by context.
+templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
+	<tr id={ rowElementID(s.Id) } { rowOOBAttrs(oobMode)... }>
+		<td>{ strconv.Itoa(s.Id) }</td>
+		if showSheetColumn {
+			if s.Sheet != nil {
+				<td>#{ strconv.Itoa(s.Sheet.Id) } { s.Sheet.Name }</td>
+			} else {
+				<td></td>
+			}
+		}
+		if s.Beans != nil {
+			<td>#{ strconv.Itoa(s.Beans.Id) } { s.Beans.Name }</td>
+		} else {
+			<td></td>
+		}
+		<td>{ strconv.Itoa(s.GrindSetting) }</td>
+		<td>{ strconv.FormatFloat(s.QuantityIn, 'f', 1, 64) }</td>
+		<td>{ strconv.FormatFloat(s.QuantityOut, 'f', 1, 64) }</td>
+		<td>{ secondsDisplay(s.ShotTime) }</td>
+		<td>{ strconv.FormatFloat(s.WaterTemperature, 'f', 1, 64) }</td>
+		<td>{ strconv.FormatFloat(s.Rating, 'f', 1, 64) }</td>
+		<td>{ boolLabel(s.IsTooBitter) }</td>
+		<td>{ boolLabel(s.IsTooSour) }</td>
+		<td>{ s.ComparisonWithPreviousResult.String() }</td>
+		<td>{ s.AdditionalNotes }</td>
+		<td>{ shared.FormatTimestamp(s.CreatedAt) }</td>
+		<td>{ shared.FormatTimestamp(s.UpdatedAt) }</td>
+		<td>
+			<a
+				href="#"
+				hx-get={ editPath(s.Id, showSheetColumn) }
+				hx-target="#shot-dialog"
+				hx-swap="innerHTML"
+			>Edit</a>
+			<a
+				href="#"
+				hx-delete={ deletePath(s.Id) }
+				hx-target="closest tr"
+				hx-swap="outerHTML"
+				hx-confirm={ "Are you sure you want to delete shot #" + strconv.Itoa(s.Id) + "?" }
+			>Delete</a>
+		</td>
+	</tr>
+}
+
+func boolLabel(b bool) string {
+	if b {
+		return "Yes"
+	}
+	return "No"
+}

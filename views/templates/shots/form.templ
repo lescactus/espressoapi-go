@@ -1,0 +1,202 @@
+package shots
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/models/sql"
+	"github.com/lescactus/espressoapi-go/internal/services/bean"
+	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+func submitAttrs(isAdd bool, id int) templ.Attributes {
+	if isAdd {
+		return templ.Attributes{"hx-post": "/shots/add"}
+	}
+	return templ.Attributes{"hx-put": updatePath(id)}
+}
+
+func fieldAttrs(errMsg string) templ.Attributes {
+	attrs := templ.Attributes{}
+	if errMsg != "" {
+		attrs["aria-invalid"] = "true"
+	}
+	return attrs
+}
+
+func checkedAttrs(checked bool) templ.Attributes {
+	attrs := templ.Attributes{}
+	if checked {
+		attrs["checked"] = "true"
+	}
+	return attrs
+}
+
+var comparisonLevels = []sql.ComparisonWithPreviousResult{
+	sql.Worst,
+	sql.Same,
+	sql.Better,
+	sql.Unknown,
+}
+
+templ sheetField(state FormState, sheets []sheet.Sheet) {
+	if state.SheetLocked {
+		<input type="hidden" name="sheet_id" value={ state.SheetID }/>
+		<p><strong>Sheet:</strong> { state.SheetName }</p>
+	} else {
+		<label>
+			Sheet
+			if len(sheets) == 0 {
+				<select name="sheet_id" disabled></select>
+				<small>No sheets yet. <a href="/sheets">Create one first.</a></small>
+			} else {
+				<select name="sheet_id" required { fieldAttrs(state.fieldError("sheet_id"))... }>
+					<option value="">Select a sheet&hellip;</option>
+					for _, sh := range sheets {
+						if strconv.Itoa(sh.Id) == state.SheetID {
+							<option value={ strconv.Itoa(sh.Id) } selected>{ sh.Name }</option>
+						} else {
+							<option value={ strconv.Itoa(sh.Id) }>{ sh.Name }</option>
+						}
+					}
+				</select>
+				if msg := state.fieldError("sheet_id"); msg != "" {
+					<small>{ msg }</small>
+				}
+			}
+		</label>
+	}
+}
+
+templ beansField(state FormState, beans []bean.Bean) {
+	<label>
+		Beans
+		if len(beans) == 0 {
+			<select name="beans_id" disabled></select>
+			<small>No beans yet. <a href="/beans">Create one first.</a></small>
+		} else {
+			<select name="beans_id" required { fieldAttrs(state.fieldError("beans_id"))... }>
+				<option value="">Select beans&hellip;</option>
+				for _, b := range beans {
+					if strconv.Itoa(b.Id) == state.BeansID {
+						<option value={ strconv.Itoa(b.Id) } selected>{ b.Name }</option>
+					} else {
+						<option value={ strconv.Itoa(b.Id) }>{ b.Name }</option>
+					}
+				}
+			</select>
+			if msg := state.fieldError("beans_id"); msg != "" {
+				<small>{ msg }</small>
+			}
+		}
+	</label>
+}
+
+// Form renders the shot add/edit dialog form content (the caller injects it
+// into the persistent #shot-dialog element). Metadata is read-only and only
+// shown in edit mode.
+templ Form(state FormState, sheets []sheet.Sheet, beans []bean.Bean, isAdd bool, createdAt, updatedAt string) {
+	<article>
+		<header>
+			if isAdd {
+				<h3>Add shot</h3>
+			} else {
+				<h3>Edit shot</h3>
+			}
+			@shared.DialogCloseButton()
+		</header>
+		if state.FormError != "" {
+			<p role="alert">{ state.FormError }</p>
+		}
+		if !isAdd {
+			<p>
+				<small>ID { strconv.Itoa(state.ID) } &middot; Created { createdAt } &middot; Updated { updatedAt }</small>
+			</p>
+		}
+		if state.ViewContext != "" {
+			<input type="hidden" name="view_context" value={ state.ViewContext }/>
+		}
+		@sheetField(state, sheets)
+		@beansField(state, beans)
+		<label>
+			Grind setting
+			<input type="number" name="grind_setting" required value={ state.GrindSetting } { fieldAttrs(state.fieldError("grind_setting"))... }/>
+			if msg := state.fieldError("grind_setting"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Quantity in (g)
+			<input type="number" step="0.1" min="0" name="quantity_in" required value={ state.QuantityIn } { fieldAttrs(state.fieldError("quantity_in"))... }/>
+			if msg := state.fieldError("quantity_in"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Quantity out (g)
+			<input type="number" step="0.1" min="0" name="quantity_out" required value={ state.QuantityOut } { fieldAttrs(state.fieldError("quantity_out"))... }/>
+			if msg := state.fieldError("quantity_out"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Shot time (seconds)
+			<input type="number" step="0.1" min="0" name="shot_time" value={ state.ShotTimeSeconds } { fieldAttrs(state.fieldError("shot_time"))... }/>
+			if msg := state.fieldError("shot_time"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Water temperature (&deg;C)
+			<input type="number" step="0.1" name="water_temperature" placeholder="93 (default)" value={ state.WaterTemperature } { fieldAttrs(state.fieldError("water_temperature"))... }/>
+			if msg := state.fieldError("water_temperature"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Rating (0&ndash;10)
+			<input type="number" step="0.1" min="0" max="10" name="rating" required value={ state.Rating } { fieldAttrs(state.fieldError("rating"))... }/>
+			if msg := state.fieldError("rating"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			<input type="checkbox" name="is_too_bitter" { checkedAttrs(state.IsTooBitter)... }/>
+			Too bitter
+		</label>
+		<label>
+			<input type="checkbox" name="is_too_sour" { checkedAttrs(state.IsTooSour)... }/>
+			Too sour
+		</label>
+		<label>
+			Comparison with previous result
+			<select name="comparison_with_previous_result" { fieldAttrs(state.fieldError("comparison_with_previous_result"))... }>
+				for _, c := range comparisonLevels {
+					if strconv.Itoa(int(c)) == state.ComparisonWithPreviousResult {
+						<option value={ strconv.Itoa(int(c)) } selected>{ c.String() }</option>
+					} else {
+						<option value={ strconv.Itoa(int(c)) }>{ c.String() }</option>
+					}
+				}
+			</select>
+			if msg := state.fieldError("comparison_with_previous_result"); msg != "" {
+				<small>{ msg }</small>
+			}
+		</label>
+		<label>
+			Additional notes
+			<textarea name="additional_notes" maxlength="511">{ state.AdditionalNotes }</textarea>
+		</label>
+		<footer>
+			<button
+				type="button"
+				{ submitAttrs(isAdd, state.ID)... }
+				hx-include="closest dialog"
+				hx-target="#shot-dialog"
+				hx-swap="innerHTML"
+				disabled?={ len(sheets) == 0 && !state.SheetLocked || len(beans) == 0 }
+			>Save</button>
+			<button type="button" data-dialog-close class="secondary">Cancel</button>
+		</footer>
+	</article>
+}

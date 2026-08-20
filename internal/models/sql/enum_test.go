@@ -48,3 +48,48 @@ func TestRoastLevelIsValid(t *testing.T) {
 		})
 	}
 }
+
+func TestRoastLevelString(t *testing.T) {
+	tests := []struct {
+		name  string
+		value RoastLevel
+		want  string
+	}{
+		{name: "light", value: RoastLevelLight, want: "Light"},
+		{name: "light to medium", value: RoastLevelLightToMedium, want: "Light to medium"},
+		{name: "medium", value: RoastLevelMedium, want: "Medium"},
+		{name: "medium to dark", value: RoastLevelMediumToDark, want: "Medium to dark"},
+		{name: "dark", value: RoastLevelDark, want: "Dark"},
+		{name: "invalid", value: 5, want: "Unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.value.String(); got != tt.want {
+				t.Errorf("RoastLevel.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestComparisonWithPreviousResultString(t *testing.T) {
+	tests := []struct {
+		name  string
+		value ComparisonWithPreviousResult
+		want  string
+	}{
+		{name: "worst", value: Worst, want: "Worse"},
+		{name: "same", value: Same, want: "Same"},
+		{name: "better", value: Better, want: "Better"},
+		{name: "unknown", value: Unknown, want: "Unknown"},
+		{name: "invalid", value: 4, want: "Unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.value.String(); got != tt.want {
+				t.Errorf("ComparisonWithPreviousResult.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

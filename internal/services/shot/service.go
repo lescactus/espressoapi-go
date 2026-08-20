@@ -22,7 +22,10 @@ import (
 // The result of a shot can be rated and compared to the previous shot.
 // It can also be too bitter or too sour.
 //
-// swagger:model
+// Not a swagger:model: it is never returned directly (rest.ShotResponse
+// carries the wire shape via swagger:allOf), and its ShotTime field would
+// otherwise generate a dead "Duration" (nanosecond int64) definition that
+// contradicts the REST contract's float-seconds shot_time.
 type Shot struct {
 	Id                           int                                  `json:"id"`
 	Sheet                        *sheet.Sheet                         `json:"sheet"`
@@ -103,6 +106,7 @@ type Service interface {
 	CreateShot(ctx context.Context, shot *Shot) (*Shot, error)
 	GetShotById(ctx context.Context, id int) (*Shot, error)
 	GetAllShots(ctx context.Context) ([]Shot, error)
+	GetShotsBySheetId(ctx context.Context, sheetId int) ([]Shot, error)
 	UpdateShotById(ctx context.Context, id int, shot *Shot) (*Shot, error)
 	DeleteShotById(ctx context.Context, id int) error
 	Ping(ctx context.Context) error
@@ -128,6 +132,9 @@ func (s *ShotService) CreateShot(ctx context.Context, shot *Shot) (*Shot, error)
 	}
 	if !shot.ComparisonWithPreviousResult.IsValid() {
 		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
+	}
+	if shot.ShotTime < 0 || shot.ShotTime > MaxShotTime {
+		return nil, errors.ErrShotTimeOutOfRange
 	}
 
 	id, err := s.repository.CreateShot(ctx, ShotToSQL(shot))
@@ -174,6 +181,25 @@ func (s *ShotService) GetAllShots(ctx context.Context) ([]Shot, error) {
 	return shots, nil
 }
 
+// GetShotsBySheetId returns every shot for the given sheet. Sheet existence
+// is the caller's responsibility (see rest.Handler.GetShotsBySheetId); an
+// empty slice for a valid sheet without shots is not an error.
+func (s *ShotService) GetShotsBySheetId(ctx context.Context, sheetId int) ([]Shot, error) {
+	sqlShots, err := s.repository.GetShotsBySheetId(ctx, sheetId)
+	if err != nil {
+		msg := "could not get shots by sheet id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+
+	shots := make([]Shot, len(sqlShots))
+	for i, v := range sqlShots {
+		shots[i] = *SQLToShot(&v)
+	}
+
+	return shots, nil
+}
+
 func (s *ShotService) UpdateShotById(ctx context.Context, id int, shot *Shot) (*Shot, error) {
 	shot.Id = id
 
@@ -186,6 +212,9 @@ func (s *ShotService) UpdateShotById(ctx context.Context, id int, shot *Shot) (*
 	}
 	if !shot.ComparisonWithPreviousResult.IsValid() {
 		return nil, errors.ErrShotComparisonWithPreviousResultOutOfRange
+	}
+	if shot.ShotTime < 0 || shot.ShotTime > MaxShotTime {
+		return nil, errors.ErrShotTimeOutOfRange
 	}
 
 	sqlShot := ShotToSQL(shot)

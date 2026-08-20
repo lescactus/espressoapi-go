@@ -1,0 +1,31 @@
+package shared
+
+templ NotFoundPage() {
+	@Layout("Not found", "") {
+		<hgroup>
+			<h1>404 &mdash; Not found</h1>
+			<p>We couldn't find what you were looking for.</p>
+		</hgroup>
+		<a href="/" role="button">Go home</a>
+	}
+}
+
+templ InternalErrorPage() {
+	@Layout("Something went wrong", "") {
+		<hgroup>
+			<h1>500 &mdash; Something went wrong</h1>
+			<p>An unexpected error occurred. Please try again.</p>
+		</hgroup>
+		<a href="/" role="button">Go home</a>
+	}
+}
+
+templ BadRequestPage(message string) {
+	@Layout("Invalid request", "") {
+		<hgroup>
+			<h1>400 &mdash; Invalid request</h1>
+			<p>{ message }</p>
+		</hgroup>
+		<a href="/" role="button">Go home</a>
+	}
+}

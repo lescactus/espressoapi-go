@@ -39,6 +39,7 @@ type ShotRepository interface {
 	CreateShot(ctx context.Context, shot *sql.Shot) (int, error)
 	GetShotById(ctx context.Context, id int) (*sql.Shot, error)
 	GetAllShots(ctx context.Context) ([]sql.Shot, error)
+	GetShotsBySheetId(ctx context.Context, sheetId int) ([]sql.Shot, error)
 	UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error)
 	DeleteShotById(ctx context.Context, id int) error
 	Ping(ctx context.Context) error

@@ -66,7 +66,7 @@ func TestEnumCheckConstraints(t *testing.T) {
 	})
 
 	assertCheckConstraint(t, ctx, db, config, "chk_beans_roast_level", "INSERT INTO beans (id, name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?, ?)", invalidBeansID, fmt.Sprintf("enum-test-invalid-beans-%d", testID), roasterID, nil, 5)
-	assertCheckConstraint(t, ctx, db, config, "chk_shots_comparison_with_previous_result", "INSERT INTO shots (id, sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", invalidShotID, sheetID, beanID, 12, 18, 36, 24, 93, 8, false, false, 4, "invalid comparison")
+	assertCheckConstraint(t, ctx, db, config, "chk_shots_comparison_with_previous_result", "INSERT INTO shots (id, sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time_ms, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", invalidShotID, sheetID, beanID, 12, 18, 36, 24000, 93, 8, false, false, 4, "invalid comparison")
 }
 
 func TestForeignKeyDeleteConstraint(t *testing.T) {

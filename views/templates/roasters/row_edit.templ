@@ -1,0 +1,49 @@
+package roasters
+
+import "strconv"
+
+func nameFieldAttrs(errMsg string) templ.Attributes {
+	attrs := templ.Attributes{}
+	if errMsg != "" {
+		attrs["aria-invalid"] = "true"
+	}
+	return attrs
+}
+
+templ nameField(name, errMsg string) {
+	<td>
+		<input type="text" name="name" required value={ name } { nameFieldAttrs(errMsg)... }/>
+		if errMsg != "" {
+			<small>{ errMsg }</small>
+		}
+	</td>
+}
+
+// AddRow renders a blank inline row used to create a new roaster.
+templ AddRow(state FormState) {
+	<tr id="roaster-row-add">
+		<td>&mdash;</td>
+		@nameField(state.Name, state.Error)
+		<td>&mdash;</td>
+		<td>&mdash;</td>
+		<td>
+			<button type="button" hx-post="/roasters/add" hx-include="closest tr" hx-target="#roaster-row-add" hx-swap="outerHTML">Save</button>
+			<a href="#" onclick="this.closest('tr').remove(); return false;">Cancel</a>
+		</td>
+	</tr>
+}
+
+// EditRow renders an inline edit row for an existing roaster. id,
+// created_at, and updated_at are always read-only.
+templ EditRow(state FormState, createdAt, updatedAt string) {
+	<tr id={ rowElementID(state.ID) }>
+		<td>{ strconv.Itoa(state.ID) }</td>
+		@nameField(state.Name, state.Error)
+		<td>{ createdAt }</td>
+		<td>{ updatedAt }</td>
+		<td>
+			<button type="button" hx-put={ updatePath(state.ID) } hx-include="closest tr" hx-target={ "#" + rowElementID(state.ID) } hx-swap="outerHTML">Save</button>
+			<a href="#" hx-get={ getPath(state.ID) } hx-target={ "#" + rowElementID(state.ID) } hx-swap="outerHTML">Cancel</a>
+		</td>
+	</tr>
+}

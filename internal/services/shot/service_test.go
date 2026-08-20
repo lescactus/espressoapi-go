@@ -78,6 +78,20 @@ func (m *MockShotRepository) GetAllShots(ctx context.Context) ([]sql.Shot, error
 	}, nil
 }
 
+func (m *MockShotRepository) GetShotsBySheetId(ctx context.Context, sheetId int) ([]sql.Shot, error) {
+	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == true {
+		return nil, fmt.Errorf("mock error")
+	}
+
+	if isEmpty := ctx.Value(IsEmptyCtxKey("isEmpty")); isEmpty == true {
+		return []sql.Shot{}, nil
+	}
+
+	return []sql.Shot{
+		{Id: 1, Sheet: &sql.Sheet{Id: sheetId, Name: "sheet01"}, Beans: &sql.Beans{Id: 1, Name: "beans01"}},
+	}, nil
+}
+
 func (m *MockShotRepository) UpdateShotById(ctx context.Context, id int, beans *sql.Shot) (*sql.Shot, error) {
 	if isError := ctx.Value(IsErrorCtxKey("isError")); isError == true {
 		return nil, fmt.Errorf("mock error")
@@ -298,6 +312,20 @@ func TestShotServiceCreateShot(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "No error - shot_time zero (not recorded)",
+			fields:  fields{&MockShotRepository{}},
+			args:    args{ctx: context.TODO(), shot: &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}, ShotTime: 0}},
+			want:    &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}},
+			wantErr: false,
+		},
+		{
+			name:    "Error - shot time out of range",
+			fields:  fields{&MockShotRepository{}},
+			args:    args{ctx: context.TODO(), shot: &Shot{Id: 3, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}, ShotTime: MaxShotTime + time.Millisecond}},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name:    "Error creating shot",
 			fields:  fields{&MockShotRepository{}},
 			args:    args{ctx: context.TODO(), shot: &Shot{Id: 2, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}}},
@@ -372,6 +400,63 @@ func TestShotServiceGetShotById(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ShotService.GetShotById() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestShotServiceGetShotsBySheetId(t *testing.T) {
+	type fields struct {
+		repository repository.ShotRepository
+	}
+	type args struct {
+		ctx     context.Context
+		sheetId int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []Shot
+		wantErr bool
+	}{
+		{
+			name:   "Empty result for a sheet without shots",
+			fields: fields{&MockShotRepository{}},
+			args: args{
+				context.WithValue(context.WithValue(context.Background(), IsErrorCtxKey("isError"), false), IsEmptyCtxKey("isEmpty"), true), 1},
+			want:    []Shot{},
+			wantErr: false,
+		},
+		{
+			name:   "Non empty result",
+			fields: fields{&MockShotRepository{}},
+			args:   args{context.WithValue(context.Background(), IsErrorCtxKey("isError"), false), 1},
+			want: []Shot{
+				{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}},
+			},
+			wantErr: false,
+		},
+		{
+			name:    "Error",
+			fields:  fields{&MockShotRepository{}},
+			args:    args{context.WithValue(context.Background(), IsErrorCtxKey("isError"), true), 1},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &ShotService{
+				repository: tt.fields.repository,
+			}
+			got, err := s.GetShotsBySheetId(tt.args.ctx, tt.args.sheetId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ShotService.GetShotsBySheetId() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ShotService.GetShotsBySheetId() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -479,6 +564,28 @@ func TestShotServiceUpdateShotById(t *testing.T) {
 				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
 				id:   1,
 				shot: &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}, Rating: -1},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:   "Shot.Id matching id - No error shot_time zero (not recorded)",
+			fields: fields{&MockShotRepository{}},
+			args: args{
+				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:   1,
+				shot: &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}, ShotTime: 0},
+			},
+			want:    &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}},
+			wantErr: false,
+		},
+		{
+			name:   "Shot.Id matching id - Error shot time out of range",
+			fields: fields{&MockShotRepository{}},
+			args: args{
+				ctx:  context.WithValue(context.Background(), IsErrorCtxKey("isError"), false),
+				id:   1,
+				shot: &Shot{Id: 1, Sheet: &svcsheet.Sheet{Id: 1, Name: "sheet01"}, Beans: &svcbeans.Bean{Id: 1, Name: "beans01"}, ShotTime: MaxShotTime + time.Millisecond},
 			},
 			want:    nil,
 			wantErr: true,

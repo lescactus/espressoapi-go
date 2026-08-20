@@ -5,6 +5,7 @@ import (
 	dbsql "database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
@@ -275,9 +276,11 @@ func NewShot(db *sqlx.DB, dialect Dialect) *Shot { return &Shot{db: db, dialect:
 
 func (db *Shot) CreateShot(ctx context.Context, shot *sql.Shot) (int, error) {
 	query := db.dialect.Rebind(`INSERT INTO
-	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
+	shots (sheet_id, beans_id, grind_setting, quantity_in, quantity_out, shot_time_ms, water_temperature, rating, is_too_bitter, is_too_sour, comparison_with_previous_result, additional_notes)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-	return db.dialect.InsertID(ctx, db.db, query, &entityShot, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
+	// shot_time_ms stores milliseconds (not nanoseconds): the shots table's
+	// INT column cannot hold a realistic duration's raw nanosecond count.
+	return db.dialect.InsertID(ctx, db.db, query, &entityShot, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime.Milliseconds(), shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes)
 }
 
 func (db *Shot) GetShotById(ctx context.Context, id int) (*sql.Shot, error) {
@@ -289,6 +292,7 @@ func (db *Shot) GetShotById(ctx context.Context, id int) (*sql.Shot, error) {
 		}
 		return nil, fmt.Errorf("failed to read record for shot id=%d from the database: %w", id, err)
 	}
+	shot.ShotTime *= time.Millisecond
 	return &shot, nil
 }
 
@@ -297,14 +301,29 @@ func (db *Shot) GetAllShots(ctx context.Context) ([]sql.Shot, error) {
 	if err := db.db.SelectContext(ctx, &shots, db.dialect.Rebind(shotQuery)); err != nil {
 		return shots, fmt.Errorf("failed to read records for shots: %w", err)
 	}
+	for i := range shots {
+		shots[i].ShotTime *= time.Millisecond
+	}
+	return shots, nil
+}
+
+func (db *Shot) GetShotsBySheetId(ctx context.Context, sheetId int) ([]sql.Shot, error) {
+	shots := make([]sql.Shot, 0)
+	query := db.dialect.Rebind(shotQuery + "\nWHERE shots.sheet_id = ?")
+	if err := db.db.SelectContext(ctx, &shots, query, sheetId); err != nil {
+		return shots, fmt.Errorf("failed to read records for shots with sheet_id=%d: %w", sheetId, err)
+	}
+	for i := range shots {
+		shots[i].ShotTime *= time.Millisecond
+	}
 	return shots, nil
 }
 
 func (db *Shot) UpdateShotById(ctx context.Context, id int, shot *sql.Shot) (*sql.Shot, error) {
 	query := db.dialect.Rebind(`UPDATE shots SET
-	sheet_id = ?, beans_id = ?, grind_setting = ?, quantity_in = ?, quantity_out = ?, shot_time = ?, water_temperature = ?, rating = ?, is_too_bitter = ?, is_too_sour = ?, comparison_with_previous_result = ?, additional_notes = ?
+	sheet_id = ?, beans_id = ?, grind_setting = ?, quantity_in = ?, quantity_out = ?, shot_time_ms = ?, water_temperature = ?, rating = ?, is_too_bitter = ?, is_too_sour = ?, comparison_with_previous_result = ?, additional_notes = ?
 	WHERE id = ?`)
-	if _, err := db.db.ExecContext(ctx, query, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime, shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes, id); err != nil {
+	if _, err := db.db.ExecContext(ctx, query, shot.Sheet.Id, shot.Beans.Id, shot.GrindSetting, shot.QuantityIn, shot.QuantityOut, shot.ShotTime.Milliseconds(), shot.WaterTemperature, shot.Rating, shot.IsTooBitter, shot.IsTooSour, shot.ComparisonWithPreviousResult, shot.AdditionalNotes, id); err != nil {
 		return nil, db.dialect.ParseError(err, &entityShot, fmt.Errorf("failed to update record in the database: %w", err))
 	}
 	return shot, nil
@@ -329,7 +348,7 @@ SELECT
 	shots.grind_setting,
 	shots.quantity_in,
 	shots.quantity_out,
-	shots.shot_time,
+	shots.shot_time_ms,
 	shots.water_temperature,
 	shots.rating,
 	shots.is_too_bitter,

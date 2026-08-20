@@ -1,0 +1,30 @@
+package sheets
+
+import (
+	"github.com/lescactus/espressoapi-go/internal/services/sheet"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// Home renders the "/" landing page: a grid of sheet cards.
+templ Home(sheets []sheet.Sheet) {
+	@shared.Layout("Home", "") {
+		<hgroup>
+			<h1>Sheets</h1>
+			<p>Pick a sheet to log shots against.</p>
+		</hgroup>
+		if len(sheets) == 0 {
+			<p>You don't have any sheets yet.</p>
+			<a href="/sheets" role="button">Add your first sheet</a>
+		} else {
+			<div class="card-grid">
+				for _, s := range sheets {
+					<a href={ templ.URL(getPath(s.Id)) } role="button" class="outline">
+						<article>
+							<h3>{ s.Name }</h3>
+						</article>
+					</a>
+				}
+			</div>
+		}
+	}
+}

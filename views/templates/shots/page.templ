@@ -1,0 +1,150 @@
+package shots
+
+import (
+	"strconv"
+
+	"github.com/lescactus/espressoapi-go/internal/services/shot"
+	"github.com/lescactus/espressoapi-go/views/templates/shared"
+)
+
+// sortableHeader renders a clickable column header that re-fetches the
+// /shots table sorted by col.
+templ sortableHeader(label, col, sortCol, order string) {
+	<th>
+		<a href="#" hx-get={ "/shots?sort=" + col + "&order=" + nextSortOrder(sortCol, order, col) } hx-target="#shots-table" hx-swap="outerHTML">
+			{ label }
+			if sortCol == col && order == "asc" {
+				<span> &#9650;</span>
+			}
+			if sortCol == col && order == "desc" {
+				<span> &#9660;</span>
+			}
+		</a>
+	</th>
+}
+
+// Table renders the shots table fragment, reused by /shots and the sheet
+// detail page. showSheetColumn is false on the sheet detail page. sortable
+// is false on the sheet detail page, which has no dedicated sort endpoint.
+templ Table(shots []shot.Shot, sortCol, order string, showSheetColumn, sortable bool) {
+	<table id="shots-table">
+		<thead>
+			<tr>
+				if sortable {
+					@sortableHeader("ID", "id", sortCol, order)
+				} else {
+					<th>ID</th>
+				}
+				if showSheetColumn {
+					<th>Sheet</th>
+				}
+				<th>Beans</th>
+				if sortable {
+					@sortableHeader("Grind", "grind_setting", sortCol, order)
+					@sortableHeader("In (g)", "quantity_in", sortCol, order)
+					@sortableHeader("Out (g)", "quantity_out", sortCol, order)
+					@sortableHeader("Time", "shot_time", sortCol, order)
+					@sortableHeader("Temp", "water_temperature", sortCol, order)
+					@sortableHeader("Rating", "rating", sortCol, order)
+				} else {
+					<th>Grind</th>
+					<th>In (g)</th>
+					<th>Out (g)</th>
+					<th>Time</th>
+					<th>Temp</th>
+					<th>Rating</th>
+				}
+				<th>Bitter</th>
+				<th>Sour</th>
+				<th>Comparison</th>
+				<th>Notes</th>
+				if sortable {
+					@sortableHeader("Created", "created_at", sortCol, order)
+					@sortableHeader("Updated", "updated_at", sortCol, order)
+				} else {
+					<th>Created</th>
+					<th>Updated</th>
+				}
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody id="shots-tbody">
+			for _, s := range shots {
+				@Row(s, showSheetColumn, "")
+			}
+		</tbody>
+	</table>
+}
+
+// Page renders the full shots list page.
+// Page renders the full shots list page. dialogContent pre-populates the
+// dialog (and is auto-opened by the shared layout script) for the full-page
+// fallback of a direct GET to /shots/add or /shots/update/:id; pass nil for
+// the normal list page, which leaves the dialog empty.
+templ Page(shots []shot.Shot, sortCol, order string, dialogContent templ.Component) {
+	@shared.Layout("Shots", "shots") {
+		<hgroup>
+			<h1>Shots</h1>
+			<p>Every espresso shot you've logged.</p>
+		</hgroup>
+		<a role="button" hx-get="/shots/add" hx-target="#shot-dialog" hx-swap="innerHTML">Add shot</a>
+		<div class="table-scroll">
+			@Table(shots, sortCol, order, true, true)
+		</div>
+		<dialog id="shot-dialog">
+			if dialogContent != nil {
+				@dialogContent
+			}
+		</dialog>
+	}
+}
+
+// RowPage renders a single shot row inside a minimal one-row table, wrapped
+// in the shared layout. Used as the full-page fallback for a direct GET to
+// /shots/get/:id.
+templ RowPage(s shot.Shot) {
+	@shared.Layout("Shot #"+strconv.Itoa(s.Id), "shots") {
+		<div class="table-scroll">
+			<table>
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Sheet</th>
+						<th>Beans</th>
+						<th>Grind</th>
+						<th>In (g)</th>
+						<th>Out (g)</th>
+						<th>Time</th>
+						<th>Temp</th>
+						<th>Rating</th>
+						<th>Bitter</th>
+						<th>Sour</th>
+						<th>Comparison</th>
+						<th>Notes</th>
+						<th>Created</th>
+						<th>Updated</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					@Row(s, true, "")
+				</tbody>
+			</table>
+		</div>
+		<dialog id="shot-dialog"></dialog>
+	}
+}
+
+// DetailSection renders the shots table scoped to one sheet, for embedding
+// in the sheet detail page. It includes the persistent dialog target used
+// by both the sheet-locked "Add shot" form and row edit links.
+templ DetailSection(shots []shot.Shot, sheetID int) {
+	<hgroup>
+		<h2>Shots</h2>
+	</hgroup>
+	<a role="button" hx-get={ "/shots/add?sheet_id=" + strconv.Itoa(sheetID) } hx-target="#shot-dialog" hx-swap="innerHTML">Add shot</a>
+	<div class="table-scroll">
+		@Table(shots, "", "", false, false)
+	</div>
+	<dialog id="shot-dialog"></dialog>
+}

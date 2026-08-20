@@ -1,0 +1,17 @@
+package shared
+
+// SuccessAlertOOB renders an out-of-band success message appended into the
+// layout's #alerts region.
+templ SuccessAlertOOB(message string) {
+	<div id="alerts" hx-swap-oob="beforeend">
+		<div class="alert-success" role="status">{ message }</div>
+	</div>
+}
+
+// ErrorAlertOOB renders an out-of-band error message appended into the
+// layout's #alerts region.
+templ ErrorAlertOOB(message string) {
+	<div id="alerts" hx-swap-oob="beforeend">
+		<div class="alert-error" role="alert">{ message }</div>
+	</div>
+}

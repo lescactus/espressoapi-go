@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/a-h/templ v0.3.1020
 	github.com/go-openapi/runtime v0.33.0
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/gorilla/handlers v1.5.2

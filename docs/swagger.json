@@ -751,6 +751,55 @@
         ]
       }
     },
+    "/rest/v1/sheets/{id}/shots": {
+      "get": {
+        "description": "This will return every shot for the sheet with the given id, as a JSON\narray with the same shape as GET /rest/v1/shots. Returns an empty array\nfor an existing sheet without shots.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "sheets"
+        ],
+        "summary": "Get shots by sheet id",
+        "operationId": "getShotsBySheetId",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "id of the sheet whose shots to get",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ShotResponse"
+          },
+          "400": {
+            "$ref": "#/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "oauth": []
+          }
+        ]
+      }
+    },
     "/rest/v1/shots": {
       "get": {
         "description": "This will show all shots by default.",
@@ -1043,6 +1092,7 @@
       "description": "0 = worst, 1 = same, 2 = better, 3 = unknown.",
       "type": "integer",
       "format": "uint8",
+      "title": "ComparisonWithPreviousResult represents how a shot compares to the\nprevious one recorded for the same sheet.",
       "enum": [
         0,
         1,
@@ -1071,7 +1121,7 @@
           "x-go-name": "RoasterId"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "CreateRoasterRequest": {
       "description": "CreateRoasterRequest represents the request body for creating a roaster",
@@ -1082,7 +1132,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "CreateSheetRequest": {
       "description": "CreateSheetRequest represents the request body for creating a sheet",
@@ -1093,7 +1143,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "CreateShotRequest": {
       "description": "CreateShotRequest represents the request body for creating a shot",
@@ -1145,7 +1195,7 @@
           "x-go-name": "SheetId"
         },
         "shot_time": {
-          "$ref": "#/definitions/Duration"
+          "$ref": "#/definitions/DurationSeconds"
         },
         "water_temperature": {
           "type": "number",
@@ -1153,13 +1203,13 @@
           "x-go-name": "WaterTemperature"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
-    "Duration": {
-      "description": "A Duration represents the elapsed time between two instants\nas an int64 nanosecond count. The representation limits the\nlargest representable duration to approximately 290 years.",
-      "type": "integer",
-      "format": "int64",
-      "x-go-package": "time"
+    "DurationSeconds": {
+      "description": "DurationSeconds is the wire representation of a shot duration: a JSON\nnumber of seconds (25.5 == 25.5s). It stores seconds rounded to the\nnearest millisecond, matching the shots table's storage precision, so a\nvalue round-trips exactly through Marshal/Unmarshal. Range validation\n(0 \u003c= seconds \u003c= 3600) happens once, in the service layer, so it applies\nidentically regardless of which boundary (REST or web) a value came from.",
+      "type": "number",
+      "format": "double",
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "ItemDeletedResponse": {
       "description": "ItemDeletedResponse represents the response when an item is deleted",
@@ -1175,17 +1225,18 @@
           "x-go-name": "Msg"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "RoastDate": {
       "type": "string",
       "format": "date-time",
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "RoastLevel": {
       "description": "0 = light, 1 = light to medium, 2 = medium, 3 = medium to dark, 4 = dark.",
       "type": "integer",
       "format": "uint8",
+      "title": "RoastLevel represents how dark the beans were roasted.",
       "enum": [
         0,
         1,
@@ -1257,78 +1308,6 @@
       },
       "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/sheet"
     },
-    "Shot": {
-      "description": "An espresso shot is made from coffee beans, ground at a specific setting,\nwith a specific quantity of coffee in and out.\nIt also has a specific shot time and water temperature.\n\nThe result of a shot can be rated and compared to the previous shot.\nIt can also be too bitter or too sour.",
-      "type": "object",
-      "title": "Shot",
-      "properties": {
-        "additional_notes": {
-          "type": "string",
-          "x-go-name": "AdditionalNotes"
-        },
-        "beans": {
-          "$ref": "#/definitions/Bean"
-        },
-        "comparison_with_previous_result": {
-          "$ref": "#/definitions/ComparisonWithPreviousResult"
-        },
-        "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreatedAt"
-        },
-        "grind_setting": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "GrindSetting"
-        },
-        "id": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Id"
-        },
-        "is_too_bitter": {
-          "type": "boolean",
-          "x-go-name": "IsTooBitter"
-        },
-        "is_too_sour": {
-          "type": "boolean",
-          "x-go-name": "IsTooSour"
-        },
-        "quantity_in": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "QuantityIn"
-        },
-        "quantity_out": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "QuantityOut"
-        },
-        "rating": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "Rating"
-        },
-        "sheet": {
-          "$ref": "#/definitions/Sheet"
-        },
-        "shot_time": {
-          "$ref": "#/definitions/Duration"
-        },
-        "updated_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "UpdatedAt"
-        },
-        "water_temperature": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "WaterTemperature"
-        }
-      },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/services/shot"
-    },
     "UpdateBeansByIdRequest": {
       "description": "UpdateBeansByIdRequest represents the request body for updating beans\nwith the given id",
       "type": "object",
@@ -1349,7 +1328,7 @@
           "x-go-name": "RoasterId"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "UpdateRoasterByIdRequest": {
       "description": "UpdateRoasterByIdRequest represents the request body for updating a roaster\nwith the given id",
@@ -1360,7 +1339,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "UpdateSheetByIdRequest": {
       "description": "UpdateSheetByIdRequest represents the request body for updating a sheet\nwith the given id",
@@ -1371,7 +1350,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     },
     "UpdateShotByIdRequest": {
       "description": "UpdateShotByIdRequest represents the request body for updating a shot\nwith the given id",
@@ -1423,7 +1402,7 @@
           "x-go-name": "SheetId"
         },
         "shot_time": {
-          "$ref": "#/definitions/Duration"
+          "$ref": "#/definitions/DurationSeconds"
         },
         "water_temperature": {
           "type": "number",
@@ -1431,7 +1410,7 @@
           "x-go-name": "WaterTemperature"
         }
       },
-      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers"
+      "x-go-package": "github.com/lescactus/espressoapi-go/internal/controllers/rest"
     }
   },
   "responses": {
@@ -1563,8 +1542,9 @@
         },
         "sheet": {},
         "shot_time": {
-          "type": "integer",
-          "format": "int64"
+          "type": "number",
+          "format": "double",
+          "description": "Shot duration in seconds (0 \u003c value \u003c= 3600), e.g. 28.5"
         },
         "updated_at": {
           "type": "string",

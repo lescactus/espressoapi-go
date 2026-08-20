@@ -22,5 +22,6 @@ var (
 	ErrShotDoesNotExist                           = errors.New("shot does not exists")
 	ErrShotRatingOutOfRange                       = errors.New("shot rating is out of range. Must be between 0.0 and 10.0")
 	ErrShotComparisonWithPreviousResultOutOfRange = errors.New("shot comparison with previous result is out of range. Must be between 0 and 3")
+	ErrShotTimeOutOfRange                         = errors.New("shot time is out of range. Must be between 0 and 3600 seconds")
 	ErrShotForeignKeyConstraint                   = errors.New("shot foreign key constraint failed")
 )

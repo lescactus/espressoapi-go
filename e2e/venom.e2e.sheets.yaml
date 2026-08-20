@@ -298,3 +298,91 @@ testcases:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "1"
     - result.bodyjson.msg ShouldEqual "sheet 1 deleted successfully"
+
+- name: GET /rest/v1/sheets/:id/shots - malformed id
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/abc/shots"
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "id must be an integer"
+
+- name: GET /rest/v1/sheets/:id/shots - sheet does not exist
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/1000000/shots"
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.bodyjson.msg ShouldEqual "no sheet found for given id"
+
+- name: Create sheet for shots scoping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/sheets"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "sheet02-shots"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: GET /rest/v1/sheets/:id/shots - existing sheet without shots returns an empty array
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/{{ .Create-sheet-for-shots-scoping.result.bodyjson.id }}/shots"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson ShouldHaveLength 0
+
+- name: Create roaster for shots scoping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/roasters"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "roaster02-shots"}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: Create beans for shots scoping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans02-shots", "roaster_id": {{ .Create-roaster-for-shots-scoping.result.bodyjson.id }}, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: Create shot for shots scoping
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/shots"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"sheet_id": {{ .Create-sheet-for-shots-scoping.result.bodyjson.id }}, "beans_id": {{ .Create-beans-for-shots-scoping.result.bodyjson.id }}, "grind_setting": 12, "quantity_in": 18.0, "quantity_out": 36.0, "rating": 8.0}
+    assertions:
+    - result.statuscode ShouldEqual 201
+
+- name: GET /rest/v1/sheets/:id/shots - existing sheet with shots
+  steps:
+  - type: http
+    method: GET
+    url: "{{ .baseuri }}/rest/v1/sheets/{{ .Create-sheet-for-shots-scoping.result.bodyjson.id }}/shots"
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.bodyjson ShouldHaveLength 1
+    - result.bodyjson.bodyjson0.sheet.id ShouldEqual "{{ .Create-sheet-for-shots-scoping.result.bodyjson.id }}"
+    - result.bodyjson.bodyjson0.beans.id ShouldEqual "{{ .Create-beans-for-shots-scoping.result.bodyjson.id }}"
+    - result.bodyjson.bodyjson0.grind_setting ShouldEqual "12"
+    - result.bodyjson.bodyjson0.rating ShouldEqual "8"

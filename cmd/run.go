@@ -9,13 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/handlers"
-	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/lescactus/espressoapi-go/cmd/app"
 	"github.com/lescactus/espressoapi-go/internal/config"
-	"github.com/lescactus/espressoapi-go/internal/controllers"
+	"github.com/lescactus/espressoapi-go/internal/controllers/rest"
+	"github.com/lescactus/espressoapi-go/internal/controllers/web"
 	"github.com/rs/zerolog/hlog"
 	"github.com/spf13/cobra"
 
@@ -53,17 +52,10 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	svcBean := svcbean.New(repositories.beans)
 	svcShot := svcshot.New(repositories.shot)
 
-	// Create http router, server and handler controller
-	r := httprouter.New()
-	h := controllers.NewHandler(svcSheet, svcRoaster, svcBean, svcShot, app.App.Cfg.ServerMaxRequestSize)
+	// Create handlers and middleware chain
+	h := rest.NewHandler(svcSheet, svcRoaster, svcBean, svcShot, app.App.Cfg.ServerMaxRequestSize)
+	webHandler := web.NewHandler(svcSheet, svcRoaster, svcBean, svcShot)
 	c := alice.New()
-	s := &http.Server{
-		Addr:              app.App.Cfg.ServerAddr,
-		Handler:           handlers.RecoveryHandler(handlers.PrintRecoveryStack(true))(r), // recover from panics and print recovery stack
-		ReadTimeout:       app.App.Cfg.ServerReadTimeout,
-		ReadHeaderTimeout: app.App.Cfg.ServerReadHeaderTimeout,
-		WriteTimeout:      app.App.Cfg.ServerWriteTimeout,
-	}
 
 	// Logger fields
 	*app.App.Logger = app.App.Logger.With().Str("svc", config.AppName).Logger()
@@ -88,36 +80,15 @@ func runCmdMain(cmd *cobra.Command, args []string) {
 	c = c.Append(h.IdParameterLoggerHandler("id"))
 	c = c.Append(h.MaxReqSize())
 
-	r.Handler(http.MethodGet, "/ping", c.ThenFunc(h.Ping))
-	r.Handler(http.MethodPost, "/rest/v1/sheets", c.ThenFunc(h.CreateSheet))
-	r.Handler(http.MethodGet, "/rest/v1/sheets/:id", c.ThenFunc(h.GetSheetById))
-	r.Handler(http.MethodGet, "/rest/v1/sheets", c.ThenFunc(h.GetAllSheets))
-	r.Handler(http.MethodPut, "/rest/v1/sheets/:id", c.ThenFunc(h.UpdateSheetById))
-	r.Handler(http.MethodDelete, "/rest/v1/sheets/:id", c.ThenFunc(h.DeleteSheetById))
-
-	r.Handler(http.MethodPost, "/rest/v1/roasters", c.ThenFunc(h.CreateRoaster))
-	r.Handler(http.MethodGet, "/rest/v1/roasters/:id", c.ThenFunc(h.GetRoasterById))
-	r.Handler(http.MethodGet, "/rest/v1/roasters", c.ThenFunc(h.GetAllRoasters))
-	r.Handler(http.MethodPut, "/rest/v1/roasters/:id", c.ThenFunc(h.UpdateRoasterById))
-	r.Handler(http.MethodDelete, "/rest/v1/roasters/:id", c.ThenFunc(h.DeleteRoasterById))
-
-	r.Handler(http.MethodPost, "/rest/v1/beans", c.ThenFunc(h.CreateBeans))
-	r.Handler(http.MethodGet, "/rest/v1/beans/:id", c.ThenFunc(h.GetBeansById))
-	r.Handler(http.MethodGet, "/rest/v1/beans", c.ThenFunc(h.GetAllBeans))
-	r.Handler(http.MethodPut, "/rest/v1/beans/:id", c.ThenFunc(h.UpdateBeanById))
-	r.Handler(http.MethodDelete, "/rest/v1/beans/:id", c.ThenFunc(h.DeleteBeansById))
-
-	r.Handler(http.MethodPost, "/rest/v1/shots", c.ThenFunc(h.CreateShot))
-	r.Handler(http.MethodGet, "/rest/v1/shots/:id", c.ThenFunc(h.GetShotById))
-	r.Handler(http.MethodGet, "/rest/v1/shots", c.ThenFunc(h.GetAllShots))
-	r.Handler(http.MethodPut, "/rest/v1/shots/:id", c.ThenFunc(h.UpdateShotById))
-	r.Handler(http.MethodDelete, "/rest/v1/shots/:id", c.ThenFunc(h.DeleteShotById))
-
-	redocOpts := middleware.RedocOpts{Path: "redoc", SpecURL: "swagger.json"}
-	swaggerUiOpts := middleware.SwaggerUIOpts{Path: "swagger", SpecURL: "swagger.json"}
-	r.Handler(http.MethodGet, "/redoc", middleware.Redoc(redocOpts, nil))
-	r.Handler(http.MethodGet, "/swagger", middleware.SwaggerUI(swaggerUiOpts, nil))
-	r.Handler(http.MethodGet, "/swagger.json", c.ThenFunc(h.Swagger))
+	// Build the route table and server
+	r := newRouter(h, webHandler, c)
+	s := &http.Server{
+		Addr:              app.App.Cfg.ServerAddr,
+		Handler:           handlers.RecoveryHandler(handlers.PrintRecoveryStack(true))(r), // recover from panics and print recovery stack
+		ReadTimeout:       app.App.Cfg.ServerReadTimeout,
+		ReadHeaderTimeout: app.App.Cfg.ServerReadHeaderTimeout,
+		WriteTimeout:      app.App.Cfg.ServerWriteTimeout,
+	}
 
 	// Start server
 	go func() {

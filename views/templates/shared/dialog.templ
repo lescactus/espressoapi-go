@@ -1,0 +1,8 @@
+package shared
+
+// DialogCloseButton renders a small "x" button that closes the nearest open
+// <dialog>, via the same data-dialog-close mechanism used by Cancel buttons
+// (see the shared click handler in layout.templ).
+templ DialogCloseButton() {
+	<button type="button" class="dialog-close-btn" data-dialog-close aria-label="Close">&times;</button>
+}
