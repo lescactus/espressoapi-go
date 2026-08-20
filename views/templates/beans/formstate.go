@@ -7,7 +7,8 @@ import "strconv"
 
 // FormState carries a bean add/edit form's submitted values and per-field
 // validation errors so invalid input can be redisplayed after a 400/409
-// response.
+// response. FormError holds an error not tied to any single field (a
+// malformed or oversized request body, or an unexpected failure).
 type FormState struct {
 	ID         int
 	Name       string
@@ -15,6 +16,7 @@ type FormState struct {
 	RoastDate  string
 	RoastLevel string
 	Errors     map[string]string
+	FormError  string
 }
 
 func (s FormState) fieldError(field string) string {

@@ -49,22 +49,26 @@ func mapDomainError(err error) webError {
 }
 
 // beanErrorField resolves a bean domain error to the form field it should
-// be displayed under, falling back to "name" for anything not specific to
-// another field (e.g. a duplicate name, or an unexpected/internal error).
+// be displayed under. Returns "" for anything not tied to a specific field
+// (an unexpected/internal error), meaning the caller should show the
+// message in the form's general, non-field-specific error slot instead.
 func beanErrorField(err error) string {
 	switch {
 	case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
 		return "roaster_id"
 	case errors.Is(err, domainerrors.ErrBeansRoastLevelOutOfRange):
 		return "roast_level"
-	default:
+	case errors.Is(err, domainerrors.ErrBeansAlreadyExists), errors.Is(err, domainerrors.ErrBeansNameIsEmpty):
 		return "name"
+	default:
+		return ""
 	}
 }
 
 // shotErrorField resolves a shot domain error to the form field it should
-// be displayed under, falling back to "rating" for anything not specific to
-// another field (e.g. an unexpected/internal error).
+// be displayed under. Returns "" for anything not tied to a specific field
+// (an unexpected/internal error), meaning the caller should show the
+// message in the form's general, non-field-specific error slot instead.
 func shotErrorField(err error) string {
 	switch {
 	case errors.Is(err, domainerrors.ErrSheetDoesNotExist):
@@ -73,8 +77,10 @@ func shotErrorField(err error) string {
 		return "beans_id"
 	case errors.Is(err, domainerrors.ErrShotComparisonWithPreviousResultOutOfRange):
 		return "comparison_with_previous_result"
-	default:
+	case errors.Is(err, domainerrors.ErrShotRatingOutOfRange):
 		return "rating"
+	default:
+		return ""
 	}
 }
 

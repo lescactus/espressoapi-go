@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -299,6 +300,22 @@ func TestCreateBean_MalformedFormBodyReturns400(t *testing.T) {
 	}
 }
 
+func TestCreateBean_MalformedFormBodyShowsGeneralFormErrorNotOnNameField(t *testing.T) {
+	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=%zz", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, `<p role="alert">Invalid form submission.</p>`) {
+		t.Errorf("expected the malformed-body error in the general form error slot, got: %s", body)
+	}
+	if strings.Contains(body, "aria-invalid") {
+		t.Errorf("expected no field to be marked invalid for a body-level error, got: %s", body)
+	}
+}
+
 func TestCreateBean_OversizedBodyReturns413(t *testing.T) {
 	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
 
@@ -308,6 +325,35 @@ func TestCreateBean_OversizedBodyReturns413(t *testing.T) {
 
 	if rec.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("expected 413 for an oversized body, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateBean_OversizedBodyShowsGeneralFormError(t *testing.T) {
+	h, _ := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+
+	req := newOversizedWebRequest(http.MethodPost, "/beans/add", formURLEncoded, "")
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	if !strings.Contains(rec.Body.String(), `<p role="alert">Request body is too large.</p>`) {
+		t.Errorf("expected the oversized-body error in the general form error slot, got: %s", rec.Body.String())
+	}
+}
+
+func TestCreateBean_UnexpectedDomainErrorShowsGeneralFormError(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) { return nil, stderrors.New("boom") }
+
+	req := newWebRequest(http.MethodPost, "/beans/add", "name=Ethiopia&roaster_id=1&roast_level=0", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateBean(rec, req)
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `<p role="alert">Something went wrong. Please try again.</p>`) {
+		t.Errorf("expected the unexpected error in the general form error slot, got: %s", body)
 	}
 }
 

@@ -44,6 +44,9 @@ templ Form(state FormState, roasters []roaster.Roaster, isAdd bool, createdAt, u
 			}
 			@shared.DialogCloseButton()
 		</header>
+			if state.FormError != "" {
+				<p role="alert">{ state.FormError }</p>
+			}
 			if !isAdd {
 				<p>
 					<small>ID { strconv.Itoa(state.ID) } &middot; Created { createdAt } &middot; Updated { updatedAt }</small>

@@ -18,7 +18,9 @@ const ViewContextSheetShots = "sheet-shots"
 // the sheet detail page) and submitted via a hidden field, not a <select>.
 // ViewContext round-trips which shots table (standalone list or a sheet's
 // scoped table) the form was opened from, so the created/updated row is
-// rendered with the matching column set.
+// rendered with the matching column set. FormError holds an error not tied
+// to any single field (a malformed or oversized request body, or an
+// unexpected failure).
 type FormState struct {
 	ID                           int
 	SheetID                      string
@@ -37,6 +39,7 @@ type FormState struct {
 	ComparisonWithPreviousResult string
 	AdditionalNotes              string
 	Errors                       map[string]string
+	FormError                    string
 }
 
 func (s FormState) fieldError(field string) string {

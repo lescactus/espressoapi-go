@@ -171,7 +171,7 @@ func (h *Handler) CreateBean(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := r.ParseForm(); err != nil {
 		status, message := parseFormError(err)
-		state := viewbeans.FormState{Errors: map[string]string{"name": message}}
+		state := viewbeans.FormState{FormError: message}
 		h.renderBeanFormError(w, r, state, true, status)
 		return
 	}
@@ -185,7 +185,11 @@ func (h *Handler) CreateBean(w http.ResponseWriter, r *http.Request) {
 	created, err := h.BeanService.CreateBean(r.Context(), model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors[beanErrorField(err)] = we.Message
+		if field := beanErrorField(err); field != "" {
+			state.Errors[field] = we.Message
+		} else {
+			state.FormError = we.Message
+		}
 		h.renderBeanFormError(w, r, state, true, we.Status)
 		return
 	}
@@ -278,7 +282,7 @@ func (h *Handler) UpdateBean(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := r.ParseForm(); err != nil {
 		status, message := parseFormError(err)
-		state := viewbeans.FormState{ID: id, Errors: map[string]string{"name": message}}
+		state := viewbeans.FormState{ID: id, FormError: message}
 		h.renderBeanFormError(w, r, state, false, status)
 		return
 	}
@@ -292,7 +296,11 @@ func (h *Handler) UpdateBean(w http.ResponseWriter, r *http.Request) {
 	updated, err := h.BeanService.UpdateBeanById(r.Context(), id, model)
 	if err != nil {
 		we := mapDomainError(err)
-		state.Errors[beanErrorField(err)] = we.Message
+		if field := beanErrorField(err); field != "" {
+			state.Errors[field] = we.Message
+		} else {
+			state.FormError = we.Message
+		}
 		h.renderBeanFormError(w, r, state, false, we.Status)
 		return
 	}

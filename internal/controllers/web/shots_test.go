@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -451,6 +452,22 @@ func TestCreateShot_MalformedFormBodyReturns400(t *testing.T) {
 	}
 }
 
+func TestCreateShot_MalformedFormBodyShowsGeneralFormErrorNotOnRatingField(t *testing.T) {
+	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+
+	req := newWebRequest(http.MethodPost, "/shots/add", "sheet_id=%zz", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	body := rec.Body.String()
+	if !strings.Contains(body, `<p role="alert">Invalid form submission.</p>`) {
+		t.Errorf("expected the malformed-body error in the general form error slot, got: %s", body)
+	}
+	if strings.Contains(body, "aria-invalid") {
+		t.Errorf("expected no field to be marked invalid for a body-level error, got: %s", body)
+	}
+}
+
 func TestCreateShot_OversizedBodyReturns413(t *testing.T) {
 	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 
@@ -460,6 +477,22 @@ func TestCreateShot_OversizedBodyReturns413(t *testing.T) {
 
 	if rec.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("expected 413 for an oversized body, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateShot_UnexpectedDomainErrorShowsGeneralFormError(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) { return nil, stderrors.New("boom") }
+
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, newWebRequest(http.MethodPost, "/shots/add", validShotForm, formURLEncoded, "", true))
+
+	body := rec.Body.String()
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d: %s", rec.Code, body)
+	}
+	if !strings.Contains(body, `<p role="alert">Something went wrong. Please try again.</p>`) {
+		t.Errorf("expected the unexpected error in the general form error slot, got: %s", body)
 	}
 }
 
