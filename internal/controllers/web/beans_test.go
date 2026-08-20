@@ -410,4 +410,7 @@ func TestDeleteBean_ForeignKeyViolationReturns409(t *testing.T) {
 	if rec.Header().Get("HX-Reswap") != "none" {
 		t.Errorf("expected HX-Reswap: none, got %q", rec.Header().Get("HX-Reswap"))
 	}
+	if !strings.Contains(rec.Body.String(), "These beans are still used by shots") {
+		t.Errorf("expected a beans-specific FK conflict message, got: %s", rec.Body.String())
+	}
 }

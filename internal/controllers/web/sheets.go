@@ -318,7 +318,7 @@ func (h *Handler) DeleteSheet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.SheetService.DeleteSheetById(r.Context(), id); err != nil {
-		we := mapDomainError(err)
+		we := mapDeleteError(err, "This sheet is still used by shots. Delete those shots first.")
 		w.Header().Set("HX-Reswap", "none")
 		writeHTMLStatus(w, we.Status)
 		_ = shared.ErrorAlertOOB(we.Message).Render(r.Context(), w)

@@ -324,7 +324,7 @@ func (h *Handler) DeleteBean(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.BeanService.DeleteBeanById(r.Context(), id); err != nil {
-		we := mapDomainError(err)
+		we := mapDeleteError(err, "These beans are still used by shots. Delete those shots first.")
 		w.Header().Set("HX-Reswap", "none")
 		writeHTMLStatus(w, we.Status)
 		_ = shared.ErrorAlertOOB(we.Message).Render(r.Context(), w)

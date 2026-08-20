@@ -528,3 +528,19 @@ func TestDeleteSheet_InvalidIDReturns400WithReswapNone(t *testing.T) {
 		t.Errorf("expected HX-Reswap: none so the existing row remains, got %q", rec.Header().Get("HX-Reswap"))
 	}
 }
+
+func TestDeleteSheet_ForeignKeyViolationReturns409WithSheetSpecificMessage(t *testing.T) {
+	h, svc := newTestSheetHandler(t)
+	svc.deleteSheetByID = func(context.Context, int) error { return errors.ErrShotForeignKeyConstraint }
+
+	req := newWebRequest(http.MethodDelete, "/sheets/delete/1", "", "", "1", true)
+	rec := httptest.NewRecorder()
+	h.DeleteSheet(rec, req)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "This sheet is still used by shots") {
+		t.Errorf("expected a sheet-specific FK conflict message, got: %s", rec.Body.String())
+	}
+}

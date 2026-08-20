@@ -77,3 +77,15 @@ func shotErrorField(err error) string {
 		return "rating"
 	}
 }
+
+// mapDeleteError resolves a delete-time domain error to a UI status/message
+// pair. domainErrorMessages' entry for ErrShotForeignKeyConstraint hedges
+// between "sheet or beans" since sheets and beans share that same sentinel
+// error when referenced by shots; fkMessage substitutes the resource-
+// specific wording for the caller (DeleteSheet/DeleteBean) instead.
+func mapDeleteError(err error, fkMessage string) webError {
+	if errors.Is(err, domainerrors.ErrShotForeignKeyConstraint) {
+		return webError{Status: http.StatusConflict, Message: fkMessage}
+	}
+	return mapDomainError(err)
+}
