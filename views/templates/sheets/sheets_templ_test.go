@@ -90,6 +90,31 @@ func TestDetailHeader_LabelsCreatedTimestampAsCreatedAt(t *testing.T) {
 	}
 }
 
+func TestDetailHeader_OmitsUpdatedWhenNeverUpdated(t *testing.T) {
+	created := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
+	never := sheet.Sheet{Id: 42, Name: "Double shot", CreatedAt: &created, UpdatedAt: nil}
+
+	html := render(t, DetailHeader(never))
+
+	if !strings.Contains(html, "Created at 2026-01-02 03:04") {
+		t.Errorf("expected the created timestamp to still render, got: %s", html)
+	}
+	if strings.Contains(html, "Updated") {
+		t.Errorf("expected no Updated segment for a never-updated sheet, got: %s", html)
+	}
+}
+
+func TestDetailHeaderEdit_OmitsUpdatedWhenEmpty(t *testing.T) {
+	html := render(t, DetailHeaderEdit(FormState{ID: 42, Name: "Double shot"}, "2026-01-02 03:04", ""))
+
+	if !strings.Contains(html, "Created at 2026-01-02 03:04") {
+		t.Errorf("expected the created timestamp to still render, got: %s", html)
+	}
+	if strings.Contains(html, "Updated") {
+		t.Errorf("expected no Updated segment when updatedAt is empty, got: %s", html)
+	}
+}
+
 func TestTable_ShowsSortIndicatorOnActiveColumn(t *testing.T) {
 	html := render(t, Table([]sheet.Sheet{testSheet()}, "name", "asc", false))
 

@@ -12,7 +12,10 @@ templ DetailHeader(s sheet.Sheet) {
 	<hgroup id="sheet-detail-header">
 		<h1>{ s.Name }</h1>
 		<p>
-			Created at { shared.FormatTimestamp(s.CreatedAt) } &middot; Updated { shared.FormatTimestamp(s.UpdatedAt) }
+			Created at { shared.FormatTimestamp(s.CreatedAt) }
+			if s.UpdatedAt != nil {
+				&middot; Updated { shared.FormatTimestamp(s.UpdatedAt) }
+			}
 		</p>
 		<a
 			href="#"
@@ -35,7 +38,12 @@ templ DetailHeaderEdit(state FormState, createdAt, updatedAt string) {
 		if state.Error != "" {
 			<small>{ state.Error }</small>
 		}
-		<p>Created at { createdAt } &middot; Updated { updatedAt }</p>
+		<p>
+			Created at { createdAt }
+			if updatedAt != "" {
+				&middot; Updated { updatedAt }
+			}
+		</p>
 		<button
 			type="button"
 			hx-put={ updatePath(state.ID) + "?view_context=sheet-detail" }
