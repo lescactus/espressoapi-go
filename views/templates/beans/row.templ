@@ -16,7 +16,7 @@ templ Row(b bean.Bean, oobMode string) {
 		<td>{ strconv.Itoa(b.Id) }</td>
 		<td>{ b.Name }</td>
 		if b.Roaster != nil {
-			<td>{ b.Roaster.Name }</td>
+			<td>#{ strconv.Itoa(b.Roaster.Id) } { b.Roaster.Name }</td>
 		} else {
 			<td></td>
 		}

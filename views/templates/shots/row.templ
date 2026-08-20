@@ -15,13 +15,13 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 		<td>{ strconv.Itoa(s.Id) }</td>
 		if showSheetColumn {
 			if s.Sheet != nil {
-				<td>{ s.Sheet.Name }</td>
+				<td>#{ strconv.Itoa(s.Sheet.Id) } { s.Sheet.Name }</td>
 			} else {
 				<td></td>
 			}
 		}
 		if s.Beans != nil {
-			<td>{ s.Beans.Name }</td>
+			<td>#{ strconv.Itoa(s.Beans.Id) } { s.Beans.Name }</td>
 		} else {
 			<td></td>
 		}

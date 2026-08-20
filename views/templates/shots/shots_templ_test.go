@@ -63,6 +63,17 @@ func TestRow_HidesSheetColumnWhenRequested(t *testing.T) {
 	}
 }
 
+func TestRow_SheetAndBeansCellsShowIDAndName(t *testing.T) {
+	html := render(t, Row(testShot(), true, ""))
+
+	if !strings.Contains(html, "#1 Morning") {
+		t.Errorf("expected the sheet cell to show its id and name, got: %s", html)
+	}
+	if !strings.Contains(html, "#2 Ethiopia") {
+		t.Errorf("expected the beans cell to show its id and name, got: %s", html)
+	}
+}
+
 func TestRow_EditLinkCarriesViewContextOnlyWhenSheetColumnHidden(t *testing.T) {
 	withSheetColumn := render(t, Row(testShot(), true, ""))
 	if !strings.Contains(withSheetColumn, `hx-get="/shots/update/5"`) {

@@ -44,6 +44,14 @@ func TestRow_ShowsAllColumnsAndHumanRoastLevel(t *testing.T) {
 	}
 }
 
+func TestRow_RoasterCellShowsIDAndName(t *testing.T) {
+	html := render(t, Row(testBean(), ""))
+
+	if !strings.Contains(html, "#3 Blue Bottle") {
+		t.Errorf("expected the roaster cell to show its id and name, got: %s", html)
+	}
+}
+
 func TestRow_OOBModes(t *testing.T) {
 	insert := render(t, Row(testBean(), "insert"))
 	if !strings.Contains(insert, `hx-swap-oob="beforeend:#beans-tbody"`) {
