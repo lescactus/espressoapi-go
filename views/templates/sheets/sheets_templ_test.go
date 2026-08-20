@@ -90,6 +90,14 @@ func TestDetailHeader_LabelsCreatedTimestampAsCreatedAt(t *testing.T) {
 	}
 }
 
+func TestDetailHeader_LabelsUpdatedTimestampAsUpdatedAt(t *testing.T) {
+	html := render(t, DetailHeader(testSheet()))
+
+	if !strings.Contains(html, "Updated at 2026-01-05 06:07") {
+		t.Errorf("expected the updated timestamp labeled 'Updated at', got: %s", html)
+	}
+}
+
 func TestDetailHeader_OmitsUpdatedWhenNeverUpdated(t *testing.T) {
 	created := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
 	never := sheet.Sheet{Id: 42, Name: "Double shot", CreatedAt: &created, UpdatedAt: nil}

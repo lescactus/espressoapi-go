@@ -14,7 +14,7 @@ templ DetailHeader(s sheet.Sheet) {
 		<p>
 			Created at { shared.FormatTimestamp(s.CreatedAt) }
 			if s.UpdatedAt != nil {
-				&middot; Updated { shared.FormatTimestamp(s.UpdatedAt) }
+				&middot; Updated at { shared.FormatTimestamp(s.UpdatedAt) }
 			}
 		</p>
 		<a
@@ -41,7 +41,7 @@ templ DetailHeaderEdit(state FormState, createdAt, updatedAt string) {
 		<p>
 			Created at { createdAt }
 			if updatedAt != "" {
-				&middot; Updated { updatedAt }
+				&middot; Updated at { updatedAt }
 			}
 		</p>
 		<button
