@@ -195,6 +195,35 @@ func TestCreateShot_HappyPath(t *testing.T) {
 	}
 }
 
+func TestCreateShot_SheetShotsContextOmitsSheetColumnInOOBRow(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) { return testShot(5), nil }
+
+	req := newWebRequest(http.MethodPost, "/shots/add", validShotForm+"&view_context=sheet-shots", formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "Morning") {
+		t.Errorf("expected the OOB row to omit the sheet column on the sheet detail page, got: %s", rec.Body.String())
+	}
+}
+
+func TestCreateShot_DefaultContextIncludesSheetColumnInOOBRow(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.createShot = func(context.Context, *shot.Shot) (*shot.Shot, error) { return testShot(5), nil }
+
+	req := newWebRequest(http.MethodPost, "/shots/add", validShotForm, formURLEncoded, "", true)
+	rec := httptest.NewRecorder()
+	h.CreateShot(rec, req)
+
+	if !strings.Contains(rec.Body.String(), "Morning") {
+		t.Errorf("expected the OOB row to include the sheet column on the standalone /shots list, got: %s", rec.Body.String())
+	}
+}
+
 func TestCreateShot_MissingSheetReturns400(t *testing.T) {
 	h, _ := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 
@@ -291,6 +320,18 @@ func TestEditShotForm_PrefillsSecondsFromDuration(t *testing.T) {
 	}
 }
 
+func TestEditShotForm_ReadsViewContextFromQueryParam(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.getShotByID = func(context.Context, int) (*shot.Shot, error) { return testShot(5), nil }
+
+	rec := httptest.NewRecorder()
+	h.EditShotForm(rec, newWebRequest(http.MethodGet, "/shots/update/5?view_context=sheet-shots", "", "", "5", true))
+
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `type="hidden" name="view_context" value="sheet-shots"`) {
+		t.Errorf("expected the view_context to round-trip as a hidden field, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestUpdateShot_HappyPath(t *testing.T) {
 	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
 	svc.updateShotByID = func(_ context.Context, id int, s *shot.Shot) (*shot.Shot, error) {
@@ -306,6 +347,24 @@ func TestUpdateShot_HappyPath(t *testing.T) {
 	}
 	if rec.Header().Get("HX-Trigger") != "dialog-close" {
 		t.Errorf("expected HX-Trigger: dialog-close, got %v", rec.Header())
+	}
+}
+
+func TestUpdateShot_SheetShotsContextOmitsSheetColumnInOOBRow(t *testing.T) {
+	h, svc := newTestShotHandler(t, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}})
+	svc.updateShotByID = func(_ context.Context, id int, s *shot.Shot) (*shot.Shot, error) {
+		return testShot(id), nil
+	}
+
+	req := newWebRequest(http.MethodPut, "/shots/update/5", validShotForm+"&view_context=sheet-shots", formURLEncoded, "5", true)
+	rec := httptest.NewRecorder()
+	h.UpdateShot(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "Morning") {
+		t.Errorf("expected the OOB row to omit the sheet column on the sheet detail page, got: %s", rec.Body.String())
 	}
 }
 

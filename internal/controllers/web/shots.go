@@ -107,6 +107,7 @@ func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 				state.SheetLocked = true
 				state.SheetID = strconv.Itoa(s.Id)
 				state.SheetName = s.Name
+				state.ViewContext = viewshots.ViewContextSheetShots
 			}
 		}
 	}
@@ -122,6 +123,7 @@ func (h *Handler) AddShotForm(w http.ResponseWriter, r *http.Request) {
 func parseShotForm(r *http.Request, id int) (viewshots.FormState, *shot.Shot, bool) {
 	state := viewshots.FormState{
 		ID:                           id,
+		ViewContext:                  strings.TrimSpace(r.PostFormValue("view_context")),
 		SheetID:                      strings.TrimSpace(r.PostFormValue("sheet_id")),
 		BeansID:                      strings.TrimSpace(r.PostFormValue("beans_id")),
 		GrindSetting:                 strings.TrimSpace(r.PostFormValue("grind_setting")),
@@ -253,7 +255,8 @@ func (h *Handler) CreateShot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Reswap", "none")
 	w.Header().Set("HX-Trigger", "dialog-close")
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewshots.Row(*created, true, "insert").Render(r.Context(), w)
+	showSheetColumn := state.ViewContext != viewshots.ViewContextSheetShots
+	_ = viewshots.Row(*created, showSheetColumn, "insert").Render(r.Context(), w)
 	_ = shared.SuccessAlertOOB("Shot successfully created.").Render(r.Context(), w)
 }
 
@@ -311,6 +314,9 @@ func (h *Handler) EditShotForm(w http.ResponseWriter, r *http.Request) {
 	if s.Beans != nil {
 		state.BeansID = strconv.Itoa(s.Beans.Id)
 	}
+	if r.URL.Query().Get("view_context") == viewshots.ViewContextSheetShots {
+		state.ViewContext = viewshots.ViewContextSheetShots
+	}
 
 	writeHTMLStatus(w, http.StatusOK)
 	_ = viewshots.Form(state, sheets, beans, false, shared.FormatTimestamp(s.CreatedAt), shared.FormatTimestamp(s.UpdatedAt)).Render(r.Context(), w)
@@ -354,7 +360,8 @@ func (h *Handler) UpdateShot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Reswap", "none")
 	w.Header().Set("HX-Trigger", "dialog-close")
 	writeHTMLStatus(w, http.StatusOK)
-	_ = viewshots.Row(*updated, true, "replace").Render(r.Context(), w)
+	showSheetColumn := state.ViewContext != viewshots.ViewContextSheetShots
+	_ = viewshots.Row(*updated, showSheetColumn, "replace").Render(r.Context(), w)
 	_ = shared.SuccessAlertOOB("Shot successfully updated.").Render(r.Context(), w)
 }
 

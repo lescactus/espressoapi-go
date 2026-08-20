@@ -110,6 +110,9 @@ templ Form(state FormState, sheets []sheet.Sheet, beans []bean.Bean, isAdd bool,
 				<small>ID { strconv.Itoa(state.ID) } &middot; Created { createdAt } &middot; Updated { updatedAt }</small>
 			</p>
 		}
+		if state.ViewContext != "" {
+			<input type="hidden" name="view_context" value={ state.ViewContext }/>
+		}
 		@sheetField(state, sheets)
 		@beansField(state, beans)
 		<label>

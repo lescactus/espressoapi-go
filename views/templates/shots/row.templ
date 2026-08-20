@@ -40,7 +40,7 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 		<td>
 			<a
 				href="#"
-				hx-get={ updatePath(s.Id) }
+				hx-get={ editPath(s.Id, showSheetColumn) }
 				hx-target="#shot-dialog"
 				hx-swap="innerHTML"
 			>Edit</a>

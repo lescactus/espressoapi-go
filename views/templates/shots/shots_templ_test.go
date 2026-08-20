@@ -63,6 +63,21 @@ func TestRow_HidesSheetColumnWhenRequested(t *testing.T) {
 	}
 }
 
+func TestRow_EditLinkCarriesViewContextOnlyWhenSheetColumnHidden(t *testing.T) {
+	withSheetColumn := render(t, Row(testShot(), true, ""))
+	if !strings.Contains(withSheetColumn, `hx-get="/shots/update/5"`) {
+		t.Errorf("expected a plain edit link when the sheet column is shown, got: %s", withSheetColumn)
+	}
+	if strings.Contains(withSheetColumn, "view_context") {
+		t.Errorf("expected no view_context on the standalone list's edit link, got: %s", withSheetColumn)
+	}
+
+	withoutSheetColumn := render(t, Row(testShot(), false, ""))
+	if !strings.Contains(withoutSheetColumn, `hx-get="/shots/update/5?view_context=sheet-shots"`) {
+		t.Errorf("expected the edit link to carry view_context=sheet-shots, got: %s", withoutSheetColumn)
+	}
+}
+
 func TestRow_DeleteConfirmUsesShotID(t *testing.T) {
 	html := render(t, Row(testShot(), true, ""))
 	if !strings.Contains(html, `hx-confirm="Are you sure you want to delete shot #5?"`) {
@@ -110,5 +125,21 @@ func TestForm_ShowsInlineFieldErrors(t *testing.T) {
 
 	if !strings.Contains(html, "Rating must be between 0 and 10.") {
 		t.Errorf("expected the inline rating error, got: %s", html)
+	}
+}
+
+func TestForm_ViewContextRendersHiddenFieldWhenSet(t *testing.T) {
+	state := FormState{ID: 5, ViewContext: ViewContextSheetShots}
+	html := render(t, Form(state, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}}, false, "", ""))
+
+	if !strings.Contains(html, `type="hidden" name="view_context" value="sheet-shots"`) {
+		t.Errorf("expected a hidden view_context field, got: %s", html)
+	}
+}
+
+func TestForm_ViewContextOmittedWhenUnset(t *testing.T) {
+	html := render(t, Form(FormState{ID: 5}, []sheet.Sheet{{Id: 1, Name: "Morning"}}, []bean.Bean{{Id: 2, Name: "Ethiopia"}}, false, "", ""))
+	if strings.Contains(html, "view_context") {
+		t.Errorf("expected no view_context field when unset, got: %s", html)
 	}
 }
