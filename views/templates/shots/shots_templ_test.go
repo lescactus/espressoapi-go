@@ -69,6 +69,9 @@ func TestRow_SheetAndBeansCellsShowIDAndName(t *testing.T) {
 	if !strings.Contains(html, "#1 Morning") {
 		t.Errorf("expected the sheet cell to show its id and name, got: %s", html)
 	}
+	if !strings.Contains(html, `<a href="/sheets/get/1">#1 Morning</a>`) {
+		t.Errorf("expected the sheet cell to link to its detail page, got: %s", html)
+	}
 	if !strings.Contains(html, "#2 Ethiopia") {
 		t.Errorf("expected the beans cell to show its id and name, got: %s", html)
 	}
