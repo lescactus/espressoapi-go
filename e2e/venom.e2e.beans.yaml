@@ -167,6 +167,19 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "beans roast level is out of range. Must be between 0 and 4"
 
+- name: POST /rest/v1/beans - roast date is before supported floor
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-invalid-roast-date", "roaster_id": 1, "roast_date": "1000-01-01", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans roast date is out of range. Must be on or after 1900-01-01"
+
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists - non empty name
   steps:
   - type: http
@@ -182,6 +195,19 @@ testcases:
     - result.bodyjson.name ShouldEqual "beans01"
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
+
+- name: POST /rest/v1/beans - duplicate dated identity
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "beans already exist"
 
 - name: POST /rest/v1/beans/:id
   steps:
@@ -251,6 +277,20 @@ testcases:
     - result.bodyjson.bodyjson0 ShouldContainKey "created_at"
     - result.bodyjson.bodyjson0 ShouldContainKey "updated_at"
 
+- name: POST /rest/v1/beans - same name and roaster with different roast date
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-19", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.name ShouldEqual "beans01"
+
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roast date omitted
   steps:
   - type: http
@@ -265,6 +305,19 @@ testcases:
     - result.bodyjson ShouldContainKey "id"
     - result.bodyjson.name ShouldEqual "beans-no-roast-date"
     - result.bodyjson.roast_date ShouldBeBlank
+
+- name: POST /rest/v1/beans - duplicate identity with roast date omitted
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-no-roast-date", "roaster_id": 1, "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "beans already exist"
 
 - name: DELETE /rest/v1/beans/:id - roast date omitted cleanup
   steps:
@@ -440,3 +493,11 @@ testcases:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     - result.bodyjson.msg ShouldEqual "beans {{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }} deleted successfully"
+
+- name: DELETE /rest/v1/beans/:id - different roast date cleanup
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-same-name-and-roaster-with-different-roast-date.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200

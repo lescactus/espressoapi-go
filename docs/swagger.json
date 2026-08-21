@@ -185,6 +185,9 @@
           "404": {
             "$ref": "#/responses/ErrorResponse"
           },
+          "409": {
+            "$ref": "#/responses/ErrorResponse"
+          },
           "413": {
             "$ref": "#/responses/ErrorResponse"
           }

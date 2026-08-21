@@ -16,6 +16,7 @@ var (
 	ErrBeansForeignKeyConstraint = errors.New("beans foreign key constraint failed")
 	ErrBeansIsNil                = errors.New("beans is nil")
 	ErrBeansNameIsEmpty          = errors.New("beans name is empty")
+	ErrBeansRoastDateOutOfRange  = errors.New("beans roast date is out of range. Must be on or after 1900-01-01")
 	ErrBeansRoastLevelOutOfRange = errors.New("beans roast level is out of range. Must be between 0 and 4")
 
 	ErrShotAlreadyExists                          = errors.New("shot already exists")

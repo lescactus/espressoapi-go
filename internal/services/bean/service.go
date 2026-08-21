@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const minimumRoastDateYear = 1900
+
 // Bean
 //
 // Beans have a name, a roaster, a roast date and a roast level.
@@ -101,6 +103,12 @@ func (b *BeanService) CreateBean(ctx context.Context, bean *Bean) (*Bean, error)
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)
 	}
+	if bean.RoastDate != nil && bean.RoastDate.Year() < minimumRoastDateYear {
+		err := errors.ErrBeansRoastDateOutOfRange
+		msg := "could not create beans"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
 	if !bean.RoastLevel.IsValid() {
 		err := errors.ErrBeansRoastLevelOutOfRange
 		msg := "could not create beans"
@@ -162,6 +170,12 @@ func (b *BeanService) UpdateBeanById(ctx context.Context, id int, bean *Bean) (*
 
 	if bean.Name == "" {
 		err := errors.ErrBeansNameIsEmpty
+		msg := "could not update beans by id"
+		zerolog.Ctx(ctx).Err(err).Msg(msg)
+		return nil, fmt.Errorf("%s: %w", msg, err)
+	}
+	if bean.RoastDate != nil && bean.RoastDate.Year() < minimumRoastDateYear {
+		err := errors.ErrBeansRoastDateOutOfRange
 		msg := "could not update beans by id"
 		zerolog.Ctx(ctx).Err(err).Msg(msg)
 		return nil, fmt.Errorf("%s: %w", msg, err)

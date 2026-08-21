@@ -274,6 +274,9 @@ func TestCreateBean_DuplicateReturns409(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("expected 409, got %d", rec.Code)
 	}
+	if !strings.Contains(rec.Body.String(), "Beans with this name, roaster and roast date already exist.") {
+		t.Errorf("expected the composite identity error in the form, got: %s", rec.Body.String())
+	}
 }
 
 func TestCreateBean_WrongContentTypeReturns415(t *testing.T) {
@@ -450,6 +453,24 @@ func TestUpdateBean_EmptyNameReturns400(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestUpdateBean_DuplicateReturns409(t *testing.T) {
+	h, svc := newTestBeanHandler(t, []roaster.Roaster{{Id: 1, Name: "Roaster"}})
+	svc.updateBeanByID = func(context.Context, int, *bean.Bean) (*bean.Bean, error) {
+		return nil, errors.ErrBeansAlreadyExists
+	}
+
+	req := newWebRequest(http.MethodPut, "/beans/update/9", "name=Ethiopia&roaster_id=1&roast_level=0", formURLEncoded, "9", true)
+	rec := httptest.NewRecorder()
+	h.UpdateBean(rec, req)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Beans with this name, roaster and roast date already exist.") {
+		t.Errorf("expected the composite identity error in the form, got: %s", rec.Body.String())
 	}
 }
 
