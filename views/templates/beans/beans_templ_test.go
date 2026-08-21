@@ -44,11 +44,11 @@ func TestRow_ShowsAllColumnsAndHumanRoastLevel(t *testing.T) {
 	}
 }
 
-func TestRow_RoasterCellShowsIDAndName(t *testing.T) {
+func TestRow_RoasterCellShowsNameWithoutID(t *testing.T) {
 	html := render(t, Row(testBean(), ""))
 
-	if !strings.Contains(html, "#3 Blue Bottle") {
-		t.Errorf("expected the roaster cell to show its id and name, got: %s", html)
+	if !strings.Contains(html, "<td>Blue Bottle</td>") || strings.Contains(html, "#3 Blue Bottle") {
+		t.Errorf("expected the roaster cell to show its name without an id, got: %s", html)
 	}
 }
 
