@@ -25,7 +25,7 @@ var domainErrorMessages = map[error]webError{
 	domainerrors.ErrRoasterNameIsEmpty:   {http.StatusBadRequest, "Roaster name must not be empty."},
 
 	domainerrors.ErrBeansDoesNotExist:         {http.StatusNotFound, "No beans found for the given id."},
-	domainerrors.ErrBeansAlreadyExists:        {http.StatusConflict, "Beans with this name already exist."},
+	domainerrors.ErrBeansAlreadyExists:        {http.StatusConflict, "Beans with this name, roaster and roast date already exist."},
 	domainerrors.ErrBeansNameIsEmpty:          {http.StatusBadRequest, "Beans name must not be empty."},
 	domainerrors.ErrBeansRoastLevelOutOfRange: {http.StatusBadRequest, "Roast level must be between light and dark."},
 	domainerrors.ErrBeansForeignKeyConstraint: {http.StatusConflict, "This roaster is still used by beans. Delete or reassign those beans first."},

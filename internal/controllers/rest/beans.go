@@ -258,6 +258,7 @@ type UpdateBeansByIdRequest struct {
 //	  200: BeansResponse
 //	  400: ErrorResponse
 //	  404: ErrorResponse
+//	  409: ErrorResponse
 //	  413: ErrorResponse
 func (h *Handler) UpdateBeanById(w http.ResponseWriter, r *http.Request) {
 	var beansReq UpdateBeansByIdRequest

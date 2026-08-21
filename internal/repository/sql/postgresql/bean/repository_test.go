@@ -42,6 +42,24 @@ func TestBeanRepositoryPostgresBehavior(t *testing.T) {
 			},
 		},
 		{
+			name: "create duplicate identity returns domain error",
+			run: func(t *testing.T, repository *Bean, mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES ($1, $2, $3, $4) RETURNING id").
+					WithArgs("beans", 1, roastDate, sql.RoastLevelMedium).
+					WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "uq_beans_identity"})
+
+				_, err := repository.CreateBeans(context.Background(), &sql.Beans{
+					Name:       "beans",
+					Roaster:    &sql.Roaster{Id: 1},
+					RoastDate:  &roastDate,
+					RoastLevel: sql.RoastLevelMedium,
+				})
+				if !errors.Is(err, domainerrors.ErrBeansAlreadyExists) {
+					t.Fatalf("CreateBeans() error = %v, want %v", err, domainerrors.ErrBeansAlreadyExists)
+				}
+			},
+		},
+		{
 			name: "create with missing roaster returns domain error",
 			run: func(t *testing.T, repository *Bean, mock sqlmock.Sqlmock) {
 				mock.ExpectQuery("INSERT INTO beans (name, roaster_id, roast_date, roast_level) VALUES ($1, $2, $3, $4) RETURNING id").
@@ -56,6 +74,24 @@ func TestBeanRepositoryPostgresBehavior(t *testing.T) {
 				})
 				if !errors.Is(err, domainerrors.ErrRoasterDoesNotExist) {
 					t.Fatalf("CreateBeans() error = %v, want %v", err, domainerrors.ErrRoasterDoesNotExist)
+				}
+			},
+		},
+		{
+			name: "update to duplicate identity returns domain error",
+			run: func(t *testing.T, repository *Bean, mock sqlmock.Sqlmock) {
+				mock.ExpectExec("UPDATE beans SET name = $1, roaster_id = $2, roast_date = $3, roast_level = $4 WHERE id = $5").
+					WithArgs("beans", 1, roastDate, sql.RoastLevelMedium, 7).
+					WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "uq_beans_identity"})
+
+				_, err := repository.UpdateBeansById(context.Background(), 7, &sql.Beans{
+					Name:       "beans",
+					Roaster:    &sql.Roaster{Id: 1},
+					RoastDate:  &roastDate,
+					RoastLevel: sql.RoastLevelMedium,
+				})
+				if !errors.Is(err, domainerrors.ErrBeansAlreadyExists) {
+					t.Fatalf("UpdateBeansById() error = %v, want %v", err, domainerrors.ErrBeansAlreadyExists)
 				}
 			},
 		},

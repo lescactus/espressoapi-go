@@ -183,6 +183,19 @@ testcases:
     - result.bodyjson ShouldContainKey "created_at"
     - result.bodyjson ShouldContainKey "updated_at"
 
+- name: POST /rest/v1/beans - duplicate dated identity
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "beans already exist"
+
 - name: POST /rest/v1/beans/:id
   steps:
   - type: http
@@ -251,6 +264,20 @@ testcases:
     - result.bodyjson.bodyjson0 ShouldContainKey "created_at"
     - result.bodyjson.bodyjson0 ShouldContainKey "updated_at"
 
+- name: POST /rest/v1/beans - same name and roaster with different roast date
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans01", "roaster_id": 1, "roast_date": "2021-02-19", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.bodyjson ShouldContainKey "id"
+    - result.bodyjson.name ShouldEqual "beans01"
+
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roast date omitted
   steps:
   - type: http
@@ -265,6 +292,19 @@ testcases:
     - result.bodyjson ShouldContainKey "id"
     - result.bodyjson.name ShouldEqual "beans-no-roast-date"
     - result.bodyjson.roast_date ShouldBeBlank
+
+- name: POST /rest/v1/beans - duplicate identity with roast date omitted
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-no-roast-date", "roaster_id": 1, "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "beans already exist"
 
 - name: DELETE /rest/v1/beans/:id - roast date omitted cleanup
   steps:
