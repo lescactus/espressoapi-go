@@ -133,7 +133,7 @@ func Table(shots []shot.Shot, sortCol, order string, showSheetColumn, sortable b
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<th>Beans</th>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<th>Beans</th><th>Roaster</th>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -335,7 +335,7 @@ func RowPage(s shot.Shot) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"table-scroll\"><table><thead><tr><th>ID</th><th>Sheet</th><th>Beans</th><th>Grind</th><th>In (g)</th><th>Out (g)</th><th>Time</th><th>Temp</th><th>Rating</th><th>Bitter</th><th>Sour</th><th>Comparison</th><th>Notes</th><th>Created</th><th>Updated</th><th>Actions</th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"table-scroll\"><table><thead><tr><th>ID</th><th>Sheet</th><th>Beans</th><th>Roaster</th><th>Grind</th><th>In (g)</th><th>Out (g)</th><th>Time</th><th>Temp</th><th>Rating</th><th>Bitter</th><th>Sour</th><th>Comparison</th><th>Notes</th><th>Created</th><th>Updated</th><th>Actions</th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -388,7 +388,7 @@ func DetailSection(shots []shot.Shot, sheetID int) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue("/shots/add?sheet_id=" + strconv.Itoa(sheetID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/templates/shots/page.templ`, Line: 145, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/templates/shots/page.templ`, Line: 147, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {

@@ -39,6 +39,7 @@ templ Table(shots []shot.Shot, sortCol, order string, showSheetColumn, sortable 
 					<th>Sheet</th>
 				}
 				<th>Beans</th>
+				<th>Roaster</th>
 				if sortable {
 					@sortableHeader("Grind", "grind_setting", sortCol, order)
 					@sortableHeader("In (g)", "quantity_in", sortCol, order)
@@ -111,6 +112,7 @@ templ RowPage(s shot.Shot) {
 						<th>ID</th>
 						<th>Sheet</th>
 						<th>Beans</th>
+						<th>Roaster</th>
 						<th>Grind</th>
 						<th>In (g)</th>
 						<th>Out (g)</th>
