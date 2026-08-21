@@ -47,7 +47,7 @@ func TestRow_ShowsEveryPersistedField(t *testing.T) {
 	html := render(t, Row(testShot(), true, ""))
 
 	for _, want := range []string{
-		"5", "Morning", "Ethiopia", "12", "18.0", "36.0", "28.5 s", "93.0", "8.5",
+		"5", "Morning", "Ethiopia", "Blue Bottle", "12", "18.0", "36.0", "28.5 s", "93.0", "8.5",
 		"No", "Yes", "Better", "great shot", "2026-01-02 03:04",
 	} {
 		if !strings.Contains(html, want) {
@@ -60,6 +60,14 @@ func TestRow_HidesSheetColumnWhenRequested(t *testing.T) {
 	html := render(t, Row(testShot(), false, ""))
 	if strings.Contains(html, "Morning") {
 		t.Errorf("expected the sheet column to be hidden, got: %s", html)
+	}
+}
+
+func TestTable_ShowsRoasterColumnAfterBeans(t *testing.T) {
+	html := render(t, Table([]shot.Shot{testShot()}, "", "", true, false))
+
+	if !strings.Contains(html, "<th>Beans</th><th>Roaster</th>") {
+		t.Errorf("expected the Roaster header immediately after Beans, got: %s", html)
 	}
 }
 
