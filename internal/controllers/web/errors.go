@@ -27,6 +27,7 @@ var domainErrorMessages = map[error]webError{
 	domainerrors.ErrBeansDoesNotExist:         {http.StatusNotFound, "No beans found for the given id."},
 	domainerrors.ErrBeansAlreadyExists:        {http.StatusConflict, "Beans with this name, roaster and roast date already exist."},
 	domainerrors.ErrBeansNameIsEmpty:          {http.StatusBadRequest, "Beans name must not be empty."},
+	domainerrors.ErrBeansRoastDateOutOfRange:  {http.StatusBadRequest, "Roast date must be on or after 1900-01-01."},
 	domainerrors.ErrBeansRoastLevelOutOfRange: {http.StatusBadRequest, "Roast level must be between light and dark."},
 	domainerrors.ErrBeansForeignKeyConstraint: {http.StatusConflict, "This roaster is still used by beans. Delete or reassign those beans first."},
 
@@ -57,6 +58,8 @@ func beanErrorField(err error) string {
 	switch {
 	case errors.Is(err, domainerrors.ErrRoasterDoesNotExist):
 		return "roaster_id"
+	case errors.Is(err, domainerrors.ErrBeansRoastDateOutOfRange):
+		return "roast_date"
 	case errors.Is(err, domainerrors.ErrBeansRoastLevelOutOfRange):
 		return "roast_level"
 	case errors.Is(err, domainerrors.ErrBeansAlreadyExists), errors.Is(err, domainerrors.ErrBeansNameIsEmpty):

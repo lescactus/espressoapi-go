@@ -20,21 +20,9 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 				<td></td>
 			}
 		}
-		if s.Beans != nil {
-			<td>{ s.Beans.Name }</td>
-		} else {
-			<td></td>
-		}
-		if s.Beans != nil && s.Beans.Roaster != nil {
-			<td>{ s.Beans.Roaster.Name }</td>
-		} else {
-			<td></td>
-		}
-		if s.Beans != nil {
-			<td>{ dateOnly(s.Beans.RoastDate) }</td>
-		} else {
-			<td></td>
-		}
+		<td>{ beanName(s.Beans) }</td>
+		<td>{ beanRoasterName(s.Beans) }</td>
+		<td>{ beanRoastDate(s.Beans) }</td>
 		<td>{ strconv.Itoa(s.GrindSetting) }</td>
 		<td>{ strconv.FormatFloat(s.QuantityIn, 'f', 1, 64) }</td>
 		<td>{ strconv.FormatFloat(s.QuantityOut, 'f', 1, 64) }</td>

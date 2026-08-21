@@ -167,6 +167,19 @@ testcases:
     - result.statuscode ShouldEqual 400
     - result.bodyjson.msg ShouldEqual "beans roast level is out of range. Must be between 0 and 4"
 
+- name: POST /rest/v1/beans - roast date is before supported floor
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "beans-invalid-roast-date", "roaster_id": 1, "roast_date": "1000-01-01", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.bodyjson.msg ShouldEqual "beans roast date is out of range. Must be on or after 1900-01-01"
+
 - name: POST /rest/v1/beans - with body - with correct Content-Type header - correct json - roaster exists - non empty name
   steps:
   - type: http
@@ -480,3 +493,11 @@ testcases:
     - result.statuscode ShouldEqual 200
     - result.bodyjson.id ShouldEqual "{{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }}"
     - result.bodyjson.msg ShouldEqual "beans {{ .POST-rest-v1-beans-with-body-with-correct-Content-Type-header-correct-json-roaster-exists-non-empty-name.result.bodyjson.id }} deleted successfully"
+
+- name: DELETE /rest/v1/beans/:id - different roast date cleanup
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{ .baseuri }}/rest/v1/beans/{{ .POST-rest-v1-beans-same-name-and-roaster-with-different-roast-date.result.bodyjson.id }}"
+    assertions:
+    - result.statuscode ShouldEqual 200

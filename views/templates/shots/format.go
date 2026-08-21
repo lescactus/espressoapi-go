@@ -25,6 +25,27 @@ func dateOnly(t *time.Time) string {
 	return t.UTC().Format("2006-01-02")
 }
 
+func beanName(b *bean.Bean) string {
+	if b == nil {
+		return ""
+	}
+	return b.Name
+}
+
+func beanRoasterName(b *bean.Bean) string {
+	if b == nil || b.Roaster == nil {
+		return ""
+	}
+	return b.Roaster.Name
+}
+
+func beanRoastDate(b *bean.Bean) string {
+	if b == nil {
+		return ""
+	}
+	return dateOnly(b.RoastDate)
+}
+
 func beanOptionLabel(b bean.Bean) string {
 	label := b.Name
 	if b.Roaster != nil && b.Roaster.Name != "" {

@@ -4,31 +4,21 @@ import (
 	"context"
 	stderrors "errors"
 	"testing"
+	"time"
 
 	domainerrors "github.com/lescactus/espressoapi-go/internal/errors"
 	"github.com/lescactus/espressoapi-go/internal/models/sql"
 	"github.com/lescactus/espressoapi-go/internal/services/roaster"
 )
 
-type noWriteBeanRepository struct {
-	MockBeanRepository
-}
-
-func (r *noWriteBeanRepository) CreateBeans(context.Context, *sql.Beans) (int, error) {
-	panic("CreateBeans must not be called for an invalid bean")
-}
-
-func (r *noWriteBeanRepository) UpdateBeansById(context.Context, int, *sql.Beans) (*sql.Beans, error) {
-	panic("UpdateBeansById must not be called for an invalid bean")
-}
-
-func TestBeanServiceRejectsInvalidRoastLevel(t *testing.T) {
-	invalidRoastLevel := sql.RoastLevel(5)
+func TestBeanServiceRejectsRoastDateBefore1900(t *testing.T) {
+	roastDate := time.Date(1899, time.December, 31, 0, 0, 0, 0, time.UTC)
 	newBean := func() *Bean {
 		return &Bean{
 			Name:       "beans",
 			Roaster:    &roaster.Roaster{Id: 1},
-			RoastLevel: invalidRoastLevel,
+			RoastDate:  &roastDate,
+			RoastLevel: sql.RoastLevelMedium,
 		}
 	}
 
@@ -55,9 +45,23 @@ func TestBeanServiceRejectsInvalidRoastLevel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.call(New(&noWriteBeanRepository{}))
-			if !stderrors.Is(err, domainerrors.ErrBeansRoastLevelOutOfRange) {
-				t.Errorf("error = %v, want %v", err, domainerrors.ErrBeansRoastLevelOutOfRange)
+			if !stderrors.Is(err, domainerrors.ErrBeansRoastDateOutOfRange) {
+				t.Errorf("error = %v, want %v", err, domainerrors.ErrBeansRoastDateOutOfRange)
 			}
 		})
+	}
+}
+
+func TestBeanServiceAcceptsRoastDateOn1900Floor(t *testing.T) {
+	roastDate := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
+	bean := &Bean{
+		Name:       "beans",
+		Roaster:    &roaster.Roaster{Id: 1},
+		RoastDate:  &roastDate,
+		RoastLevel: sql.RoastLevelMedium,
+	}
+
+	if _, err := New(&MockBeanRepository{}).CreateBean(context.Background(), bean); err != nil {
+		t.Fatalf("CreateBean() error = %v", err)
 	}
 }
