@@ -15,7 +15,7 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 		<td>{ strconv.Itoa(s.Id) }</td>
 		if showSheetColumn {
 			if s.Sheet != nil {
-				<td>#{ strconv.Itoa(s.Sheet.Id) } { s.Sheet.Name }</td>
+				<td><a href={ templ.URL("/sheets/get/" + strconv.Itoa(s.Sheet.Id)) }>#{ strconv.Itoa(s.Sheet.Id) } { s.Sheet.Name }</a></td>
 			} else {
 				<td></td>
 			}
