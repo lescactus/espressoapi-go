@@ -38,6 +38,8 @@ func TestBeanIdentityConstraint(t *testing.T) {
 	otherDateBeanID := testRowID(testID, 23)
 	undatedBeanID := testRowID(testID, 24)
 	duplicateUndatedBeanID := testRowID(testID, 25)
+	caseVariantBeanID := testRowID(testID, 26)
+	accentVariantBeanID := testRowID(testID, 27)
 	name := fmt.Sprintf("identity-test-beans-%d", testID)
 	roastDate := time.Date(2026, time.August, 21, 0, 0, 0, 0, time.UTC)
 	otherRoastDate := time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
@@ -61,6 +63,17 @@ func TestBeanIdentityConstraint(t *testing.T) {
 	insertRow(t, ctx, db, config, otherDateBeanID,
 		"INSERT INTO beans (id, name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?, ?)",
 		otherDateBeanID, name, roasterID, otherRoastDate, 2)
+
+	// Case-insensitive, accent-sensitive identity: an upper-cased variant of the
+	// dated bean is a duplicate on both engines, while an accented variant is a
+	// distinct bean.
+	_, err = db.ExecContext(ctx, config.bind(
+		"INSERT INTO beans (id, name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?, ?)"),
+		caseVariantBeanID, strings.ToUpper(name), roasterID, roastDate, 2)
+	assertUniqueConstraintError(t, config, err, "uq_beans_identity")
+	insertRow(t, ctx, db, config, accentVariantBeanID,
+		"INSERT INTO beans (id, name, roaster_id, roast_date, roast_level) VALUES (?, ?, ?, ?, ?)",
+		accentVariantBeanID, "í"+strings.TrimPrefix(name, "i"), roasterID, roastDate, 2)
 
 	// NULL identity: NULL matches NULL, so the second undated bean is rejected.
 	insertRow(t, ctx, db, config, undatedBeanID,

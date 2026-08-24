@@ -209,6 +209,19 @@ testcases:
     - result.statuscode ShouldEqual 409
     - result.bodyjson.msg ShouldEqual "beans already exist"
 
+- name: POST /rest/v1/beans - duplicate dated identity with different case
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/rest/v1/beans"
+    headers:
+      Content-Type: application/json
+    body: |
+      {"name": "BEANS01", "roaster_id": 1, "roast_date": "2021-02-18", "roast_level": 2}
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.bodyjson.msg ShouldEqual "beans already exist"
+
 - name: POST /rest/v1/beans/:id
   steps:
   - type: http
