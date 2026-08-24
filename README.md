@@ -12,6 +12,9 @@ configuration is supplied.
 | MySQL | `mysql` | `root:root@tcp(127.0.0.1:3306)/espresso-api?parseTime=true` |
 | PostgreSQL | `postgres` | `postgres://root:root@127.0.0.1:5432/espresso-api?sslmode=disable` |
 
+Supported database versions are MySQL 8.0.13 or newer and PostgreSQL 15 or
+newer. MariaDB is not supported.
+
 Configuration is read from `config.json`, `config.yaml`, or `config.env` when
 one of those files exists in the working directory. Otherwise, it is read from
 environment variables. A configuration file is authoritative; environment

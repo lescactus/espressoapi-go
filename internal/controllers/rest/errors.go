@@ -73,6 +73,8 @@ var domainErrorResponses = map[error]ErrorResponse{
 	domainerrors.ErrShotTimeOutOfRange: {status: http.StatusBadRequest, Msg: "shot time is out of range. Must be between 0 and 3600 seconds"},
 	// Catch if the beans roast level is out of range
 	domainerrors.ErrBeansRoastLevelOutOfRange: {status: http.StatusBadRequest, Msg: "beans roast level is out of range. Must be between 0 and 4"},
+	// Catch if the beans roast date is out of range
+	domainerrors.ErrBeansRoastDateOutOfRange: {status: http.StatusBadRequest, Msg: "beans roast date is out of range. Must be on or after 1900-01-01"},
 	// Catch if the beans foreign key constraint failed
 	domainerrors.ErrBeansForeignKeyConstraint: {status: http.StatusBadRequest, Msg: "cannot delete due to existing references: beans foreign key constraint failed"},
 	// Catch if the shot foreign key constraint failed

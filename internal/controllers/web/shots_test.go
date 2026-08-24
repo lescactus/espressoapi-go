@@ -203,7 +203,7 @@ func TestAddShotForm_SheetLockedFullPageFallbackOmitsSheetShotsViewContext(t *te
 		t.Errorf("expected the sheet lock to still apply, got: %s", body)
 	}
 	if strings.Contains(body, `name="view_context"`) {
-		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 17-column table), got: %s", body)
+		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 18-column table), got: %s", body)
 	}
 }
 
@@ -592,7 +592,7 @@ func TestEditShotForm_FullPageFallbackOmitsSheetShotsViewContextEvenIfRequested(
 		t.Fatalf("expected the full shots page, got %d: %s", rec.Code, body)
 	}
 	if strings.Contains(body, `name="view_context"`) {
-		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 17-column table), got: %s", body)
+		t.Errorf("expected no view_context field on the standalone-page fallback (would misalign the OOB row against its 18-column table), got: %s", body)
 	}
 }
 

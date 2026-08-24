@@ -151,6 +151,12 @@ func TestSetErrorResponse(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:           "errors.ErrBeansRoastDateOutOfRange error",
+			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansRoastDateOutOfRange},
+			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: "beans roast date is out of range. Must be on or after 1900-01-01"},
+			wantStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:           "errors.ErrBeansForeignKeyConstraint error",
 			args:           args{w: httptest.NewRecorder(), err: domerrors.ErrBeansForeignKeyConstraint},
 			want:           &ErrorResponse{status: http.StatusBadRequest, Msg: fmt.Sprintf("cannot delete due to existing references: %s", domerrors.ErrBeansForeignKeyConstraint)},

@@ -40,6 +40,7 @@ templ Table(shots []shot.Shot, sortCol, order string, showSheetColumn, sortable 
 				}
 				<th>Beans</th>
 				<th>Roaster</th>
+				<th>Roast date</th>
 				if sortable {
 					@sortableHeader("Grind", "grind_setting", sortCol, order)
 					@sortableHeader("In (g)", "quantity_in", sortCol, order)
@@ -104,7 +105,7 @@ templ Page(shots []shot.Shot, sortCol, order string, dialogContent templ.Compone
 // in the shared layout. Used as the full-page fallback for a direct GET to
 // /shots/get/:id.
 templ RowPage(s shot.Shot) {
-	@shared.Layout("Shot #"+strconv.Itoa(s.Id), "shots") {
+	@shared.Layout("Shot details", "shots") {
 		<div class="table-scroll">
 			<table>
 				<thead>
@@ -113,6 +114,7 @@ templ RowPage(s shot.Shot) {
 						<th>Sheet</th>
 						<th>Beans</th>
 						<th>Roaster</th>
+						<th>Roast date</th>
 						<th>Grind</th>
 						<th>In (g)</th>
 						<th>Out (g)</th>

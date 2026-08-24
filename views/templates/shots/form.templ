@@ -79,9 +79,9 @@ templ beansField(state FormState, beans []bean.Bean) {
 				<option value="">Select beans&hellip;</option>
 				for _, b := range beans {
 					if strconv.Itoa(b.Id) == state.BeansID {
-						<option value={ strconv.Itoa(b.Id) } selected>{ b.Name }</option>
+						<option value={ strconv.Itoa(b.Id) } selected>{ beanOptionLabel(b) }</option>
 					} else {
-						<option value={ strconv.Itoa(b.Id) }>{ b.Name }</option>
+						<option value={ strconv.Itoa(b.Id) }>{ beanOptionLabel(b) }</option>
 					}
 				}
 			</select>

@@ -180,6 +180,15 @@ func TestBeanHandlersErrorPaths(t *testing.T) {
 			},
 		},
 		{
+			name: "create duplicate identity", method: http.MethodPost, target: "/rest/v1/beans", body: `{"name":"beans","roaster_id":1,"roast_date":"2026-02-18","roast_level":2}`,
+			status: http.StatusConflict, message: "beans already exist", handler: (*Handler).CreateBeans,
+			configure: func(service *fakeBeanService) {
+				service.createBean = func(context.Context, *bean.Bean) (*bean.Bean, error) {
+					return nil, domainerrors.ErrBeansAlreadyExists
+				}
+			},
+		},
+		{
 			name: "get not found", method: http.MethodGet, target: "/rest/v1/beans/5", id: "5",
 			status: http.StatusNotFound, message: "no beans found for given id", handler: (*Handler).GetBeansById,
 			configure: func(service *fakeBeanService) {
@@ -202,6 +211,15 @@ func TestBeanHandlersErrorPaths(t *testing.T) {
 						t.Errorf("bean name = %q, want empty", value.Name)
 					}
 					return nil, domainerrors.ErrBeansNameIsEmpty
+				}
+			},
+		},
+		{
+			name: "update to duplicate identity", method: http.MethodPut, target: "/rest/v1/beans/5", body: `{"name":"beans","roaster_id":1,"roast_date":"2026-02-18","roast_level":2}`, id: "5",
+			status: http.StatusConflict, message: "beans already exist", handler: (*Handler).UpdateBeanById,
+			configure: func(service *fakeBeanService) {
+				service.updateBeanByID = func(context.Context, int, *bean.Bean) (*bean.Bean, error) {
+					return nil, domainerrors.ErrBeansAlreadyExists
 				}
 			},
 		},

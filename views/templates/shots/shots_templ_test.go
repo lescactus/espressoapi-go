@@ -25,10 +25,11 @@ func render(t *testing.T, c templ.Component) string {
 
 func testShot() shot.Shot {
 	created := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
+	roastDate := time.Date(2025, 12, 28, 0, 0, 0, 0, time.UTC)
 	return shot.Shot{
 		Id:                           5,
 		Sheet:                        &sheet.Sheet{Id: 1, Name: "Morning"},
-		Beans:                        &bean.Bean{Id: 2, Name: "Ethiopia", Roaster: &roaster.Roaster{Id: 3, Name: "Blue Bottle"}},
+		Beans:                        &bean.Bean{Id: 2, Name: "Ethiopia", RoastDate: &roastDate, Roaster: &roaster.Roaster{Id: 3, Name: "Blue Bottle"}},
 		GrindSetting:                 12,
 		QuantityIn:                   18,
 		QuantityOut:                  36,
@@ -47,7 +48,7 @@ func TestRow_ShowsEveryPersistedField(t *testing.T) {
 	html := render(t, Row(testShot(), true, ""))
 
 	for _, want := range []string{
-		"5", "Morning", "Ethiopia", "Blue Bottle", "12", "18.0", "36.0", "28.5 s", "93.0", "8.5",
+		"5", "Morning", "Ethiopia", "Blue Bottle", "2025-12-28", "12", "18.0", "36.0", "28.5 s", "93.0", "8.5",
 		"No", "Yes", "Better", "great shot", "2026-01-02 03:04",
 	} {
 		if !strings.Contains(html, want) {
@@ -63,22 +64,36 @@ func TestRow_HidesSheetColumnWhenRequested(t *testing.T) {
 	}
 }
 
-func TestTable_ShowsRoasterColumnAfterBeans(t *testing.T) {
+func TestTable_ShowsBeanIdentityColumnsInOrder(t *testing.T) {
 	html := render(t, Table([]shot.Shot{testShot()}, "", "", true, false))
 
-	if !strings.Contains(html, "<th>Beans</th><th>Roaster</th>") {
-		t.Errorf("expected the Roaster header immediately after Beans, got: %s", html)
+	if !strings.Contains(html, "<th>Beans</th><th>Roaster</th><th>Roast date</th>") {
+		t.Errorf("expected Beans, Roaster, and Roast date headers in order, got: %s", html)
 	}
 }
 
-func TestRow_SheetCellLinksNameWithoutIDAndBeansCellShowsIDAndName(t *testing.T) {
+func TestRow_ShowsBeanIdentityWithoutVisibleID(t *testing.T) {
 	html := render(t, Row(testShot(), true, ""))
 
 	if !strings.Contains(html, `<a href="/sheets/get/1">Morning</a>`) || strings.Contains(html, "#1 Morning") {
 		t.Errorf("expected the sheet cell to link its name without an id, got: %s", html)
 	}
-	if !strings.Contains(html, "#2 Ethiopia") {
-		t.Errorf("expected the beans cell to show its id and name, got: %s", html)
+	if !strings.Contains(html, "<td>Ethiopia</td><td>Blue Bottle</td><td>2025-12-28</td>") {
+		t.Errorf("expected bean name, roaster, and roast date, got: %s", html)
+	}
+	if strings.Contains(html, "#2 Ethiopia") {
+		t.Errorf("expected the bean id prefix to be hidden, got: %s", html)
+	}
+}
+
+func TestRow_EmptyRoastDateRendersEmptyCell(t *testing.T) {
+	value := testShot()
+	value.Beans.RoastDate = nil
+
+	html := render(t, Row(value, true, ""))
+
+	if !strings.Contains(html, "<td>Ethiopia</td><td>Blue Bottle</td><td></td>") {
+		t.Errorf("expected an empty roast date cell, got: %s", html)
 	}
 }
 
@@ -90,6 +105,12 @@ func TestRowPage_IncludesDialogTargetForEditLink(t *testing.T) {
 	}
 	if !strings.Contains(html, `id="shot-dialog"`) {
 		t.Errorf("expected the row's Edit link (hx-target=\"#shot-dialog\") to have a matching dialog target, got: %s", html)
+	}
+	if !strings.Contains(html, "<title>Shot details - espressoapi-go</title>") {
+		t.Errorf("expected a shot details title without a visible id, got: %s", html)
+	}
+	if strings.Contains(html, "Shot #5") {
+		t.Errorf("expected no hash-prefixed shot id in the title, got: %s", html)
 	}
 }
 
@@ -108,10 +129,34 @@ func TestRow_EditLinkCarriesViewContextOnlyWhenSheetColumnHidden(t *testing.T) {
 	}
 }
 
-func TestRow_DeleteConfirmUsesShotID(t *testing.T) {
+func TestRow_DeleteConfirmDoesNotExposeShotID(t *testing.T) {
 	html := render(t, Row(testShot(), true, ""))
-	if !strings.Contains(html, `hx-confirm="Are you sure you want to delete shot #5?"`) {
-		t.Errorf("expected the delete confirm to reference the shot id, got: %s", html)
+	if !strings.Contains(html, `hx-confirm="Are you sure you want to delete this shot?"`) {
+		t.Errorf("expected a neutral delete confirmation, got: %s", html)
+	}
+	if strings.Contains(html, "shot #5") {
+		t.Errorf("expected no hash-prefixed shot id in the confirmation, got: %s", html)
+	}
+}
+
+func TestForm_BeanOptionsAreDisambiguated(t *testing.T) {
+	roastDate := time.Date(2025, 12, 28, 0, 0, 0, 0, time.UTC)
+	beans := []bean.Bean{
+		{Id: 2, Name: "Ethiopia", RoastDate: &roastDate, Roaster: &roaster.Roaster{Id: 3, Name: "Blue Bottle"}},
+		{Id: 4, Name: "Ethiopia", Roaster: &roaster.Roaster{Id: 3, Name: "Blue Bottle"}},
+		{Id: 6, Name: "Ethiopia", RoastDate: &roastDate},
+	}
+
+	html := render(t, Form(FormState{}, nil, beans, true, "", ""))
+
+	for _, want := range []string{
+		`<option value="2">Ethiopia — Blue Bottle (2025-12-28)</option>`,
+		`<option value="4">Ethiopia — Blue Bottle</option>`,
+		`<option value="6">Ethiopia (2025-12-28)</option>`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("expected bean option %q, got: %s", want, html)
+		}
 	}
 }
 

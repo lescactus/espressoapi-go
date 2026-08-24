@@ -186,6 +186,19 @@ testcases:
     - result.body ShouldContainSubstring "beans01"
     - result.body ShouldContainSubstring "hx-swap-oob"
 
+- name: POST /beans/add - duplicate bean identity - 409
+  steps:
+  - type: http
+    method: POST
+    url: "{{ .baseuri }}/beans/add"
+    headers:
+      HX-Request: "true"
+      Content-Type: application/x-www-form-urlencoded
+    body: "name=beans01&roast_date=2024-01-01&roast_level=0&roaster_id=1"
+    assertions:
+    - result.statuscode ShouldEqual 409
+    - result.body ShouldContainSubstring "Beans with this name, roaster and roast date already exist."
+
 - name: POST /beans/add - empty name - 400
   steps:
   - type: http

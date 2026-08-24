@@ -20,16 +20,9 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 				<td></td>
 			}
 		}
-		if s.Beans != nil {
-			<td>#{ strconv.Itoa(s.Beans.Id) } { s.Beans.Name }</td>
-		} else {
-			<td></td>
-		}
-		if s.Beans != nil && s.Beans.Roaster != nil {
-			<td>{ s.Beans.Roaster.Name }</td>
-		} else {
-			<td></td>
-		}
+		<td>{ beanName(s.Beans) }</td>
+		<td>{ beanRoasterName(s.Beans) }</td>
+		<td>{ beanRoastDate(s.Beans) }</td>
 		<td>{ strconv.Itoa(s.GrindSetting) }</td>
 		<td>{ strconv.FormatFloat(s.QuantityIn, 'f', 1, 64) }</td>
 		<td>{ strconv.FormatFloat(s.QuantityOut, 'f', 1, 64) }</td>
@@ -54,7 +47,7 @@ templ Row(s shot.Shot, showSheetColumn bool, oobMode string) {
 				hx-delete={ deletePath(s.Id) }
 				hx-target="closest tr"
 				hx-swap="outerHTML"
-				hx-confirm={ "Are you sure you want to delete shot #" + strconv.Itoa(s.Id) + "?" }
+				hx-confirm="Are you sure you want to delete this shot?"
 			>Delete</a>
 		</td>
 	</tr>
